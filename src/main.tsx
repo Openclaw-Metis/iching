@@ -7,7 +7,6 @@ import { Hall } from './pages/Hall.tsx'
 import './styles/global.css'
 
 // 卦殿以外的頁面一律延遲載入，卦殿首屏才不會帶到 three、保存層與功能模組
-const placeholder = lazy(() => import('./app/ComingSoon.tsx').then(m => ({ default: m.ComingSoon })))
 const NotFound = lazy(() => import('./app/ComingSoon.tsx').then(m => ({ default: m.NotFound })))
 
 const PAGES: Record<PageId, ComponentType> = {
@@ -19,7 +18,7 @@ const PAGES: Record<PageId, ComponentType> = {
   me: lazy(() => import('./pages/Me.tsx').then(m => ({ default: m.Me }))),
   lesson: lazy(() => import('./pages/Lesson.tsx').then(m => ({ default: m.Lesson }))),
   exam: lazy(() => import('./pages/Exam.tsx').then(m => ({ default: m.Exam }))),
-  review: placeholder,
+  review: lazy(() => import('./pages/Review.tsx').then(m => ({ default: m.Review }))),
 }
 
 const router = createBrowserRouter([

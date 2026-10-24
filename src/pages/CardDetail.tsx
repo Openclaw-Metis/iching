@@ -11,6 +11,7 @@ import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
 import { lineKey, parseTextFocus, type TextFocus } from '../data/lines.ts'
 import { xugua, zagua } from '../data/xugua.ts'
+import { ReviewToggle } from '../features/review/index.ts'
 import { interpret } from '../lib/reading.ts'
 
 type Tab = 'meaning' | 'text' | 'structure' | 'lab' | 'source'
@@ -135,6 +136,7 @@ function Detail({ n }: { n: number }) {
             <button className="btn" type="button" aria-pressed={flipped} onClick={flipToCuo}>翻面 <small>看錯卦</small></button>
             {x !== hex && <button className="btn" type="button" aria-pressed={dived} onClick={diveToHu}>取中 <small>看互卦</small></button>}
           </div>
+          <ReviewToggle hexagram={n} />
           <SequenceNav hex={hex} />
         </section>
 

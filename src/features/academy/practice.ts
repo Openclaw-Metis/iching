@@ -1,8 +1,8 @@
 // 看圖猜卦練習（規格「看圖猜卦練習」）：每次 10 題，優先抽還沒答對過看圖題的卦。
-// 進度只在當次有效，不寫入作答進度；答對照樣給作答 XP（計入每日上限）並寫入掌握紀錄。
+// 進度只在當次有效，不寫入作答進度；答對照樣給作答 XP（計入每日上限）、寫入掌握紀錄並建立溫故卡。
 
 import { cryptoSource, randomInt, type Uint32Source } from '../../lib/rng.ts'
-import { mastery, xp } from '../../storage/index.ts'
+import { rewardCorrect } from './attempts.ts'
 import { generateQuestion } from './questions/generate.ts'
 import type { Question } from './questions/types.ts'
 
@@ -29,12 +29,12 @@ export interface PracticeResult {
   correct: boolean
   xp: number
   capped: boolean
+  reviewAdded: boolean
 }
 
-export async function answerPractice(sessionId: string, index: number, q: Question, choice: number, now = new Date()): Promise<PracticeResult> {
+export async function answerPractice(sessionId: string, index: number, q: Question, choice: number, elapsedMs = 5000, now = new Date()): Promise<PracticeResult> {
   const correct = choice === q.answerIndex
-  if (!correct) return { correct, xp: 0, capped: false }
-  const r = await xp.award({ key: `answer:${sessionId}:${index}`, source: 'answer', amount: xp.XP_AMOUNTS.answer, ref: q.questionKey }, now)
-  if (q.hexagram && q.facet) await mastery.markMastery(q.hexagram, q.facet, now)
-  return { correct, xp: r.awarded, capped: r.capped }
+  if (!correct) return { correct, xp: 0, capped: false, reviewAdded: false }
+  const r = await rewardCorrect(`answer:${sessionId}:${index}`, q, elapsedMs, now)
+  return { correct, xp: r.awarded, capped: r.capped, reviewAdded: r.reviewAdded }
 }

@@ -1,6 +1,6 @@
 // 看圖猜卦練習：每次 10 題，按「檢查」立即揭露對錯。進度只在當次有效，離開就結束。
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from '../../app/toast.ts'
 import { answerPractice, practiceQuestions, PRACTICE_SIZE } from './practice.ts'
 import { QuestionCard } from './QuestionCard.tsx'
@@ -21,13 +21,14 @@ export function ImagePractice({ masteredImage, onExit }: Props) {
   const [score, setScore] = useState(0)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const shownAt = useRef(performance.now())
   const q = questions[index]
 
   const check = async () => {
     if (choice === null || busy) return
     setBusy(true)
     try {
-      const r = await answerPractice(sessionId, index, q, choice)
+      const r = await answerPractice(sessionId, index, q, choice, Math.round(performance.now() - shownAt.current))
       setResult(r)
       if (r.correct) setScore(s => s + 1)
     } catch {
@@ -43,6 +44,7 @@ export function ImagePractice({ masteredImage, onExit }: Props) {
     setIndex(i => i + 1)
     setChoice(null)
     setResult(null)
+    shownAt.current = performance.now()
   }
 
   if (done) {

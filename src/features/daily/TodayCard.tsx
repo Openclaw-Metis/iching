@@ -67,7 +67,12 @@ export function TodayCard({ date, row }: Props) {
     if (!revealed || row?.date !== date || awarded.current) return
     awarded.current = true
     awardDaily(date).then(
-      r => { if (r.awarded) toast(`翻開今日卦，得到 ${r.awarded} XP`) },
+      r => {
+        if (!r.awarded) return
+        toast(`翻開今日卦，得到 ${r.awarded} XP`)
+        // 達到每日目標可能接上連續天數的印章
+        void import('../academy/index.ts').then(m => m.checkAndAnnounce(), () => {})
+      },
       e => logError(isAppError(e) ? e.code : 'XP_AWARD_FAILED', String((e as Error)?.message ?? e)),
     )
   }, [revealed, row, date])

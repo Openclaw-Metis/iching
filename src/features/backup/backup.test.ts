@@ -46,7 +46,8 @@ async function seedAll() {
   await db.mastery.add({ id: '29:glyph', hexagram: 29, facet: 'glyph', firstCorrectAt: '2026-10-20T00:00:00.000Z' })
   await db.xpEvents.add(xp('lesson:S1-L1', '2026-10-20T00:00:00.000Z'))
   await db.checkIns.add({ date: '2026-10-20', goal: 30, reachedAt: '2026-10-20T03:00:00.000Z' })
-  await db.seals.add({ id: 'first', earnedAt: '2026-10-20T00:00:00.000Z' })
+  // 與上面的課程和考核一致：匯入後的成就補發不會再多出印章
+  await db.seals.bulkAdd([{ id: 'first', earnedAt: '2026-10-20T00:00:00.000Z' }, { id: 'qian', earnedAt: '2026-10-21T00:00:00.000Z' }])
   await db.settings.bulkPut([
     { key: 'dailyGoal', value: 50, updatedAt: '2026-10-20T00:00:00.000Z' },
     { key: 'lastBackupAt', value: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z' },
@@ -203,5 +204,19 @@ describe('匯出與匯入', () => {
     await applyImport(await previewImport([json('x.json', file)]), 'merge')
     expect(await db.xpEvents.count()).toBe(2)
     expect((await db.xpEvents.where('key').equals('lesson:S1-L1').first())?.at).toBe('2026-10-19T00:00:00.000Z')
+  })
+
+  it('匯入後補發印章與溫故卡（AC-31）', async () => {
+    const db = await requireDb()
+    const file = {
+      ...partialBackup(reading()), scope: 'full' as const,
+      data: {
+        examResults: [{ id: 'e1', attemptId: 'a1', stationId: 2, score: 8, passed: true, at: '2026-10-21T00:00:00.000Z' }],
+        mastery: [{ id: '30:image', hexagram: 30, facet: 'image', firstCorrectAt: '2026-10-20T00:00:00.000Z' }],
+      },
+    }
+    await applyImport(await previewImport([json('x.json', file)]), 'merge')
+    expect(await db.seals.get('dui')).toEqual({ id: 'dui', earnedAt: '2026-10-21T00:00:00.000Z' })
+    expect(await db.reviewCards.get('30:image')).toBeTruthy()
   })
 })

@@ -1,13 +1,16 @@
 // 學堂的作答流程（規格 API 的 academy.startAttempt、answer、completeLesson、submitExam）。
 // 課程每題按「檢查」即揭露對錯；考核只保存選擇，送出後才一起評分。XP 一律經 xp.award，
 // 業務鍵為 answer:<attemptId>:<題號>、lesson:<課號>、exam:<站號>，作答事件的 ref 是 questionKey（10 秒防刷用）。
+// 卦畫認卦與看圖認卦答對時寫入掌握紀錄並建立溫故卡；完成課程、送出考核後判定印章。
 
 import { localDateKey } from '../../lib/dates.ts'
-import { attempts, exams, lessons, mastery, xp, type Attempt, type QuestionSnapshot } from '../../storage/index.ts'
+import { attempts, exams, lessons, mastery, xp, type Attempt, type QuestionSnapshot, type SealId } from '../../storage/index.ts'
+import { addFromAnswer } from '../review/index.ts'
 import { EXAM_PLAN, lessonById } from './curriculum.ts'
 import { highestPassed, isCorrect, isPassing, scoreExam } from './grading.ts'
 import { generateSet } from './questions/generate.ts'
 import { rankOf } from './ranks.ts'
+import { checkSeals } from './seals.ts'
 
 export function lessonQuestions(id: string): QuestionSnapshot[] {
   const lesson = lessonById(id)
@@ -28,11 +31,20 @@ export function startAttempt(kind: Attempt['kind'], target: string, now = new Da
   })
 }
 
-/** 答對且第一次答對時給作答 XP、寫入掌握紀錄 */
-async function rewardCorrect(key: string, q: QuestionSnapshot, now: Date): Promise<xp.AwardResult> {
+export interface Reward extends xp.AwardResult {
+  /** 這題讓一張溫故卡加入 */
+  reviewAdded: boolean
+}
+
+/** 答對時給作答 XP；卦畫或看圖題另寫入掌握紀錄，溫故卡不存在（也沒被移出過）時建立並排程 */
+export async function rewardCorrect(key: string, q: QuestionSnapshot, elapsedMs: number, now: Date): Promise<Reward> {
   const result = await xp.award({ key, source: 'answer', amount: xp.XP_AMOUNTS.answer, ref: q.questionKey }, now)
-  if (q.facet && q.hexagram) await mastery.markMastery(q.hexagram, q.facet, now)
-  return result
+  let reviewAdded = false
+  if (q.facet && q.hexagram) {
+    await mastery.markMastery(q.hexagram, q.facet, now)
+    reviewAdded = await addFromAnswer(q.hexagram, q.facet, elapsedMs, now)
+  }
+  return { ...result, reviewAdded }
 }
 
 /** 課程：選了還沒檢查也先存起來，回來時看到同樣的選擇 */
@@ -45,6 +57,7 @@ export interface CheckResult {
   xp: number
   /** 今天的作答 XP 已滿 */
   capped: boolean
+  reviewAdded: boolean
   attempt: Attempt
 }
 
@@ -58,9 +71,9 @@ export async function answer(attemptId: string, index: number, choice: number, e
   const q = current.questions[index]
   const correct = choice === q.answerIndex
   const attempt = await attempts.saveAnswer(attemptId, index, { choice, checked: true, correct, elapsedMs }, now)
-  if (!correct) return { correct, xp: 0, capped: false, attempt }
-  const r = await rewardCorrect(`answer:${attemptId}:${index}`, q, now)
-  return { correct, xp: r.awarded, capped: r.capped, attempt }
+  if (!correct) return { correct, xp: 0, capped: false, reviewAdded: false, attempt }
+  const r = await rewardCorrect(`answer:${attemptId}:${index}`, q, elapsedMs, now)
+  return { correct, xp: r.awarded, capped: r.capped, reviewAdded: r.reviewAdded, attempt }
 }
 
 export const advance = (attemptId: string, position: number, now = new Date()) => attempts.setPosition(attemptId, position, now)
@@ -72,6 +85,7 @@ export interface LessonOutcome {
   xp: number
   correct: number
   total: number
+  seals: SealId[]
 }
 
 export async function completeLesson(attemptId: string, now = new Date()): Promise<LessonOutcome> {
@@ -83,7 +97,7 @@ export async function completeLesson(attemptId: string, now = new Date()): Promi
   await lessons.completeLesson(lesson.id, lesson.station.id, correct, total, now)
   const r = await xp.award({ key: `lesson:${lesson.id}`, source: 'lesson', amount: xp.XP_AMOUNTS.lesson, ref: attemptId }, now)
   if (a.status === 'active') await attempts.close(attemptId, 'done', now)
-  return { xp: r.awarded, correct, total }
+  return { xp: r.awarded, correct, total, seals: await checkSeals() }
 }
 
 export interface ExamOutcome {
@@ -93,6 +107,8 @@ export interface ExamOutcome {
   xp: number
   /** 晉升後的修為；沒有晉升為 null */
   rankUp: string | null
+  reviewAdded: number
+  seals: SealId[]
 }
 
 export async function submitExam(attemptId: string, now = new Date()): Promise<ExamOutcome> {
@@ -105,11 +121,15 @@ export async function submitExam(attemptId: string, now = new Date()): Promise<E
   const passed = isPassing(score)
   await exams.recordExam({ attemptId, stationId, score, passed }, now)
   let gained = 0
+  let reviewAdded = 0
   for (const [i, q] of a.questions.entries()) {
-    if (isCorrect(q, a.answers[i])) gained += (await rewardCorrect(`answer:${attemptId}:${i}`, q, now)).awarded
+    if (!isCorrect(q, a.answers[i])) continue
+    const r = await rewardCorrect(`answer:${attemptId}:${i}`, q, a.answers[i]!.elapsedMs, now)
+    gained += r.awarded
+    if (r.reviewAdded) reviewAdded++
   }
   if (passed) gained += (await xp.award({ key: `exam:${stationId}`, source: 'exam', amount: xp.XP_AMOUNTS.exam, ref: attemptId }, now)).awarded
   await attempts.close(attemptId, 'done', now)
   const after = passed ? Math.max(before, stationId) : before
-  return { score, passed, xp: gained, rankUp: after > before ? rankOf(after) : null }
+  return { score, passed, xp: gained, rankUp: after > before ? rankOf(after) : null, reviewAdded, seals: await checkSeals() }
 }

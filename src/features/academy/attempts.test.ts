@@ -90,9 +90,9 @@ describe('XP（AC-15）', () => {
 
   it('同一 questionKey 10 秒內重複作答不給 XP', async () => {
     const [q] = practiceQuestions(new Set(), () => 1)
-    expect((await answerPractice('s1', 0, q, q.answerIndex, at(24, 10, 0))).xp).toBe(2)
-    expect((await answerPractice('s2', 0, q, q.answerIndex, at(24, 10, 5))).xp).toBe(0)
-    expect((await answerPractice('s3', 0, q, q.answerIndex, at(24, 10, 11))).xp).toBe(2)
+    expect((await answerPractice('s1', 0, q, q.answerIndex, 5000, at(24, 10, 0))).xp).toBe(2)
+    expect((await answerPractice('s2', 0, q, q.answerIndex, 5000, at(24, 10, 5))).xp).toBe(0)
+    expect((await answerPractice('s3', 0, q, q.answerIndex, 5000, at(24, 10, 11))).xp).toBe(2)
   })
 
   it('看圖猜卦練習優先抽還沒答對過的卦，答對寫入掌握紀錄', async () => {
@@ -100,7 +100,7 @@ describe('XP（AC-15）', () => {
     const qs = practiceQuestions(mastered)
     expect(qs).toHaveLength(10)
     expect(qs.slice(0, 4).map(q => q.hexagram).sort()).toEqual([61, 62, 63, 64])
-    await answerPractice('s', 0, qs[0], qs[0].answerIndex, at(24))
+    expect((await answerPractice('s', 0, qs[0], qs[0].answerIndex, 5000, at(24))).reviewAdded).toBe(true)
     expect(await (await requireDb()).mastery.get(`${qs[0].hexagram}:image`)).toBeTruthy()
     expect((await xp.summary(at(24))).today).toBe(2)
   })

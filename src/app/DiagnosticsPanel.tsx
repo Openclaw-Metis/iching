@@ -2,7 +2,7 @@
 // 只在這台裝置上顯示，使用者回報問題時可以一鍵複製。
 
 import { useEffect, useState } from 'react'
-import { getStorage, maintenance, readErrors, storageStatus, type StorageStatus } from '../storage/index.ts'
+import { getStorage, maintenance, readErrors, requireDb, review, storageStatus, type StorageStatus } from '../storage/index.ts'
 import { toast } from './toast.ts'
 
 const MODE_LABEL: Record<string, string> = {
@@ -14,13 +14,15 @@ const mb = (n: number | null) => (n === null ? '不明' : `${(n / 1024 / 1024).t
 export function DiagnosticsPanel() {
   const [status, setStatus] = useState<StorageStatus | null>(null)
   const [counts, setCounts] = useState<Record<string, number> | null>(null)
+  const [due, setDue] = useState<number | null>(null)
 
   useEffect(() => {
     void getStorage().then(storageStatus).then(setStatus)
     void maintenance.tableCounts().then(setCounts).catch(() => setCounts(null))
+    void requireDb().then(db => review.dueCount(db)).then(setDue).catch(() => setDue(null))
   }, [])
 
-  const report = () => JSON.stringify({ at: new Date().toISOString(), userAgent: navigator.userAgent, status, counts, errors: readErrors() }, null, 2)
+  const report = () => JSON.stringify({ at: new Date().toISOString(), userAgent: navigator.userAgent, status, counts, due, errors: readErrors() }, null, 2)
 
   return (
     <details className="accordion diagnostics">
@@ -32,6 +34,7 @@ export function DiagnosticsPanel() {
           <dt>已用空間</dt><dd>{mb(status.usage)}／配額 {mb(status.quota)}</dd>
           <dt>資料版本</dt><dd>{status.schema ?? '不明'}</dd>
           {counts && <><dt>資料筆數</dt><dd>{Object.entries(counts).filter(([, n]) => n > 0).map(([t, n]) => `${t} ${n}`).join('、') || '沒有資料'}</dd></>}
+          {due !== null && <><dt>今日待溫</dt><dd>{due} 張</dd></>}
           <dt>最近錯誤</dt><dd>{readErrors().length} 筆</dd>
         </dl>
       )}

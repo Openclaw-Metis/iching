@@ -100,8 +100,11 @@ export function DivineFlow() {
       void maintenance.requestPersist().catch(() => {})
       // 完成占卜每天記一次 XP；失敗不影響紀錄本身
       const date = localDateKey(new Date(reading.createdAt))
+      // 印章判定（筮、打卡帶來的七與卅）以 import() 載入學堂模組，不佔占卜頁的程式包
       void xp.award({ key: `divine:${date}`, source: 'divine', amount: xp.XP_AMOUNTS.divine, ref: reading.id })
         .catch(e => logError(isAppError(e) ? e.code : 'XP_AWARD_FAILED', String((e as Error)?.message ?? e)))
+        .then(() => import('../academy/index.ts'))
+        .then(m => m.checkAndAnnounce(), () => {})
     } catch (e) {
       track('divine_save_failed', { errorCode: errorCode(e) })
       logError(isAppError(e) ? e.code : 'STORAGE_QUOTA', String((e as Error)?.message ?? e))

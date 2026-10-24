@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { textOf } from '../data/classic.ts'
@@ -19,11 +20,53 @@ const GENERATIONS: PalaceGeneration[] = ['本宮', '一世', '二世', '三世',
 const MONTH_ORDER = [24, 19, 11, 34, 43, 1, 44, 33, 12, 20, 23, 2]
 const MONTH_NAMES = ['十一月', '十二月', '正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月']
 const BRANCHES = '子丑寅卯辰巳午未申酉戌亥'
+const MAP_KEY = 'iching:map-overlay'
+
+type MapCells = Map<number, { opacity: number; due: boolean }>
+type MapView = { cells: MapCells; dueCount: number } | null
+
+function loadMapOn(): boolean {
+  try { return localStorage.getItem(MAP_KEY) === '1' } catch { return false }
+}
+
+/**
+ * 學習地圖：預設關閉。開啟時才以 import() 載入溫故模組（含 ts-fsrs 與保存層），卦殿首屏不帶這些程式。
+ * 溫故卡有變動（作答、加入、移出、另一個分頁）時重算亮度。
+ */
+function useLearningMap(on: boolean): { map: MapView; failed: boolean } {
+  const [map, setMap] = useState<MapView>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!on) {
+      setMap(null)
+      return
+    }
+    let stop = () => {}
+    let alive = true
+    setFailed(false)
+    import('../features/review/index.ts').then(
+      m => { if (alive) stop = m.watchMap(s => setMap({ cells: s.cells, dueCount: s.dueCount })) },
+      () => { if (alive) setFailed(true) },
+    )
+    return () => {
+      alive = false
+      stop()
+    }
+  }, [on])
+  return { map, failed }
+}
 
 export function Hall() {
   const [view, setView] = useState<View>('kingwen')
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<Hexagram | null>(null)
+  const [mapOn, setMapOn] = useState(loadMapOn)
+  const { map, failed } = useLearningMap(mapOn)
+  const toggleMap = () => {
+    const next = !mapOn
+    setMapOn(next)
+    try { localStorage.setItem(MAP_KEY, next ? '1' : '0') } catch { /* 偏好記不住而已 */ }
+  }
 
   const matches = useMemo(() => {
     const q = query.trim()
@@ -40,7 +83,7 @@ export function Hall() {
   }, [focus])
 
   const thumb = (h: Hexagram) => (
-    <CardThumb key={h.number} hex={h} relation={relations.get(h.number)} dim={matches ? !matches.has(h.number) : false} onFocus={setFocus} />
+    <CardThumb key={h.number} hex={h} relation={relations.get(h.number)} dim={matches ? !matches.has(h.number) : false} map={map?.cells.get(h.number)} onFocus={setFocus} />
   )
 
   return (
@@ -58,7 +101,15 @@ export function Hall() {
           {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
         </div>
         <input className="search" type="search" placeholder="搜尋卦名或卦序" value={query} onChange={e => setQuery(e.target.value)} aria-label="搜尋卦名或卦序" />
+        <button type="button" className="btn map-toggle" aria-pressed={mapOn} onClick={toggleMap}>學習地圖</button>
       </div>
+      {mapOn && (
+        <p className="map-status" aria-live="polite">
+          {failed ? '學習地圖載入失敗，請重新整理再試。'
+            : !map ? '學習地圖載入中'
+              : <>待溫 {map.dueCount} 張・越亮表示記得越牢，淡墨灰階是還沒學過的卦。{map.dueCount > 0 && <Link to="/academy/review">去溫故</Link>}</>}
+        </p>
+      )}
       <div className="legend" aria-hidden="true"><span className="l-cuo">錯卦：陰陽全變</span><span className="l-zong">綜卦：上下顛倒</span><span className="l-hu">互卦：取中間四爻</span></div>
 
       {view === 'kingwen' && <div className="hall-grid">{hexagrams.map(thumb)}</div>}

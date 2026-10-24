@@ -2,7 +2,7 @@
 // 取代只限完整且分卷齊全的備份：清空會匯出的資料表與作答進度，保留起卦草稿、中繼資料與只屬於這台裝置的設定。
 
 import { AppError } from '../../lib/errors.ts'
-import { EXPORTED_SETTING_KEYS, EXPORTED_TABLES, requireDb, type ExportedTable, type XpEvent } from '../../storage/index.ts'
+import { EXPORTED_SETTING_KEYS, EXPORTED_TABLES, logError, requireDb, type ExportedTable, type XpEvent } from '../../storage/index.ts'
 import { keyOf, mergeRow } from './merge.ts'
 import type { ImportPreview } from './preview.ts'
 
@@ -59,5 +59,11 @@ export async function applyImport(preview: ImportPreview, mode: ImportMode): Pro
     }
   })
 
+  // 匯入的課程、考核、打卡與掌握紀錄可能帶來新的印章與溫故卡；補發失敗不影響已完成的匯入
+  try {
+    await (await import('../academy/index.ts')).reconcileAchievements()
+  } catch (e) {
+    logError('IMPORT_RECONCILE_FAILED', String((e as Error)?.message ?? e))
+  }
   return { written, skipped: preview.total - written + preview.invalid }
 }

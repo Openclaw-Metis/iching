@@ -5,6 +5,7 @@ import type { Attempt } from '../../storage/index.ts'
 import type { ExamOutcome } from './attempts.ts'
 import { PASS_SCORE } from './curriculum.ts'
 import { isCorrect } from './grading.ts'
+import { NewSeals } from './LessonPlayer.tsx'
 import { QuestionCard } from './QuestionCard.tsx'
 
 interface Props {
@@ -23,7 +24,8 @@ export function ExamResult({ attempt, outcome, nextHref, onRetake }: Props) {
       </p>
       {outcome.rankUp && <p className="exam-rank">修為晉升為「{outcome.rankUp}」</p>}
       {!outcome.passed && <p className="note">答對 {PASS_SCORE} 題以上就能通過，看完解說再考一次。</p>}
-      <p className="note">這次得到 {outcome.xp} XP。</p>
+      <p className="note">這次得到 {outcome.xp} XP{outcome.reviewAdded ? `，${outcome.reviewAdded} 張卡加入溫故` : ''}。</p>
+      <NewSeals ids={outcome.seals} />
       <div className="step-actions player-actions">
         {outcome.passed
           ? <Link className="btn btn-primary" to={nextHref}>前往下一站</Link>

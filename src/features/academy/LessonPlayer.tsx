@@ -13,10 +13,11 @@ import { trigramById } from '../../data/trigrams.ts'
 import { localDateKey } from '../../lib/dates.ts'
 import { ERROR_MESSAGES, isAppError } from '../../lib/errors.ts'
 import { track } from '../../lib/events.ts'
-import { attempts as attemptsRepo, lessons, logError, type Attempt } from '../../storage/index.ts'
+import { attempts as attemptsRepo, lessons, logError, type Attempt, type SealId } from '../../storage/index.ts'
 import { advance, answer, completeLesson, restart, select, startAttempt, submitExam, type ExamOutcome, type LessonOutcome } from './attempts.ts'
 import { EXAM_SIZE, flatten, lessonById, PASS_SCORE, type ReadStep } from './curriculum.ts'
 import { ExamResult } from './ExamResult.tsx'
+import { SealStamp } from './SealStamp.tsx'
 import { QuestionCard } from './QuestionCard.tsx'
 
 type Failure = { message: string; retry: () => void } | null
@@ -70,13 +71,23 @@ function ReadView({ step }: { step: ReadStep }) {
 const xpNote = (r: { xp: number; capped: boolean } | null): ReactNode =>
   r && (r.xp ? <p className="q-xp">＋{r.xp} XP</p> : r.capped ? <p className="q-xp">今天的作答 XP 已滿，仍可繼續練習</p> : null)
 
+export function NewSeals({ ids }: { ids: SealId[] }) {
+  if (!ids.length) return null
+  return (
+    <div className="new-seals">
+      <p>取得新的印章</p>
+      <div>{ids.map(id => <SealStamp key={id} id={id} earned />)}</div>
+    </div>
+  )
+}
+
 // ── 課程 ─────────────────────────────────────────────
 
 type LessonPhase =
   | { name: 'loading' }
   | { name: 'empty' }
   | { name: 'active'; attempt: Attempt }
-  | { name: 'resolved'; outcome: LessonOutcome; gained: number }
+  | { name: 'resolved'; outcome: LessonOutcome; gained: number; reviewAdded: number }
 
 export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHref?: string }) {
   const lesson = lessonById(lessonId)!
@@ -86,6 +97,7 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
   const [lastCheck, setLastCheck] = useState<{ xp: number; capped: boolean } | null>(null)
   const [confirmRestart, setConfirmRestart] = useState(false)
   const gained = useRef(0)
+  const reviewAdded = useRef(0)
   const shownAt = useRef(performance.now())
   const { run, busy, banner } = useGuard()
 
@@ -144,7 +156,9 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
         <dl className="kv">
           <dt>答對</dt><dd>{outcome.correct}／{outcome.total} 題</dd>
           <dt>這次得到</dt><dd>{phase.gained} XP</dd>
+          <dt>加入溫故</dt><dd>{phase.reviewAdded} 張</dd>
         </dl>
+        <NewSeals ids={outcome.seals} />
         <div className="step-actions player-actions">
           {nextHref && <Link className="btn btn-primary" to={nextHref}>下一步</Link>}
           <Link className={nextHref ? 'btn' : 'btn btn-primary'} to="/academy">回到學堂</Link>
@@ -163,7 +177,7 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
       const outcome = await completeLesson(attempt.id)
       gained.current += outcome.xp
       track('lesson_complete', { lessonId, correct: outcome.correct, total: outcome.total })
-      setPhase({ name: 'resolved', outcome, gained: gained.current })
+      setPhase({ name: 'resolved', outcome, gained: gained.current, reviewAdded: reviewAdded.current })
       return
     }
     const a = await advance(attempt.id, position + 1)
@@ -192,6 +206,7 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
       const r = await answer(attempt.id, index, choice, Math.round(performance.now() - shownAt.current))
       if (!('correct' in r)) return
       gained.current += r.xp
+      if (r.reviewAdded) reviewAdded.current++
       setPhase({ name: 'active', attempt: r.attempt })
       setLastCheck({ xp: r.xp, capped: r.capped })
     })

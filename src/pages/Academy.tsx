@@ -1,15 +1,17 @@
-// 學堂首頁（規格「流程 C」）：修為摘要列、今日目標與「繼續下一課」、修行路線，路線下方是看圖猜卦練習入口。
+// 學堂首頁（規格「流程 C」）：修為摘要列（修為、連續天數、印譜）、今日目標與「繼續下一課」、溫故入口、
+// 修行路線，路線下方是看圖猜卦練習入口。
 
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { STATION_NUMERALS } from '../data/stations.ts'
 import { AcademyRoute, DailyGoalRing, highestPassed, ImagePractice, lessonById, nextStep, RankBadge } from '../features/academy/index.ts'
-import { lessons, useDb, useLiveQuery, xp } from '../storage/index.ts'
+import { lessons, review, useDb, useLiveQuery, xp } from '../storage/index.ts'
 
 export function Academy() {
   const db = useDb()
   const state = useLiveQuery(() => (db ? lessons.stateOf(db) : undefined), [db])
   const summary = useLiveQuery(() => (db ? xp.summaryOf(db) : undefined), [db])
+  const due = useLiveQuery<number | undefined>(() => (db ? review.dueCount(db) : undefined), [db])
   const [practicing, setPracticing] = useState(false)
 
   if (!state || !summary) return <div className="academy" aria-busy="true" />
@@ -32,12 +34,17 @@ export function Academy() {
   return (
     <div className="academy">
       <header className="page-head"><h1>學堂</h1></header>
-      <RankBadge highest={highestPassed(state.exams)} total={summary.total} />
+      <RankBadge highest={highestPassed(state.exams)} total={summary.total} streak={summary.streak} best={summary.best} />
       <section className="academy-today">
         <DailyGoalRing today={summary.today} goal={summary.goal} />
         <div className="academy-next">
           {nextHref ? <Link className="btn btn-primary" to={nextHref}>{nextLabel}</Link> : <p>八站都已完成，可以從路線重溫任何一課。</p>}
         </div>
+      </section>
+      <section className="review-entry">
+        <h2>溫故</h2>
+        <p>{due ? `今天待溫 ${due} 張` : '今天沒有待溫的卡'}</p>
+        <Link className={due ? 'btn btn-primary' : 'btn'} to="/academy/review">{due ? '開始溫故' : '看看溫故'}</Link>
       </section>
       <section className="academy-route">
         <h2>修行路線</h2>

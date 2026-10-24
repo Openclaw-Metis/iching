@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import type { PointerEvent } from 'react'
+import type { CSSProperties, PointerEvent } from 'react'
 import { cardAsset, hasArt } from '../data/cards.ts'
 import type { Hexagram } from '../data/hexagrams.ts'
 
@@ -10,11 +10,13 @@ interface Props {
   hex: Hexagram
   relation?: Relation[]
   dim?: boolean
+  /** 學習地圖：亮度（0.35、0.55、0.8、1）與是否待溫 */
+  map?: { opacity: number; due: boolean }
   onFocus?: (hex: Hexagram | null) => void
 }
 
 // 展廳縮圖：以 CSS 傾斜與一道掃光模擬全息卡，WebGL 只留給詳細頁的單張大卡
-export function CardThumb({ hex, relation = [], dim = false, onFocus }: Props) {
+export function CardThumb({ hex, relation = [], dim = false, map, onFocus }: Props) {
   const tilt = (e: PointerEvent<HTMLAnchorElement>) => {
     if (e.pointerType !== 'mouse') return
     const r = e.currentTarget.getBoundingClientRect()
@@ -36,7 +38,9 @@ export function CardThumb({ hex, relation = [], dim = false, onFocus }: Props) {
       data-dim={dim}
       data-rel={rel}
       data-rel-label={relation.map(r => REL_LABEL[r]).join('・')}
-      aria-label={`第${hex.number}卦 ${hex.fullName}`}
+      data-map={map ? String(map.opacity) : undefined}
+      style={map ? { '--map-opacity': map.opacity } as CSSProperties : undefined}
+      aria-label={`第${hex.number}卦 ${hex.fullName}${map?.due ? '，待溫' : ''}`}
       onPointerMove={tilt}
       onPointerEnter={() => onFocus?.(hex)}
       onPointerLeave={reset}
@@ -45,6 +49,7 @@ export function CardThumb({ hex, relation = [], dim = false, onFocus }: Props) {
     >
       <img src={cardAsset(hex.number, 'thumb')} alt="" loading="lazy" decoding="async" width={400} height={560} />
       {!hasArt(hex.number) && <span className="pending">插圖繪製中</span>}
+      {map?.due && <span className="due-dot" aria-hidden="true" />}
     </Link>
   )
 }

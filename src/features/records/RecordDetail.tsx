@@ -47,6 +47,8 @@ export function RecordDetail({ id }: { id: string }) {
     const next = await save({ followUp }, rev)
     if (followUp && !reading.followUp) {
       track('followup_saved', { readingId: reading.id, daysAfter: daysBetween(localDateKey(new Date(reading.createdAt)), localDateKey()) })
+      // 第 10 則回顧取得「錄」印
+      void import('../academy/index.ts').then(m => m.checkAndAnnounce(), () => {})
     }
     return next
   }
