@@ -750,3 +750,8 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .install-body h4 { margin: 12px 0 4px; color: var(--gold); font-size: 14px; font-weight: 500; letter-spacing: .1em; }
 .install-body ol { margin: 0; padding-left: 22px; }
 .install-body p { margin: 6px 0; }
+.guide-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.guide-list b { color: var(--ivory); font-weight: 500; }
+.guide-faq { margin: 0; display: grid; gap: 10px; }
+.guide-faq dt { color: var(--ivory); }
+.guide-faq dd { margin: 2px 0 0; color: var(--text); }
