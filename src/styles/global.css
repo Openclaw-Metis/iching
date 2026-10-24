@@ -66,8 +66,9 @@ main { padding: 0 clamp(16px, 4vw, 40px) 64px; }
 /* ---------- 卦殿 ---------- */
 .hall-intro { max-width: 980px; margin: 28px auto 8px; text-align: center; }
 .hall-intro h1 { margin: 0; color: var(--ivory); font-size: clamp(26px, 4vw, 36px); letter-spacing: .3em; font-weight: 700; }
-.hall-intro p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
-.hall-intro .tally { color: var(--gold); }
+.view-notes { display: grid; max-width: 760px; margin: 6px auto 0; }
+.view-notes p { grid-area: 1 / 1; margin: 0; color: var(--muted); font-size: 15px; }
+.view-notes .off { visibility: hidden; }
 
 .hall-controls {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px;

@@ -2,16 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import classic from '../data/classic.json'
-import { illustratedCount } from '../data/cards.ts'
 import { cuo, hexagram, hexagrams, hu, zong, type Hexagram, type PalaceGeneration } from '../data/hexagrams.ts'
 import { trigrams } from '../data/trigrams.ts'
 
 type View = 'kingwen' | 'matrix' | 'palace' | 'months'
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'kingwen', label: '文王卦序' },
-  { id: 'matrix', label: '上下卦' },
-  { id: 'palace', label: '京房八宮' },
-  { id: 'months', label: '十二消息' },
+const VIEWS: { id: View; label: string; note: string }[] = [
+  { id: 'kingwen', label: '文王卦序', note: '依通行本《周易》的卦序排列，上經三十卦從乾到離，下經三十四卦從咸到未濟。卦序兩兩成對，相鄰兩卦不是上下顛倒的綜卦，就是陰陽全變的錯卦。' },
+  { id: 'matrix', label: '上下卦', note: '以上卦為列、下卦為行排成八乘八。每張卦牌的背景由上卦與下卦拼成，所以同一列上半相同、同一行下半相同，對角線是上下相同的八純卦。' },
+  { id: 'palace', label: '京房八宮', note: '漢代京房以八純卦為宮首，從初爻起逐爻變出一世到五世卦，再變回第四爻為遊魂、下卦復原為歸魂，每宮八卦同屬宮首的五行。' },
+  { id: 'months', label: '十二消息', note: '十二個月各配一卦：十一月冬至的復卦一陽初生，陽爻逐月增長到四月的乾卦；五月姤卦一陰始生，陰爻再逐月增長到十月的坤卦。' },
 ]
 
 const PALACE_ORDER = ['乾', '震', '坎', '艮', '坤', '巽', '離', '兌']
@@ -49,7 +48,10 @@ export function Hall() {
     <>
       <section className="hall-intro">
         <h1>六十四卦殿</h1>
-        <p>每張卦牌的背景由上卦與下卦拼成，同一列上半相同、同一行下半相同。<span className="tally">已繪 {illustratedCount} / 64</span></p>
+        {/* 四段說明疊在同一格，高度取最長的一段，切換排列時下方按鈕不會跳動 */}
+        <div className="view-notes" aria-live="polite">
+          {VIEWS.map(v => <p key={v.id} className={v.id === view ? undefined : 'off'} aria-hidden={v.id !== view}>{v.note}</p>)}
+        </div>
       </section>
 
       <div className="hall-controls">

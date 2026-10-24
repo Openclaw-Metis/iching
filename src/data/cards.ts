@@ -10,4 +10,3 @@ export type CardLayer = 'background' | 'subject' | 'fx' | 'text' | 'face' | 'thu
 export const hasArt = (n: number) => Boolean(art[n]?.art)
 export const cardAsset = (n: number, layer: CardLayer) => `${base}cards/${pad(n)}/${layer}.webp`
 export const deckBack = `${base}cards/back.webp`
-export const illustratedCount = Object.values(art).filter(c => c.art).length
