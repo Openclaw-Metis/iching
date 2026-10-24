@@ -6,3 +6,6 @@ cards/holo/
 # 本機環境變數（範本在 .env.example）
 .env
 .env.local
+
+# tsc -b 的增量快取（型別檢查用 npm run typecheck）
+*.tsbuildinfo
