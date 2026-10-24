@@ -18,6 +18,29 @@ function originalOf(focus: ReadingFocus): string | undefined {
   return t.lines[focus.kind === 'useAll' ? 6 : focus.position]?.text
 }
 
+// 卦辭判語與白話裡可算作說明的寫法（docs/lines-review.md「判語不漏譯」）；長的在前
+const GOOD = /亨通|通達|順暢|通暢|暢通/
+const UPRIGHT = /守正|正道|正固|貞固|持正/
+const VERDICTS: [string, RegExp][] = [
+  ['不利有攸往', /(不宜|不利|不適合)[^。；]{0,8}(前往|前進|前行|進取|行動|推進)/],
+  ['不利涉大川', /(不宜|不利|不適合)[^。；]{0,8}(大河|大川|渡|冒險|大事)/],
+  ['利有攸往', /前往|前進|前行|進取|行動|有所作為|推進/],
+  ['利涉大川', /大河|大川|渡過|涉險|艱難的大事|承擔大事|迎難|冒險/],
+  ['利見大人', /大人|賢者|有德|中正的人/],
+  ['元亨', GOOD],
+  ['元吉', /大吉|吉/],
+  ['利貞', UPRIGHT],
+  ['貞吉', UPRIGHT],
+  ['悔亡', /悔恨[^。；]{0,4}(消|沒有)|悔亡/],
+  ['无攸利', /沒有[^。；]{0,6}(利|好處)|無所利|不利/],
+  ['无咎', /沒有過失|無咎|沒有咎|無過失|沒有災|不會有過失|沒有過錯|免於過失/],
+  ['亨', GOOD],
+  ['吉', /吉/],
+  ['凶', /凶/],
+  ['厲', /危/],
+  ['吝', /遺憾|吝|羞/],
+]
+
 const EXPECTED = hexagrams.flatMap(h => [
   `${h.number}-judgment`,
   ...[0, 1, 2, 3, 4, 5].map(p => `${h.number}-${p}`),
@@ -50,6 +73,21 @@ describe('卦辭與爻辭白話（AC-13）', () => {
   it('不使用破折號', () => {
     const dashes = Object.entries(lines).filter(([, v]) => /[—–]|――/.test(v.plain + v.advice)).map(([k]) => k)
     expect(dashes).toEqual([])
+  })
+
+  it('卦辭的判語在白話裡有說明，不只放在引文裡', () => {
+    const missing: string[] = []
+    for (const h of hexagrams) {
+      // 先比對較長的判語並從原文抹掉，「元亨」不再算一次「亨」，「不利有攸往」不再算成「利有攸往」
+      let rest = textOf(h.number).judgment
+      const plain = lines[`${h.number}-judgment`].plain.replace(/「[^」]*」/g, '')
+      for (const [verdict, explained] of VERDICTS) {
+        if (!rest.includes(verdict)) continue
+        rest = rest.split(verdict).join('＿')
+        if (!explained.test(plain)) missing.push(`${h.number} ${h.name}：${verdict}`)
+      }
+    }
+    expect(missing).toEqual([])
   })
 
   it('64 × 64 種變爻組合的主讀與輔讀都找得到原文與白話（AC-05）', () => {
