@@ -8,10 +8,11 @@ import { ConfirmDialog } from '../../components/ConfirmDialog.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
 import { Stepper } from '../../components/Stepper.tsx'
 import type { LineValue } from '../../lib/castLines.ts'
+import { localDateKey } from '../../lib/dates.ts'
 import { isAppError } from '../../lib/errors.ts'
 import { track } from '../../lib/events.ts'
 import {
-  draft as draftRepo, logError, maintenance, readings as readingsRepo, useDb, useLiveQuery, useStorageMode,
+  draft as draftRepo, logError, maintenance, readings as readingsRepo, useDb, useLiveQuery, useStorageMode, xp,
   type CastDraft, type Reading,
 } from '../../storage/index.ts'
 import { downloadFile, partialBackup, readingFileName } from '../backup/index.ts'
@@ -95,6 +96,10 @@ export function DivineFlow() {
       showResult(reading)
       // 第一次成功保存紀錄後申請持久保存，降低瀏覽器自動清除資料的機會
       void maintenance.requestPersist().catch(() => {})
+      // 完成占卜每天記一次 XP；失敗不影響紀錄本身
+      const date = localDateKey(new Date(reading.createdAt))
+      void xp.award({ key: `divine:${date}`, source: 'divine', amount: xp.XP_AMOUNTS.divine, ref: reading.id })
+        .catch(e => logError(isAppError(e) ? e.code : 'XP_AWARD_FAILED', String((e as Error)?.message ?? e)))
     } catch (e) {
       track('divine_save_failed', { errorCode: errorCode(e) })
       logError(isAppError(e) ? e.code : 'STORAGE_QUOTA', String((e as Error)?.message ?? e))

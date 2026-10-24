@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import * as THREE from 'three'
 import { cardAsset, deckBack, hasArt } from '../../data/cards.ts'
 import { EDGE, FACE, VERT } from './shaders.ts'
@@ -7,7 +7,8 @@ import { EDGE, FACE, VERT } from './shaders.ts'
 export type BackFace = { kind: 'card'; number: number } | { kind: 'deck' }
 
 interface Props {
-  front: number
+  /** null 表示還沒決定正面（今日一卦未翻開），只載入背面 */
+  front: number | null
   back: BackFace
   flipped: boolean
   /** 牌面在平面內轉 180°：卦象上下顛倒即成綜卦 */
@@ -15,6 +16,10 @@ interface Props {
   /** 卡牌往前湊近：看進卦的中間四爻，即成互卦 */
   dived?: boolean
   onDoubleClick?: () => void
+  /** 有值時整張牌是按鈕：點擊、Enter 或空白鍵觸發 */
+  onClick?: () => void
+  /** 每次換上的正面貼圖淡入完成時觸發（改用平面卡圖時在圖片載入後觸發），帶這次換牌的請求序號 */
+  onFrontReady?: (seq: number) => void
   label: string
 }
 
@@ -87,13 +92,21 @@ function remapUV(geo: THREE.BufferGeometry) {
 }
 
 interface Engine {
-  setFront(face: BackFace): void
+  setFront(face: BackFace, seq: number): void
   setBack(face: BackFace): void
   state: { flipped: boolean; rolled: boolean; dived: boolean; onDouble?: () => void }
   dispose(): void
 }
 
-function createEngine(stage: HTMLElement, onError: (msg: string) => void, onReady: () => void): Engine | null {
+interface EngineEvents {
+  onError(msg: string): void
+  /** 看得到的那一面第一次淡入完成 */
+  onReady(): void
+  onFrontReady(seq: number): void
+}
+
+function createEngine(stage: HTMLElement, initialFlipped: boolean, events: EngineEvents): Engine | null {
+  const { onError, onReady } = events
   let renderer: THREE.WebGLRenderer
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -137,8 +150,9 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   card.add(new THREE.Mesh(edgeGeo, [hidden, materials[2]]))
   scene.add(card)
 
-  const state = { flipped: false, rolled: false, dived: false, onDouble: undefined as undefined | (() => void) }
-  const motion = { yaw: REST.yaw, pitch: REST.pitch, roll: 0, z: 0, tYaw: REST.yaw, tPitch: REST.pitch, pressed: false }
+  const state = { flipped: initialFlipped, rolled: false, dived: false, onDouble: undefined as undefined | (() => void) }
+  // 一開始就背面朝上（今日一卦未翻開）時直接定位在背面，避免掛載時從正面轉過去
+  const motion = { yaw: (initialFlipped ? Math.PI : 0) + REST.yaw, pitch: REST.pitch, roll: 0, z: 0, tYaw: REST.yaw, tPitch: REST.pitch, pressed: false }
   const inverse = new THREE.Matrix4()
 
   function resize() {
@@ -185,12 +199,15 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   resize()
 
   let raf = 0, last = performance.now(), elapsed = 0, readySent = false, disposed = false
+  // 正面換牌後等淡入完成才通知；有更新的請求時改等新的那一次
+  let frontPending: number | null = null
   function frame(now: number) {
     const dt = Math.min((now - last) / 1000, 0.1)
     last = now
     elapsed += dt
-    // 正面換牌淡出期間維持原姿勢：倒轉或翻面後換卦時，若先轉回正面會短暫露出舊牌
-    if (fadeTarget.get(frontU) !== 0) {
+    // 正面換牌淡出期間維持原姿勢：倒轉或翻面後換卦時，若先轉回正面會短暫露出舊牌。
+    // 背面朝上時看不到正面，不必等正面載入，姿勢照常更新
+    if (fadeTarget.get(frontU) !== 0 || state.flipped) {
       const ease = reduced ? 1 : 1 - Math.exp(-dt * 6)
       motion.yaw += ((state.flipped ? Math.PI : 0) + motion.tYaw - motion.yaw) * ease
       motion.pitch += (motion.tPitch - motion.pitch) * ease
@@ -203,7 +220,12 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
       if (swap && u.uFade.value < 0.04) { pendingSwap.delete(u); swap() }
     }
     render(reduced ? 0 : elapsed)
-    if (!readySent && frontU.uFade.value > 0.9) { readySent = true; onReady() }
+    if (!readySent && (state.flipped ? backU : frontU).uFade.value > 0.9) { readySent = true; onReady() }
+    if (frontPending !== null && fadeTarget.get(frontU) === 1 && frontU.uFade.value > 0.9) {
+      const seq = frontPending
+      frontPending = null
+      events.onFrontReady(seq)
+    }
     raf = requestAnimationFrame(frame)
   }
   const fadeTarget = new Map<FaceUniforms, number>()
@@ -216,8 +238,9 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   // 正面換牌的瞬間把翻面、平面旋轉與湊近一起歸位，倒轉、翻面或看互卦後換上的新牌才會是正面朝上
   function faceLoader(u: FaceUniforms, settlePose: boolean) {
     let token = 0
-    return (face: BackFace) => {
+    return (face: BackFace, seq?: number) => {
       const mine = ++token
+      if (seq !== undefined) frontPending = seq
       fadeTarget.set(u, 0)
       faceTextures(face).then(t => {
         if (mine !== token) return
@@ -239,7 +262,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
     setTilt(yawDeg: number, pitchDeg: number) {
       motion.tYaw = THREE.MathUtils.degToRad(yawDeg); motion.tPitch = THREE.MathUtils.degToRad(pitchDeg)
     },
-    get ready() { return frontU.uFade.value > 0.9 },
+    get ready() { return (state.flipped ? backU : frontU).uFade.value > 0.9 },
   }
 
   return {
@@ -266,26 +289,36 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
 }
 
 // WebGL 不能用或任一層貼圖載入失敗時，改顯示目前看得到的那一面的平面卡圖（仍維持 5:7）
-function flatImage(front: number, back: BackFace, flipped: boolean) {
-  if (!flipped) return cardAsset(front, 'thumb')
+function flatImage(front: number | null, back: BackFace, flipped: boolean) {
+  if (!flipped && front !== null) return cardAsset(front, 'thumb')
   return back.kind === 'deck' ? deckBack : cardAsset(back.number, 'thumb')
 }
 
 const FLAT_NOTE = '這個瀏覽器無法顯示全息效果，改用平面卡圖。'
 
-export function HoloCard({ front, back, flipped, rolled, dived = false, onDoubleClick, label }: Props) {
+export function HoloCard({ front, back, flipped, rolled, dived = false, onDoubleClick, onClick, onFrontReady, label }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const [flat, setFlat] = useState(false)
   const [ready, setReady] = useState(false)
+  // 正面換牌的請求序號；只通知最新一次，較早送出、較晚載入完成的結果不算
+  const frontSeq = useRef(0)
+  const frontReady = useRef(onFrontReady)
+  frontReady.current = onFrontReady
+  const notifyFront = (seq: number) => { if (seq === frontSeq.current) frontReady.current?.(seq) }
 
   useEffect(() => {
-    const e = createEngine(stageRef.current!, msg => {
-      console.warn(`[WEBGL_UNAVAILABLE] ${msg}`)
-      setFlat(true)
-    }, () => setReady(true))
+    const e = createEngine(stageRef.current!, flipped, {
+      onError: msg => {
+        console.warn(`[WEBGL_UNAVAILABLE] ${msg}`)
+        setFlat(true)
+      },
+      onReady: () => setReady(true),
+      onFrontReady: notifyFront,
+    })
     engine.current = e
     return () => { e?.dispose(); engine.current = null }
+    // 只在掛載時建立；之後的翻面由 state 同步
   }, [])
 
   // 改用平面卡圖後就釋放 WebGL 資源，之後的換牌只換圖片
@@ -295,7 +328,20 @@ export function HoloCard({ front, back, flipped, rolled, dived = false, onDouble
     engine.current = null
   }, [flat])
 
-  useEffect(() => { engine.current?.setFront({ kind: 'card', number: front }) }, [front])
+  useEffect(() => {
+    if (front === null) return
+    const seq = ++frontSeq.current
+    engine.current?.setFront({ kind: 'card', number: front }, seq)
+  }, [front])
+
+  // 平面卡圖沒有淡入動畫，正面圖片載入（或失敗）後就算準備好，翻開時不會閃出空白
+  useEffect(() => {
+    if (!flat || front === null) return
+    const seq = frontSeq.current
+    const img = new Image()
+    img.src = cardAsset(front, 'thumb')
+    img.decode().catch(() => {}).then(() => notifyFront(seq))
+  }, [flat, front])
   // back 每次 render 都是新物件，以內容當依賴，避免重複載入
   const backKey = back.kind === 'card' ? back.number : 'deck'
   useEffect(() => { engine.current?.setBack(back) }, [backKey])
@@ -307,8 +353,21 @@ export function HoloCard({ front, back, flipped, rolled, dived = false, onDouble
     engine.current.state.onDouble = onDoubleClick
   }, [flipped, rolled, dived, onDoubleClick])
 
+  const button = onClick
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onClick,
+        onKeyDown: (e: KeyboardEvent) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return
+          e.preventDefault()
+          onClick()
+        },
+      }
+    : { role: 'img' }
+
   return (
-    <div className="holo-stage" ref={stageRef} role="img" aria-label={label} data-flat={flat || undefined}>
+    <div className="holo-stage" ref={stageRef} {...button} aria-label={label} data-flat={flat || undefined} data-clickable={onClick ? true : undefined}>
       {flat && (
         <>
           <img

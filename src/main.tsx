@@ -13,7 +13,7 @@ const NotFound = lazy(() => import('./app/ComingSoon.tsx').then(m => ({ default:
 const PAGES: Record<PageId, ComponentType> = {
   hall: Hall,
   card: lazy(() => import('./pages/CardDetail.tsx').then(m => ({ default: m.CardDetail }))),
-  today: placeholder,
+  today: lazy(() => import('./pages/Today.tsx').then(m => ({ default: m.Today }))),
   divine: lazy(() => import('./pages/Divine.tsx').then(m => ({ default: m.Divine }))),
   academy: placeholder,
   me: lazy(() => import('./pages/Me.tsx').then(m => ({ default: m.Me }))),

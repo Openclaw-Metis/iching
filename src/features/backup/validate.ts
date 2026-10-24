@@ -9,7 +9,7 @@ import { AppError } from '../../lib/errors.ts'
 import {
   SCHEMA_VERSION, type Category, type CheckIn, type DailyDraw, type ExamResult, type ExportedTable, type Facet, type Favorite,
   type FsrsCardData, type LessonProgress, type Mastery, type Method, type Quote, type QuoteKind, type Reading, type ReviewCard,
-  type ReviewLog, type Seal, type SealId, type Setting, type XpEvent, type XpSource,
+  type ReviewLog, type Seal, type SealId, type Setting, type XpEvent, type XpSource, xp,
 } from '../../storage/index.ts'
 import { BACKUP_APP, BACKUP_FORMAT, type BackupFile, type BackupScope } from './format.ts'
 
@@ -239,12 +239,12 @@ export function validateMastery(raw: Json): RecordCheck<Mastery> {
 
 /** 各來源的 XP 與業務鍵格式（規格「學堂內容設計：XP 與每日目標」） */
 export const XP_RULES: Record<XpSource, { amount: number; key: RegExp }> = {
-  answer: { amount: 2, key: /^answer:[^:]+:\d+$/ },
-  lesson: { amount: 10, key: /^lesson:S[1-8]-L[1-3]$/ },
-  exam: { amount: 30, key: /^exam:[1-8]$/ },
-  review: { amount: 10, key: /^review:[^:]+$/ },
-  daily: { amount: 5, key: /^daily:\d{4}-\d{2}-\d{2}$/ },
-  divine: { amount: 5, key: /^divine:\d{4}-\d{2}-\d{2}$/ },
+  answer: { amount: xp.XP_AMOUNTS.answer, key: /^answer:[^:]+:\d+$/ },
+  lesson: { amount: xp.XP_AMOUNTS.lesson, key: /^lesson:S[1-8]-L[1-3]$/ },
+  exam: { amount: xp.XP_AMOUNTS.exam, key: /^exam:[1-8]$/ },
+  review: { amount: xp.XP_AMOUNTS.review, key: /^review:[^:]+$/ },
+  daily: { amount: xp.XP_AMOUNTS.daily, key: /^daily:\d{4}-\d{2}-\d{2}$/ },
+  divine: { amount: xp.XP_AMOUNTS.divine, key: /^divine:\d{4}-\d{2}-\d{2}$/ },
 }
 
 export function validateXpEvent(raw: Json): RecordCheck<XpEvent> {

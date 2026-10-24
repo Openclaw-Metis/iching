@@ -550,3 +550,31 @@ main { padding: 0 clamp(16px, 4vw, 40px) 64px; }
   .record-item { grid-template-columns: 1fr; }
   .record-tags { justify-content: flex-start; }
 }
+
+/* ---------- 今日一卦 ---------- */
+.today-page { max-width: 1100px; margin: 0 auto; }
+.today-page .page-head .note { margin: 0; }
+.today { display: grid; grid-template-columns: minmax(280px, 440px) minmax(0, 1fr); gap: clamp(20px, 3vw, 44px); align-items: start; margin-top: 12px; }
+.today-stage .holo-stage { height: min(68vh, 640px); }
+.today-placeholder { height: min(68vh, 640px); }
+.holo-stage[data-clickable] { cursor: pointer; }
+.holo-stage:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 12px; }
+.today-text header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.today-text h2 { margin: 0; color: var(--ivory); font-size: 26px; letter-spacing: .2em; }
+.today-text header a { color: var(--celadon); font-size: 14px; }
+.today-text h3 { margin: 20px 0 6px; color: var(--gold); font-size: 15px; font-weight: 500; letter-spacing: .2em; }
+.today-text .note-editor { margin-top: 20px; }
+.ics-reminder { margin: 36px 0 12px; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
+.ics-reminder h2 { margin: 0 0 4px; color: var(--gold); font-size: 16px; font-weight: 500; letter-spacing: .2em; }
+.ics-reminder .note { margin: 4px 0; }
+.ics-reminder a { color: var(--celadon); }
+.ics-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
+.ics-row input { min-height: 44px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--ink-0); color: var(--ivory); font: inherit; color-scheme: dark; }
+.record-subs { display: inline-flex; margin: 4px 0 12px; }
+.record-subs button { min-height: 44px; min-width: 72px; }
+.daily-item .link-button { justify-self: end; min-height: 44px; }
+.daily-item .record-hex { color: var(--gold-hi); }
+@media (max-width: 900px) {
+  .today { grid-template-columns: 1fr; }
+  .today-stage .holo-stage, .today-placeholder { height: min(58vh, 520px); }
+}

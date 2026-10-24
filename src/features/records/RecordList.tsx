@@ -1,5 +1,6 @@
-// 紀錄列表：搜尋與篩選（方法、類別、是否回顧、星號），每頁 50 筆，捲到底以游標載入下一頁。
-// 每一頁各自訂閱資料，另一個分頁修改後畫面自動更新；篩選條件記在 localStorage。
+// 紀錄列表：分「占卜」與「每日」兩個子分頁。
+// 占卜紀錄可搜尋與篩選（方法、類別、是否回顧、星號），每頁 50 筆，捲到底以游標載入下一頁。
+// 每一頁各自訂閱資料，另一個分頁修改後畫面自動更新；篩選條件與子分頁記在 localStorage。
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
@@ -7,6 +8,7 @@ import { HexagramGlyph } from '../../components/HexagramGlyph.tsx'
 import { hexagram } from '../../data/hexagrams.ts'
 import { formatDateTime } from '../../lib/dates.ts'
 import { readings, useDb, useLiveQuery, type Category, type Method } from '../../storage/index.ts'
+import { DailyList } from '../daily/index.ts'
 import { CATEGORY_LABELS, METHOD_LABELS } from '../divination/index.ts'
 
 type Reviewed = '' | 'yes' | 'no'
@@ -85,7 +87,34 @@ function RecordPage({ filters, cursor, last, onNext }: { filters: RecordFilters;
   )
 }
 
+type Sub = 'readings' | 'daily'
+const SUBS: { id: Sub; label: string }[] = [
+  { id: 'readings', label: '占卜' },
+  { id: 'daily', label: '每日' },
+]
+const SUB_KEY = 'iching:me-records-sub'
+
+function loadSub(): Sub {
+  try { return localStorage.getItem(SUB_KEY) === 'daily' ? 'daily' : 'readings' } catch { return 'readings' }
+}
+
 export function RecordList({ onRestoreBackup }: { onRestoreBackup?: () => void }) {
+  const [sub, setSubState] = useState<Sub>(loadSub)
+  const setSub = (next: Sub) => {
+    setSubState(next)
+    try { localStorage.setItem(SUB_KEY, next) } catch { /* 偏好記不住而已 */ }
+  }
+  return (
+    <>
+      <div className="segmented record-subs" role="group" aria-label="紀錄種類">
+        {SUBS.map(s => <button key={s.id} type="button" aria-pressed={sub === s.id} onClick={() => setSub(s.id)}>{s.label}</button>)}
+      </div>
+      {sub === 'readings' ? <ReadingList onRestoreBackup={onRestoreBackup} /> : <DailyList />}
+    </>
+  )
+}
+
+function ReadingList({ onRestoreBackup }: { onRestoreBackup?: () => void }) {
   const [filters, setFilters] = useState<RecordFilters>(loadFilters)
   const [open, setOpen] = useState(false)
   const [cursors, setCursors] = useState<(readings.Cursor | undefined)[]>([undefined])
