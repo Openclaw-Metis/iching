@@ -11,9 +11,9 @@
 
 **最後更新**：2026-10-24（Stage 11 完成，交付）
 
-**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main`，程式最新 `e9e7045`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
+**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main` 的部署版為 `2d24456`；之後的驗收紀錄提交在 `claude/keen-mayer-v9g6tt`）；網站 https://openclaw-metis.github.io/iching/
 
-**下一步**：Stage 0 至 11 已在分支 `claude/keen-mayer-v9g6tt` 完成並推送，尚未合併到 `main`。使用者審閱後合併部署，再依 `docs/qa-checklist.md`「部署後要做的事」跑 `npm run check:routes`（AC-23）、檢查正式站 CSP 與外部請求（AC-27）、Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 匯入；未完成與未驗證的項目在 `docs/known-issues.md`。規格是之後開發的依據，和規格不同的決定先改規格再實作。
+**下一步**：Stage 0 至 11 已完成並部署（使用者同意後把分支快轉合併到 `main`），正式站通過 AC-23 與 AC-27。剩下要在實機做的：正式站 Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 在 Google 日曆與 Apple 行事曆匯入、Firefox 匯入、陀螺儀與低階手機；等使用者決定的事（授權、抽牌占卜、白話三方撰稿）在 `docs/known-issues.md`。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
 ### 需求狀態
 - [x] 六十四卦資料：原文解析成 `src/data/classic.json`，結構由六爻推算（`hexagrams.ts`：上下卦、錯綜互、京房八宮、先天序、消息卦），序卦雜卦在 `xugua.ts`
@@ -39,7 +39,7 @@
 - [x] Stage 9：離線版（vite-plugin-pwa 2.0.0 generateSW、prompt 更新、manifest 與圖示、預先快取外殼與全部程式、白話、64 縮圖與 64 看圖卡，卡圖四層與字型執行時快取、最近 30 卦的卡圖快取整理、UpdateToast、設定頁加到主畫面說明、README 回滾方式）
 - [x] Stage 10：AC-01 到 AC-31 對照表與手動檢查（`docs/qa-checklist.md`）、占卜頁與課程頁與匯入預覽的元件測試、五個 Gherkin 情境、TC-07／12／24、`scripts/check-routes.mjs`（`npm run check:routes`）、`.claude/commands/acceptance-audit.md`
 - [x] Stage 11：README（功能、使用須知、分卷備份、加到主畫面、字型來源、資料表版本只升不降、程式回滾）、站內使用說明（我的 › 設定與備份，文字與規格非技術版一致並有測試把關）、`docs/known-issues.md`、規格總覽加上完成狀態
-- [ ] 正式站驗收：合併到 `main` 部署後執行（AC-23、AC-27 與實機項目）
+- [x] 正式站驗收（2026-10-24）：102 條路徑直接回 200 且標題正確（AC-23）；正式站與本機建置位元組相同，CSP 無違規、外部請求只有 Google Fonts（AC-27）；主要流程抽查通過（`docs/qa-checklist.md`「正式站驗收」）
 - [ ] 抽牌占卜：使用者之後另談，規格只保留 `method = 'draw'`
 - [ ] 授權條款（倉庫目前沒有 LICENSE，等使用者決定）
 
@@ -48,7 +48,7 @@
 - `易經_周易_原文.md` 的標點校勘出自第三方整理本（使用者要求移除來源標註），公開散布的著作權風險由使用者斟酌。
 - 倉庫約 312 MiB，大半是 `art/raw` 原圖；是否改成只提交網站貼圖未決。
 - 卦殿首屏 JS gzip 130.1 KB（上限 160 KB）、占卜頁 113.1 KB（上限 120 KB），`npm run check:size` 在 CI 把關；卡牌頁的 `HoloCard` chunk 約 568 KB（three），建置有超過 500 kB 的警告。
-- 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），本機 preview 102 條全過，正式站要等合併到 `main` 部署後跑 `npm run check:routes`。
+- 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），正式站 102 條已確認直接回 200。
 - 規格中由 Claude 自行採用、使用者還沒表態的預設：每日一卦每人當天固定、大衍筮法提供親手分蓍與一鍵完成、不做 AI 解卦、保留 Google Fonts（網站唯一的外部請求）。
 - 睽卦（38）重生後兩女並坐、沒有明確背對，可接受但不完全貼合畫面設計。
 - 白話 450 條只有 Claude 撰稿與自我複審，雲端環境沒有 `codex`、`agy`；之後在本機用 `.claude/commands/three-way-draft.md` 補跑三方撰稿與交叉複審。
@@ -73,7 +73,8 @@
 - Stage 9（2026-10-24）：`npm test` 238 項（卡圖快取：第 31 卦刪最舊一卦四層、重複開啟只移動順序、壞資料從頭記起）；建置產生 sw.js 與 manifest，預先快取 168 筆（含 64 thumb、64 quiz、lines.json，HTML 只有 index.html）；Playwright（preview）：註冊後離線開卦殿、今日、占卜、學堂、我的都可用，離線完成三錢法占卜並保存、白話可讀、看圖猜卦可作答，看過的卡牌離線仍是全息卡、沒看過的改平面卡圖，改動 sw.js 後出現 UpdateToast 並可重新整理換版，無 CSP 違規；CDP 檢查 Chrome 可安裝（installabilityErrors 為空）；首屏 130.1 KB、占卜頁 113.1 KB。
 - Stage 10（2026-10-24）：`npm test` 255 項（新增占卜頁三錢走完、連點只成一爻、中斷接續、重複提問對話框、問題上限與 HTML 文字、途中與完成時保存失敗；課程 read／quiz 按鈕狀態、考核不揭露；匯入預覽筆數與部分備份停用取代；Gherkin 今日卦固定、考核通過、合併預覽；TC-07、TC-12、TC-24）；`check:routes` 對本機 preview 102 條全過；QA 自動檢查 375／1280 十頁無橫向捲動、主操作在視窗內、無 CSP 違規、外部請求只有 Google Fonts、鍵盤翻今日卦與作答。
 - Stage 11（2026-10-24）：`npm test` 257 項（新增使用說明與規格「限制與注意事項」「常見問題」逐條一致）、`npm run typecheck`、`npm run build`、`npm run check:size`（首屏 130.1 KB、占卜頁 113.1 KB）全過；Playwright 375／1280：我的 › 設定與備份展開使用說明，10 條限制與 10 則問答都在、位於加到主畫面說明之前、無橫向捲動、主控台無錯誤；新文件無破折號。
-- 未驗證：手機陀螺儀實機、iOS Safari、Firefox 匯入、低階手機效能、.ics 在 Google 日曆與 Apple 行事曆的實際匯入、正式站（Pages）上的路徑、安裝與更新（分支尚未部署）。
+- 正式站（2026-10-24，`2d24456`，Actions run 9 成功）：雲端環境連不到 github.io，改用 Firecrawl 從外部抓取 102 個網址，全部直接回 200、沒有轉址、標題正確，未知網址回 404 並顯示「找不到這一頁」；以相同 `VITE_SITE_ORIGIN` 在本機建置，`sw.js` 的 `index.html` 修訂碼與 32 個帶雜湊檔名都和正式站相同，在這份建置上逐頁確認 CSP 無違規、非本站請求只有 Google Fonts，並在 375／1280 抽查占卜、今日、第一課、我的、匯出與合併匯入。
+- 未驗證：手機陀螺儀實機、iOS Safari、Firefox 匯入、低階手機效能、.ics 在 Google 日曆與 Apple 行事曆的實際匯入、在正式站實際以 Chrome 安裝與看到更新提示。
 
 ### 關鍵技術決策（當前有效）
 > 歷史上做過的、目前仍然成立的決策摘要。被推翻的決策不列。
@@ -117,6 +118,7 @@
 - **Dexie 遇到 VersionError 會用無版本號重開並自行補建資料表**：等於舊程式改寫新版資料庫；`open.ts` 包一層 factory 攔下無版本號的 open（詳見 `src/storage/open.ts`）
 - **Dexie 的 liveQuery 在全域沒有 indexedDB 時不查詢**：node 測試與完全沒有 IndexedDB 的瀏覽器都會遇到，記憶體模式要補 `Dexie.dependencies`（`src/storage/memory.ts`）
 - **GitHub Pages 的 `<路徑>/index.html` 會先 301 到結尾斜線**：直接 200 要用 `<路徑>.html`（2026-10-24 以正式站實測）
+- **雲端環境連不到 github.io 與 Actions 產物網址**：正式站檢查改用 Firecrawl 抓取（每分鐘約 10 次）；Firecrawl 的瀏覽器會移除 CSP 標籤，CSP 要以 `sw.js` 的 `index.html` 修訂碼比對本機同環境變數的建置來確認
 - **這個雲端環境預設 Node 22**：先 `export PATH=/opt/nvm/versions/node/v24.22.1/bin:$PATH`（`nvm install 24` 已裝）；Playwright 用 `/opt/node-tools/node_modules/playwright`
 - **liveQuery 的查詢函式裡不要先 await 非 Dexie 的 promise**：會失去追蹤，訂閱不再更新；畫面用 `useDb()` 拿到 db 後直接查詢（例：`queryList(db, …)`、`needsBackupReminder(db)`）
 - **筆記保存要帶開始編輯時的 rev**：即時訂閱會把 rev 更新成最新，若用最新 rev 保存會默默蓋掉另一個分頁的內容（`NoteEditor` 的 `version`）
@@ -350,7 +352,7 @@
 ## [2026-10-24 23:30] Stage 0 到 11 開發與交付
 
 ### 本次做了什麼（增量）
-在雲端環境（分支 `claude/keen-mayer-v9g6tt`）依 `docs/spec.md` 從 Stage 0 做到 Stage 11，每個階段完成後檢查 DoD 與驗收條件，`npm test`、`npm run typecheck`、`npm run build`、`npm run check:size` 全過並以 Playwright 在 375 與 1280 寬實測後才提交推送（`36945fa` Stage 0、`2032ff9` Stage 1、`aed8782` Stage 2、`ed1610f` Stage 3、`58f21eb` Stage 4、`13c3ab5` Stage 5、`4a98494` Stage 6、`fef05ff` Stage 7、`0bc1c17` Stage 8、`1b4dc73` Stage 9、`0181ede` Stage 10，Stage 11 為文件交付）。測試從 59 項增加到 257 項。Stage 11 補上 README、站內使用說明、`docs/known-issues.md` 與規格的完成狀態；正式站驗收要等合併到 `main`。
+在雲端環境（分支 `claude/keen-mayer-v9g6tt`）依 `docs/spec.md` 從 Stage 0 做到 Stage 11，每個階段完成後檢查 DoD 與驗收條件，`npm test`、`npm run typecheck`、`npm run build`、`npm run check:size` 全過並以 Playwright 在 375 與 1280 寬實測後才提交推送（`36945fa` Stage 0、`2032ff9` Stage 1、`aed8782` Stage 2、`ed1610f` Stage 3、`58f21eb` Stage 4、`13c3ab5` Stage 5、`4a98494` Stage 6、`fef05ff` Stage 7、`0bc1c17` Stage 8、`1b4dc73` Stage 9、`0181ede` Stage 10，Stage 11 為文件交付）。測試從 59 項增加到 257 項。Stage 11 補上 README、站內使用說明、`docs/known-issues.md` 與規格的完成狀態；使用者同意後把分支快轉合併到 `main` 部署，正式站通過 AC-23 與 AC-27（方法見 `docs/qa-checklist.md`「正式站驗收」）。
 
 ### 本次重大技術決策
 - **白話以 `?url` 加 `fetch` 載入**
@@ -371,6 +373,10 @@
   - 影響：常見問題「今天的卦可以重抽嗎」的位置改成「我的 › 紀錄 › 每日」，規格同步修正。
 
 ### 本次失敗經驗與填坑
+- **正式站 HTML 看起來沒有 CSP**
+  - 現象：Firecrawl 抓回的 `rawHtml` 少了 CSP 的 `<meta>`，原位置只剩空行。
+  - 最終解法：以部署時相同的 `VITE_SITE_ORIGIN` 在本機建置，比對正式站 `sw.js` 裡 `index.html` 的修訂碼（內容雜湊），相同即代表正式站 HTML 與本機一致，再在本機建置上檢查 CSP。
+  - 根因：Firecrawl 的瀏覽器為了注入自己的腳本會拿掉頁面的 CSP。
 - **今日頁替隔天記了 XP**
   - 現象：跨日後畫面拿到前一天的 `useLiveQuery` 結果，誤以為今天已翻開。
   - 最終解法：把日期帶進查詢結果並比對。
@@ -384,5 +390,5 @@
   - 最終解法：開啟卡牌時連錯卦一起記。
 
 ### 備註
-- 雲端環境沒有 `codex`、`agy`，白話只有 Claude 撰稿與自我複審；也連不到 github.io，正式站的檢查與實機項目都列在 `docs/known-issues.md`「尚未驗證」。
+- 雲端環境沒有 `codex`、`agy`，白話只有 Claude 撰稿與自我複審；也連不到 github.io，正式站改用 Firecrawl 檢查，實機項目列在 `docs/known-issues.md`「尚未驗證」。
 - 開發用的 Playwright 腳本、截圖與 ical.js 驗證套件都在 scratchpad，交付後已清除。

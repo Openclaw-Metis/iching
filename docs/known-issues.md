@@ -34,11 +34,9 @@
 
 ## 尚未驗證
 
-雲端開發環境只有 Chromium，也連不到正式站（github.io 被代理擋下），下列項目要合併到 `main` 部署後在實機確認。檢查方式見 `docs/qa-checklist.md`「部署後要做的事」。
+正式站的 AC-23 與 AC-27 已在部署後驗收（`docs/qa-checklist.md`「正式站驗收」）。雲端開發環境只有 Chromium，下列項目要在實機確認，方式見 `docs/qa-checklist.md`「部署後要做的事」。
 
-- 正式站 102 條路徑直接回 200 且標題正確（`npm run check:routes`，AC-23）；本機 preview 已全過。
-- 正式站的 CSP 與外部請求（AC-27）；本機 preview 已確認沒有 CSP 違規、外部請求只有 Google Fonts。
-- 正式站的 Chrome 安裝、service worker 更新提示。
+- 在正式站用 Chrome 安裝、service worker 更新提示（與正式站相同的建置已在本機確認可安裝並出現更新提示）。
 - iPhone 與 iPad 的 Safari：加到主畫面、離線開啟、7 天規則。
 - Firefox 匯入備份。
 - `.ics` 在 Google 日曆與 Apple 行事曆實際匯入（目前只以 Mozilla ical.js 解析並展開）。

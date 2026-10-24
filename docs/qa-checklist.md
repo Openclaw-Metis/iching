@@ -28,11 +28,11 @@
 | AC-20 | `backup.test.ts`（往返、約 20 MB、1 MB 分卷、Gherkin「匯入前預覽」） | 匯出後在全新的瀏覽器空間合併與取代匯入 |
 | AC-21 | `backup.test.ts`、`src/features/backup/validate.test.ts` | 非備份檔提示 |
 | AC-22 | `src/storage/open.test.ts`（TC-22） | 停用 IndexedDB 後橫幅出現、占卜仍可完成 |
-| AC-23 | `src/app/buildScripts.test.ts`（TC-19，建置產物） | `node scripts/check-routes.mjs`：本機 preview 102 條全過；**正式站要合併到 main 部署後再跑** |
+| AC-23 | `src/app/buildScripts.test.ts`（TC-19，建置產物） | 本機 preview 以 `node scripts/check-routes.mjs` 102 條全過；正式站 102 條全過（見下方「正式站驗收」） |
 | AC-24 | `npm run check:size`（CI） | |
 | AC-25 | | 加到主畫面與離線（見下方） |
 | AC-26 | | 375 寬各頁（見下方） |
-| AC-27 | | CSP 與第三方請求（見下方） |
+| AC-27 | | CSP 與第三方請求（見下方「手動檢查」與「正式站驗收」） |
 | AC-28 | `open.test.ts`（TC-21） | 另一分頁把資料庫升到較新版本後的提示 |
 | AC-29 | `readings.test.ts`（TC-13） | 兩個分頁同時寫筆記，其中一個收到衝突提示 |
 | AC-30 | `attempts.test.ts`（TC-23） | 第 3 題重新整理回到同題同選項同選擇 |
@@ -58,10 +58,22 @@
 | Firefox 匯入 | Firefox 實機 | **尚未驗證** |
 | 手機陀螺儀與低階手機效能 | 實機 | **尚未驗證** |
 | .ics 匯入 | Google 日曆、Apple 行事曆 | **尚未驗證**（僅以 ical.js 解析） |
-| 正式站路徑 | 合併到 main 部署後 `node scripts/check-routes.mjs` | **尚未驗證**（分支尚未部署） |
+| 正式站路徑 | 見下方「正式站驗收」 | 102 條全過 |
+
+## 正式站驗收（2026-10-24，`2d24456` 部署後）
+
+雲端開發環境的網路政策擋下 github.io 與 Actions 產物的下載網址，所以 `check-routes.mjs` 不能直接從這裡跑，改用下列方式：
+
+| 項目 | 方法 | 結果 |
+|---|---|---|
+| 部署 | GitHub Actions「部署到 GitHub Pages」run 9 | 測試、建置、首屏體積檢查、部署都成功 |
+| AC-23 路徑 | Firecrawl 從外部逐一抓取 `routes.ts` 的 102 個正式網址，比對狀態碼、最終網址（有沒有轉址）與標題 | 102 條都直接回 200、沒有轉址、標題正確；不在路徑表的網址回 404 並顯示「找不到這一頁」 |
+| 正式站與本機建置相同 | 以部署時相同的 `VITE_SITE_ORIGIN` 在本機建置，比對正式站 `sw.js` 預先快取清單的修訂碼與檔名 | `index.html` 修訂碼相同（`4755da97…`），32 個帶雜湊的程式與樣式檔、`manifest.webmanifest` 全部相同 |
+| AC-27 CSP 與第三方請求 | 在上述相同的建置上以 Playwright 逐頁開啟卦殿、乾與屯卡牌頁、今日、占卜、學堂、第一課、第一站考核、溫故、我的，監聽 `securitypolicyviolation` 與所有請求 | 每頁都有 CSP 標籤、沒有違規、沒有主控台錯誤；非本站請求只有 fonts.googleapis.com 與 fonts.gstatic.com（Firecrawl 的瀏覽器抓取時會移除 CSP 標籤，所以改以修訂碼確認正式站 HTML 與本機相同） |
+| 主要流程抽查 | 相同的建置，375 與 1280 寬：三錢法占卜存入紀錄、翻開今日卦、開第一課、我的頁看到紀錄、匯出後在全新的瀏覽器空間合併匯入 | 都完成，沒有橫向捲動與主控台錯誤 |
 
 ## 部署後要做的事
 
-1. `node scripts/check-routes.mjs`：102 條路徑都要直接回 200 且標題正確。
+1. `node scripts/check-routes.mjs`：102 條路徑都要直接回 200 且標題正確（2026-10-24 已以 Firecrawl 完成，網路可直連 github.io 的環境可直接跑這支腳本）。
 2. 用 Chrome 開正式站，確認網址列出現安裝圖示；用 iPhone 的 Safari 加入主畫面後離線開啟一次。
 3. 下載 `.ics` 在 Google 日曆與 Apple 行事曆各匯入一次，確認每天提醒並附網站連結。
