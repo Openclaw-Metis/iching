@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="generator" content="webgl-holo-card">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__CARD_TITLE__</title>
+<style>
+  :root {
+    --bg: #0d0e12;
+    --bg-glow: #1d2030;
+    --fg: #f3f3f6;
+    --muted: #a3a5b4;
+    --panel: rgba(255, 255, 255, .07);
+    --panel-hover: rgba(255, 255, 255, .13);
+    --line: rgba(255, 255, 255, .15);
+    --accent: #d9c8ff;
+    --focus: #9fd3ff;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: flex; flex-direction: column; min-height: 100dvh; overflow: hidden;
+    color: var(--fg); background: var(--bg);
+    background-image: radial-gradient(120% 80% at 50% 38%, var(--bg-glow), var(--bg) 72%);
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  }
+  header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding: 16px 20px 0; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: .02em; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .chip {
+    margin-left: auto; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px;
+    color: var(--accent); font-size: 12px; letter-spacing: .06em;
+  }
+  #stage { position: relative; flex: 1; min-height: 320px; touch-action: none; outline: none; cursor: grab; }
+  #stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #status {
+    position: absolute; inset: 0; display: grid; place-items: center; padding: 16px;
+    color: var(--muted); font-size: 14px; text-align: center; white-space: pre-line;
+  }
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 20px;
+    padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+  }
+  .buttons, .sliders { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; }
+  button {
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+    color: var(--fg); background: var(--panel); font: inherit; font-size: 14px;
+  }
+  button:hover { background: var(--panel-hover); }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible, input:focus-visible, #stage:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  input[type="range"] { width: 120px; accent-color: var(--accent); }
+  output { min-width: 4ch; color: var(--fg); font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
+  @media (max-width: 480px) {
+    header { padding: 12px 16px 0; }
+    input[type="range"] { width: 92px; }
+    button { padding: 7px 11px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" } }
+</script>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <span class="sub" id="subtitle"></span>
+  <span class="chip" id="rarity"></span>
+</header>
+<main id="stage" tabindex="0" aria-label="互動卡片：移動游標或拖曳可傾斜，按 F 翻面，方向鍵微調">
+  <div id="status">載入中…</div>
+</main>
+<div class="controls">
+  <div class="buttons">
+    <button id="flip" type="button">翻面</button>
+    <button id="auto" type="button" aria-pressed="false">自動展示</button>
+    <button id="gyro" type="button" aria-pressed="false" hidden>陀螺儀</button>
+    <button id="save" type="button">存成圖片</button>
+    <button id="reset" type="button">重設</button>
+  </div>
+  <div class="sliders">
+    <label>鐳射 <input id="foil" type="range" min="0" max="1" step="0.01"><output id="foil-v"></output></label>
+    <label>景深 <input id="depth" type="range" min="0" max="2" step="0.01"><output id="depth-v"></output></label>
+    <label id="flip-angle-row">翻轉角度 <input id="flip_angle" type="range" min="6" max="30" step="1"><output id="flip_angle-v"></output></label>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+
+// holo_card.py build 會把 {config, textures} 注入這一行
+const DATA = /*__CARD_DATA__*/null;
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const statusEl = $('status');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const deg = THREE.MathUtils.degToRad;
+const clamp = THREE.MathUtils.clamp;
+
+const CARD_W = 2.5, CARD_H = 3.5, CARD_T = 0.035, RADIUS = 0.14;
+const MAX_TILT = deg(22);
+const RARITY = {
+  common:    { label: '普通', color: [0.80, 0.82, 0.86], rainbow: 0.0 },
+  rare:      { label: '稀有', color: [0.55, 0.75, 1.00], rainbow: 0.15 },
+  epic:      { label: '史詩', color: [0.80, 0.60, 1.00], rainbow: 0.35 },
+  legendary: { label: '傳說', color: [1.00, 0.81, 0.44], rainbow: 0.6 },
+};
+
+function fail(message) {
+  statusEl.hidden = false;
+  statusEl.textContent = '卡片無法顯示\n' + message;
+  statusEl.setAttribute('role', 'alert');
+  window.__card = { ready: false, error: message };
+}
+
+const VERT = /* glsl */`
+uniform vec3 uCam;
+varying vec2 vUv;
+varying vec3 vView;
+void main() {
+  vUv = uv;
+  vView = uCam - position;          // 卡片本地座標：x 往右、y 往上、z 朝正面外
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const COMMON = /* glsl */`
+uniform float uTime, uFoil, uDepth, uSparkle, uGlow, uFlipAngle, uRainbow;
+uniform vec3 uFrame, uViewDir;
+uniform vec2 uAspect;
+varying vec2 vUv;
+varying vec3 vView;
+
+float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), f.x), mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+vec3 spectrum(float t) { return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67))); }
+vec3 softLight(vec3 b, vec3 s) { return mix(2.0 * b * s + b * b * (1.0 - 2.0 * s), sqrt(b) * (2.0 * s - 1.0) + 2.0 * b * (1.0 - s), step(0.5, s)); }
+float inside01(vec2 p) { vec2 q = step(vec2(0.0), p) * step(p, vec2(1.0)); return q.x * q.y; }
+// 視線偏移：視角越斜，深處圖層位移越多；z 下限避免掠射角時爆衝
+vec2 tiltOffset(vec3 V) { return V.xy / max(V.z, 0.35); }
+vec3 foilColor(vec2 uv, vec3 V) {
+  vec2 a = uv * vec2(1.0, 1.4) + V.xy * 1.8;
+  float t = dot(a, vec2(0.83, 0.55)) * 1.6 + vnoise(a * 3.2) * 0.55 + uTime * 0.015;
+  return mix(spectrum(t), vec3(1.0), 0.2);
+}
+float sheen(vec2 uv, vec3 V) {
+  float s = sin((uv.x * 0.9 + uv.y * 0.5 + V.x * 2.4 + V.y * 1.4) * 6.28318);
+  return pow(max(s, 0.0), 12.0);
+}
+float sparkle(vec2 uv, vec3 V) {
+  vec2 g = uv * vec2(60.0, 84.0);
+  vec2 id = floor(g), f = fract(g) - 0.5;
+  float h = hash12(id);
+  vec2 o = (vec2(hash12(id + 17.0), hash12(id + 31.0)) - 0.5) * 0.6;
+  vec2 d = abs(f - o);
+  float core = smoothstep(0.10, 0.0, length(f - o));
+  float rays = smoothstep(0.035, 0.0, min(d.x, d.y)) * smoothstep(0.45, 0.0, max(d.x, d.y));
+  float twinkle = pow(0.5 + 0.5 * sin(h * 80.0 + V.x * 40.0 + V.y * 31.0 + uTime * 1.3), 10.0);
+  return step(0.88, h) * (core + rays * 0.6) * twinkle;
+}
+float glare(vec2 uv, vec3 V) {
+  vec2 c = vec2(0.5) - V.xy * 1.3;
+  return smoothstep(0.85, 0.0, length((uv - c) * vec2(1.0, 0.75)));
+}
+// 以卡片實際比例算圓角距離，長短邊的框寬才會一致；圓角半徑與幾何一致
+vec2 frameMask(vec2 uv) {
+  vec2 p = (uv - 0.5) * uAspect;
+  float r = 0.28;
+  vec2 q = abs(p) - (uAspect * 0.5 - r);
+  float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+  return vec2(smoothstep(-0.20, -0.18, dist), smoothstep(0.012, 0.0, abs(dist + 0.235)));
+}
+// 易經卦牌：卡框（琺瑯色帶、金線）已畫在文字圖層，這裡只讓金色部分吃一點掃光，不再另畫框
+vec3 applyFrame(vec3 col, vec2 uv, vec3 V, float sh) {
+  float gold = smoothstep(0.45, 0.8, col.r) * step(col.b, col.r * 0.85);
+  return col + gold * sh * 0.25;
+}
+const vec3 LINE_TINT = vec3(1.0, 0.93, 0.78);
+`;
+
+const LAYERED = /* glsl */`
+uniform sampler2D tBackground, tSubject, tFx, tText;
+void main() {
+  vec3 V = normalize(vView);
+  vec2 uv = vUv;
+  vec2 off = tiltOffset(V);
+  // 背景在卡面後方：反向位移。放大 14% 留邊，景深 2、最大傾角時仍不會取樣到原圖邊界外
+  vec2 bu = (uv - 0.5) / 1.14 + 0.5 - off * 0.060 * uDepth;
+  vec2 su = uv + off * 0.040 * uDepth;                          // 主體浮在卡面前方：同向位移
+  vec3 foil = foilColor(uv, V);
+  float sh = sheen(uv, V);
+
+  vec3 bg = texture2D(tBackground, bu).rgb;
+  float lum = dot(bg, vec3(0.299, 0.587, 0.114));
+  bg = mix(bg, softLight(bg, foil), uFoil * 0.65);
+  bg += foil * sh * uFoil * 0.30 * (0.35 + lum);
+  bg += vec3(0.92, 0.96, 1.0) * sparkle(bu, V) * uSparkle;
+  vec2 shadowUv = su + vec2(0.010, -0.014);
+  bg *= 1.0 - texture2D(tSubject, shadowUv).a * inside01(shadowUv) * 0.35 * min(uDepth, 1.0);
+
+  vec4 sub = texture2D(tSubject, su);
+  sub.a *= inside01(su);
+  vec3 sc = mix(sub.rgb, softLight(sub.rgb, foil), uFoil * 0.16) + foil * sh * uFoil * 0.07;
+  vec3 col = mix(bg, sc, sub.a);
+  float line = texture2D(tFx, su).r * inside01(su);
+  col += mix(LINE_TINT, foil, 0.55) * line * (0.25 + 1.2 * sh) * uGlow;
+
+  vec4 tx = texture2D(tText, uv);
+  col = mix(col, tx.rgb, tx.a);
+  col = applyFrame(col, uv, V, sh);
+  col += glare(uv, V) * 0.08 * (0.5 + uFoil);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+const FLIP = /* glsl */`
+uniform sampler2D tA, tB, tFx, tText;
+void main() {
+  vec3 V = normalize(vView);
+  vec2 uv = vUv;
+  vec2 off = tiltOffset(V);
+  // 翻轉相位用整張卡的視角（uViewDir），不用逐像素視線，否則透視會讓靜止時卡緣先翻到 B
+  float ang = degrees(atan(uViewDir.x, max(uViewDir.z, 0.05))) + (uv.x - 0.5) * 6.0;
+  float lensC = fract(uv.x * 120.0) - 0.5;                     // 柱鏡條紋內的位置
+  float t = clamp(abs(ang) / uFlipAngle, 0.0, 1.0) + lensC * 0.175;
+  float m = smoothstep(0.28, 0.72, t);
+  vec2 ua = (uv - 0.5) / 1.03 + 0.5 + off * 0.012 * uDepth;
+  ua.x += lensC * 0.3 / 120.0;
+  vec3 col = mix(texture2D(tA, ua).rgb, texture2D(tB, ua).rgb, m);
+  col *= 1.0 - (1.0 - abs(2.0 * m - 1.0)) * 0.07;              // 兩張半重疊時的亮度下陷
+
+  vec3 foil = foilColor(uv, V);
+  float sh = sheen(uv, V);
+  col = mix(col, softLight(col, foil), uFoil * 0.30);
+  vec3 ridgeN = normalize(vec3(lensC, 0.0, 1.0));
+  float spec = pow(max(dot(ridgeN, normalize(V + vec3(0.29, 0.50, 0.82))), 0.0), 28.0);
+  col += vec3(spec) * 0.10 + foil * sh * uFoil * 0.12;
+  vec2 fx = texture2D(tFx, ua).rg;
+  col += mix(LINE_TINT, foil, 0.55) * mix(fx.r, fx.g, m) * (0.2 + sh) * uGlow * 0.8;
+  col += vec3(0.92, 0.96, 1.0) * sparkle(uv, V) * uSparkle * 0.7;
+
+  vec4 tx = texture2D(tText, uv);
+  col = mix(col, tx.rgb, tx.a);
+  col = applyFrame(col, uv, V, sh);
+  col += glare(uv, V) * 0.08 * (0.5 + uFoil);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+const BACK = /* glsl */`
+uniform sampler2D tBack;
+void main() {
+  vec3 V = normalize(vView);
+  vec2 uv = vUv;
+  vec3 col = texture2D(tBack, uv).rgb;
+  vec3 foil = foilColor(uv, V);
+  float sh = sheen(uv, V);
+  col = mix(col, softLight(col, foil), uFoil * 0.35) + foil * sh * uFoil * 0.12;
+  col = applyFrame(col, uv, V, sh);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+const EDGE = /* glsl */`
+void main() {
+  vec3 V = normalize(vView);
+  float sh = sheen(vUv * 0.2, V);
+  gl_FragColor = vec4(clamp(uFrame * 0.55 + foilColor(vUv * 0.1, V) * 0.25 + sh * 0.3, 0.0, 1.0), 1.0);
+}`;
+
+function roundedRect(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+
+// ShapeGeometry 的 uv 是形狀座標；改成 0..1 才能直接對應圖層。必須在旋轉、平移之前做
+function remapUV(geo) {
+  geo.computeBoundingBox();
+  const b = geo.boundingBox, pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) {
+    uv.setXY(i, (pos.getX(i) - b.min.x) / (b.max.x - b.min.x), (pos.getY(i) - b.min.y) / (b.max.y - b.min.y));
+  }
+  uv.needsUpdate = true;
+}
+
+async function loadTextures(renderer, sources) {
+  const loader = new THREE.TextureLoader();
+  const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const entries = await Promise.all(Object.entries(sources).map(async ([name, url]) => {
+    const tex = await loader.loadAsync(url);
+    tex.colorSpace = THREE.NoColorSpace;   // 直接以 sRGB 數值合成，輸出也不轉換，畫面顏色等於原圖
+    tex.anisotropy = anisotropy;
+    return ['t' + name[0].toUpperCase() + name.slice(1), { value: tex }];
+  }));
+  return Object.fromEntries(entries);
+}
+
+async function main() {
+  if (!DATA) { fail('這是模板檔，請用 holo_card.py build 產生卡片。'); return; }
+  const cfg = DATA.config;
+  const rarity = RARITY[cfg.rarity] || RARITY.rare;
+  document.title = cfg.title + (cfg.subtitle ? ' · ' + cfg.subtitle : '');
+  $('title').textContent = cfg.title;
+  $('subtitle').textContent = cfg.subtitle || '';
+  $('rarity').textContent = rarity.label + (cfg.edition ? ' · ' + cfg.edition : '');
+  $('flip-angle-row').hidden = cfg.mode !== 'flip';
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  } catch (error) {
+    fail('瀏覽器無法建立 WebGL：' + error.message);
+    return;
+  }
+  let shaderError = null;
+  renderer.debug.onShaderError = (gl, program, vs, fs) => {
+    shaderError = gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || gl.getProgramInfoLog(program) || 'shader 編譯失敗';
+    console.error(shaderError);
+  };
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  stage.appendChild(renderer.domElement);
+
+  const fx = cfg.effects;
+  const uniforms = {
+    uCam: { value: new THREE.Vector3(0, 0, 10) },
+    uViewDir: { value: new THREE.Vector3(0, 0, 1) },
+    uTime: { value: 0 },
+    uFoil: { value: fx.foil }, uDepth: { value: fx.depth }, uSparkle: { value: fx.sparkle },
+    uGlow: { value: fx.glow }, uFlipAngle: { value: fx.flip_angle },
+    uRainbow: { value: rarity.rainbow },
+    uFrame: { value: new THREE.Vector3(...rarity.color) },
+    uAspect: { value: new THREE.Vector2(5, 7) },
+    ...(await loadTextures(renderer, DATA.textures)),
+  };
+  const material = (frag) => new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: COMMON + frag });
+
+  const shape = roundedRect(CARD_W, CARD_H, RADIUS);
+  const front = new THREE.ShapeGeometry(shape, 24);
+  remapUV(front); front.translate(0, 0, CARD_T / 2);
+  const back = new THREE.ShapeGeometry(shape, 24);
+  remapUV(back); back.rotateY(Math.PI); back.translate(0, 0, -CARD_T / 2);
+  const edge = new THREE.ExtrudeGeometry(shape, { depth: CARD_T, bevelEnabled: false, curveSegments: 24 });
+  edge.translate(0, 0, -CARD_T / 2);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+  const card = new THREE.Group();
+  card.add(new THREE.Mesh(front, material(cfg.mode === 'flip' ? FLIP : LAYERED)));
+  card.add(new THREE.Mesh(back, material(BACK)));
+  card.add(new THREE.Mesh(edge, [new THREE.MeshBasicMaterial({ visible: false }), material(EDGE)]));
+  scene.add(card);
+
+  // 分層卡靜止時微傾，讓景深一眼看得出來；翻轉卡靜止要停在乾淨的 A 面
+  const REST = cfg.mode === 'flip' ? { yaw: 0, pitch: deg(4) } : { yaw: deg(-8), pitch: deg(5) };
+  const state = { yaw: REST.yaw, pitch: REST.pitch, tYaw: REST.yaw, tPitch: REST.pitch, flipped: false, auto: false, gyro: null, pressed: false };
+  const inverse = new THREE.Matrix4();
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    const tan = Math.tan(deg(camera.fov / 2));
+    const dist = Math.max((CARD_H / 2 * 1.16) / tan, (CARD_W / 2 * 1.16) / (tan * camera.aspect));
+    camera.position.set(0, 0, dist);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }
+
+  function render(time) {
+    card.rotation.set(state.pitch, state.yaw, 0);
+    card.updateMatrixWorld(true);
+    uniforms.uCam.value.copy(camera.position).applyMatrix4(inverse.copy(card.matrixWorld).invert());
+    uniforms.uViewDir.value.copy(uniforms.uCam.value).normalize();
+    uniforms.uTime.value = time;
+    renderer.render(scene, camera);
+  }
+
+  const rest = () => { state.tYaw = REST.yaw; state.tPitch = REST.pitch; };
+  function setAuto(on) {
+    state.auto = on;
+    $('auto').setAttribute('aria-pressed', String(on));
+    if (!on) rest();
+  }
+  function flip() {
+    state.flipped = !state.flipped;
+    $('flip').textContent = state.flipped ? '看正面' : '翻面';
+  }
+  function pointerTilt(e) {
+    const r = stage.getBoundingClientRect();
+    const span = Math.min(r.width, r.height) * 0.45;
+    state.tYaw = clamp((e.clientX - r.left - r.width / 2) / span, -1, 1) * MAX_TILT;
+    state.tPitch = clamp((e.clientY - r.top - r.height / 2) / span, -1, 1) * MAX_TILT * 0.8;
+  }
+
+  stage.addEventListener('pointermove', (e) => {
+    if (state.auto || state.gyro) return;
+    if (e.pointerType === 'mouse' || state.pressed) pointerTilt(e);
+  });
+  stage.addEventListener('pointerdown', (e) => {
+    state.pressed = true;
+    if (state.auto) setAuto(false);
+    stage.setPointerCapture(e.pointerId);
+    stage.style.cursor = 'grabbing';
+    if (!state.gyro) pointerTilt(e);
+  });
+  const release = (e) => {
+    state.pressed = false;
+    stage.style.cursor = '';
+    if (e.pointerType !== 'mouse' && !state.gyro) rest();
+  };
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+  stage.addEventListener('pointerleave', () => { if (!state.pressed && !state.auto && !state.gyro) rest(); });
+  stage.addEventListener('dblclick', flip);
+  stage.addEventListener('keydown', (e) => {
+    const step = deg(3);
+    const keys = {
+      ArrowLeft: () => { state.tYaw -= step; }, ArrowRight: () => { state.tYaw += step; },
+      ArrowUp: () => { state.tPitch -= step; }, ArrowDown: () => { state.tPitch += step; },
+      f: flip, F: flip, r: () => reset(), R: () => reset(),
+    };
+    if (!keys[e.key]) return;
+    e.preventDefault();
+    if (state.auto) setAuto(false);
+    keys[e.key]();
+    state.tYaw = clamp(state.tYaw, -MAX_TILT, MAX_TILT);
+    state.tPitch = clamp(state.tPitch, -MAX_TILT, MAX_TILT);
+  });
+
+  function reset() {
+    if (state.flipped) flip();
+    setAuto(false);
+    for (const name of ['foil', 'depth', 'flip_angle']) {
+      const input = $(name);
+      input.value = fx[name];
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+
+  const sliderUniform = { foil: 'uFoil', depth: 'uDepth', flip_angle: 'uFlipAngle' };
+  for (const [name, key] of Object.entries(sliderUniform)) {
+    const input = $(name), out = $(name + '-v');
+    input.value = uniforms[key].value;
+    const update = () => {
+      uniforms[key].value = Number(input.value);
+      out.value = name === 'flip_angle' ? input.value + '°' : Math.round(input.value * 100) + '%';
+    };
+    input.addEventListener('input', update);
+    update();
+  }
+
+  $('flip').addEventListener('click', flip);
+  $('auto').addEventListener('click', () => setAuto(!state.auto));
+  $('reset').addEventListener('click', reset);
+  $('save').addEventListener('click', () => {
+    render(uniforms.uTime.value);   // 未開 preserveDrawingBuffer，需在同一個 task 內重畫再讀取
+    const link = document.createElement('a');
+    link.href = renderer.domElement.toDataURL('image/png');
+    link.download = (cfg.title || 'card') + '.png';
+    link.click();
+  });
+
+  const gyroButton = $('gyro');
+  if ('DeviceOrientationEvent' in window && matchMedia('(pointer: coarse)').matches) gyroButton.hidden = false;
+  gyroButton.addEventListener('click', async () => {
+    if (state.gyro) {
+      removeEventListener('deviceorientation', state.gyro);
+      state.gyro = null;
+      gyroButton.setAttribute('aria-pressed', 'false');
+      rest();
+      return;
+    }
+    try {
+      // iOS 13+ 只允許在使用者手勢內要求權限
+      if (typeof DeviceOrientationEvent.requestPermission === 'function'
+          && await DeviceOrientationEvent.requestPermission() !== 'granted') return;
+    } catch { return; }
+    let base = null;
+    state.gyro = (e) => {
+      if (e.beta == null || e.gamma == null) return;
+      base = base || { beta: e.beta, gamma: e.gamma };
+      state.tYaw = clamp((e.gamma - base.gamma) / 25, -1, 1) * MAX_TILT;
+      state.tPitch = clamp((e.beta - base.beta) / 25, -1, 1) * MAX_TILT * 0.8;
+    };
+    addEventListener('deviceorientation', state.gyro);
+    if (state.auto) setAuto(false);
+    gyroButton.setAttribute('aria-pressed', 'true');
+  });
+
+  renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); fail('WebGL context 遺失，請重新整理頁面。'); });
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  let last = performance.now(), elapsed = 0;
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    elapsed += dt;
+    if (state.auto) {
+      state.tYaw = Math.sin(elapsed * 0.7) * MAX_TILT * 0.9;
+      state.tPitch = Math.sin(elapsed * 0.95) * MAX_TILT * 0.45;
+    }
+    const ease = reduced ? 1 : 1 - Math.exp(-dt * 7);
+    state.yaw += ((state.flipped ? Math.PI : 0) + state.tYaw - state.yaw) * ease;
+    state.pitch += (state.tPitch - state.pitch) * ease;
+    render(reduced && !state.auto ? 0 : elapsed);
+    requestAnimationFrame(frame);
+  }
+
+  render(0);
+  if (shaderError) { fail(shaderError); return; }
+  statusEl.hidden = true;
+  requestAnimationFrame(frame);
+
+  // 驗證用：可重現地設定角度並重畫，供截圖比對
+  window.__card = {
+    ready: true, mode: cfg.mode, config: cfg, uniforms,
+    setTilt(yawDeg, pitchDeg) {
+      if (state.auto) setAuto(false);
+      state.tYaw = deg(yawDeg); state.tPitch = deg(pitchDeg);
+      state.yaw = (state.flipped ? Math.PI : 0) + state.tYaw; state.pitch = state.tPitch;
+      render(uniforms.uTime.value);
+    },
+    flip() {
+      flip();
+      state.yaw = (state.flipped ? Math.PI : 0) + state.tYaw;
+      render(uniforms.uTime.value);
+    },
+  };
+}
+
+main().catch((error) => { console.error(error); fail(error.message || String(error)); });
+</script>
+</body>
+</html>

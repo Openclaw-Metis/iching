@@ -1,0 +1,50 @@
+import { Link } from 'react-router'
+import type { PointerEvent } from 'react'
+import { cardAsset, hasArt } from '../data/cards.ts'
+import type { Hexagram } from '../data/hexagrams.ts'
+
+export type Relation = 'cuo' | 'zong' | 'hu'
+const REL_LABEL: Record<Relation, string> = { cuo: '錯', zong: '綜', hu: '互' }
+
+interface Props {
+  hex: Hexagram
+  relation?: Relation[]
+  dim?: boolean
+  onFocus?: (hex: Hexagram | null) => void
+}
+
+// 展廳縮圖：以 CSS 傾斜與一道掃光模擬全息卡，WebGL 只留給詳細頁的單張大卡
+export function CardThumb({ hex, relation = [], dim = false, onFocus }: Props) {
+  const tilt = (e: PointerEvent<HTMLAnchorElement>) => {
+    if (e.pointerType !== 'mouse') return
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5
+    e.currentTarget.style.setProperty('--ry', `${x * 16}deg`)
+    e.currentTarget.style.setProperty('--rx', `${-y * 12}deg`)
+    e.currentTarget.style.setProperty('--sx', `${(0.5 - x) * 200}%`)
+  }
+  const reset = (e: PointerEvent<HTMLAnchorElement>) => {
+    for (const p of ['--ry', '--rx', '--sx']) e.currentTarget.style.removeProperty(p)
+    onFocus?.(null)
+  }
+  // 一張牌同時是錯卦又是綜卦時（例如泰否），標籤合併顯示
+  const rel = relation[0]
+  return (
+    <Link
+      to={`/gua/${hex.number}`}
+      className="thumb"
+      data-dim={dim}
+      data-rel={rel}
+      data-rel-label={relation.map(r => REL_LABEL[r]).join('・')}
+      aria-label={`第${hex.number}卦 ${hex.fullName}`}
+      onPointerMove={tilt}
+      onPointerEnter={() => onFocus?.(hex)}
+      onPointerLeave={reset}
+      onFocus={() => onFocus?.(hex)}
+      onBlur={() => onFocus?.(null)}
+    >
+      <img src={cardAsset(hex.number, 'thumb')} alt="" loading="lazy" decoding="async" width={400} height={560} />
+      {!hasArt(hex.number) && <span className="pending">插圖繪製中</span>}
+    </Link>
+  )
+}
