@@ -4,6 +4,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { writeRoutePages } from './scripts/build/route-pages.mjs'
+import { FLAGS } from './src/app/flags.ts'
 
 // GitHub Pages 不支援單頁應用的路由：不在路徑表裡的網址（打錯的、舊的）會落到 404.html，
 // 由前端路由顯示「找不到這一頁」。路徑表裡的頁面另由 route-pages 產生各自的 HTML，直接開啟就是 200。
@@ -98,7 +99,7 @@ const pwa = () => VitePWA({
   manifest: {
     name: '易經卦殿',
     short_name: '易經卦殿',
-    description: '易經六十四卦卦牌：占卜、每日一卦、學堂與收藏，資料只存在這台裝置。',
+    description: `易經六十四卦卦牌：占卜、每日一卦${FLAGS.collection ? '、學堂與收藏' : '與學堂'}，資料只存在這台裝置。`,
     lang: 'zh-Hant',
     start_url: '/iching/',
     scope: '/iching/',
