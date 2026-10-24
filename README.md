@@ -33,6 +33,11 @@ npm run preview      # 比照正式站（/iching/ 前綴、CSP）
 - **部署包瘦身**：已有插圖的卡用分層貼圖顯示，整張的 `face.webp` 不放進 `dist`。
 - **離線版**：`vite-plugin-pwa`（generateSW）產生 `sw.js` 與 `manifest.webmanifest`。預先快取 `index.html`、全部程式與白話（`assets/**/*.{js,css,json}`）、64 張縮圖、64 張看圖卡與圖示；卡圖四層（`card-layers`）與 Google Fonts 在用到時才快取，`src/app/cardCache.ts` 只保留最近 30 卦的四層。註冊與新版本提示在 `src/app/UpdateToast.tsx`，有新版本時由使用者按「重新整理」才更新。圖示由 `node scripts/build/icons.mjs` 從 `public/favicon.svg` 產生。
 
+### 部署後的檢查
+
+1. `npm run check:routes`：依 `src/app/routes.ts` 請求正式站的 102 個網址，確認都直接回 200 且 `<title>` 正確（AC-23）。本機可用 `npm run check:routes -- http://localhost:4173` 檢查 `npm run preview`。
+2. 其餘手動項目（Safari、離線、安裝、.ics 匯入）見 `docs/qa-checklist.md`。
+
 ### 離線版出問題時的回滾
 
 service worker 一旦裝上，即使撤回程式，使用者的瀏覽器仍會用舊的快取。要撤掉它：

@@ -10,6 +10,12 @@ const run = (start: string, days: number, goal = 30): CheckIn[] =>
   Array.from({ length: days }, (_, i) => ({ date: addDays(start, i), goal, reachedAt: `${addDays(start, i)}T12:00:00.000Z` }))
 
 describe('連續天數（AC-16）', () => {
+  it('連續 30 天，第 31 天沒有：第 30 天為 30，第 32 天開啟時為 0，最長仍為 30（TC-07）', () => {
+    const c = run('2026-09-01', 30) // 9/1 到 9/30
+    expect(streakOf(c, '2026-09-30')).toEqual({ streak: 30, best: 30 })
+    expect(streakOf(c, '2026-10-02')).toEqual({ streak: 0, best: 30 })
+  })
+
   it('連續 30 天', () => {
     const c = run('2026-09-25', 30)
     expect(streakOf(c, '2026-10-24')).toEqual({ streak: 30, best: 30 })

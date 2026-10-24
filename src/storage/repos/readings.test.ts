@@ -7,7 +7,11 @@ import { openStorage } from '../open.ts'
 import * as draft from './draft.ts'
 import * as readings from './readings.ts'
 
-beforeEach(async () => provideStorage(await openStorage({ indexedDB: new IDBFactory(), IDBKeyRange })))
+let factory: IDBFactory
+beforeEach(async () => {
+  factory = new IDBFactory()
+  provideStorage(await openStorage({ indexedDB: factory, IDBKeyRange }))
+})
 
 const NOW = new Date('2026-10-24T03:00:00.000Z')
 
@@ -113,5 +117,16 @@ describe('跨分頁寫入比對 rev（TC-13）', () => {
     const next = await readings.update(r.id, { note: '先觀望', starred: 1 }, 1)
     expect(next).toMatchObject({ note: '先觀望', starred: 1, rev: 2, lines: r.lines, primary: r.primary })
     await expect(readings.update(r.id, { question: '短' }, 2)).rejects.toThrow(RangeError)
+  })
+})
+
+describe('草稿（TC-12）', () => {
+  it('建立草稿、寫 3 爻後重新開啟資料庫，草稿仍有 3 爻且 phase 為 casting', async () => {
+    const d = makeDraft({ phase: 'casting', lines: [] })
+    await draft.save(d)
+    const saved = await draft.get()
+    await draft.save({ ...saved!, lines: [7, 8, 9] })
+    provideStorage(await openStorage({ indexedDB: factory, IDBKeyRange }))
+    expect(await draft.get()).toMatchObject({ castId: d.castId, phase: 'casting', lines: [7, 8, 9] })
   })
 })

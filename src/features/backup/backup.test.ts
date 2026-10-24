@@ -219,4 +219,22 @@ describe('匯出與匯入', () => {
     expect(await db.seals.get('dui')).toEqual({ id: 'dui', earnedAt: '2026-10-21T00:00:00.000Z' })
     expect(await db.reviewCards.get('30:image')).toBeTruthy()
   })
+
+  it('合併另一台裝置的備份：12 筆紀錄中 2 筆重複，合併後紀錄增加 10 筆（Gherkin）', async () => {
+    const db = await requireDb()
+    const rows = Array.from({ length: 12 }, (_, i) => reading({ question: `問題 ${i}` }))
+    await db.readings.bulkAdd(rows.slice(0, 2))
+    const dailyDraws = Array.from({ length: 30 }, (_, i) => {
+      const date = `2026-09-${String(i + 1).padStart(2, '0')}`
+      return { date, hexagram: 1 + i, drawnAt: `${date}T01:00:00.000Z`, note: '', updatedAt: `${date}T01:00:00.000Z`, rev: 1 }
+    })
+    const file = { ...partialBackup(reading()), scope: 'full' as const, data: { readings: rows, dailyDraws } }
+    const preview = await previewImport([json('x.json', file)])
+    expect(preview.counts).toMatchObject({ readings: 12, dailyDraws: 30 })
+    expect(preview.duplicates).toBe(2)
+    await applyImport(preview, 'merge')
+    expect(await db.readings.count()).toBe(12)
+    expect(await db.dailyDraws.count()).toBe(30)
+  })
 })
+

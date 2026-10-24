@@ -93,3 +93,15 @@ describe('跨日檢查', () => {
     stop()
   })
 })
+
+describe('今日卦當天固定（Gherkin）', () => {
+  it('翻開得到坎之後關掉網站再打開，仍是坎', async () => {
+    const factory = new IDBFactory()
+    provideStorage(await openStorage({ indexedDB: factory, IDBKeyRange }))
+    await daily.draw(DAY, () => 29)
+    // 模擬關閉網站再打開：同一個資料庫重新連線
+    provideStorage(await openStorage({ indexedDB: factory, IDBKeyRange }))
+    expect((await daily.today(at(2026, 10, 24, 21)))?.hexagram).toBe(29)
+    expect((await daily.draw(at(2026, 10, 24, 21), () => 1)).hexagram).toBe(29)
+  })
+})

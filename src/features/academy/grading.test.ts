@@ -1,7 +1,7 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ExamResult, LessonProgress } from '../../storage/index.ts'
-import { attempts as attemptsRepo, openStorage, provideStorage } from '../../storage/index.ts'
+import { attempts as attemptsRepo, openStorage, provideStorage, requireDb } from '../../storage/index.ts'
 import { answer, startAttempt, submitExam } from './attempts.ts'
 import { examStatus, lessonStatus, nextStep, scoreExam } from './grading.ts'
 
@@ -73,5 +73,20 @@ describe('解鎖順序', () => {
     expect(lessonStatus('S2-L1', p3, [exam(1, false), exam(1, true)])).toBe('available')
     expect(examStatus(1, p3, [exam(1, true)])).toBe('passed')
     expect(nextStep(p3, [exam(1, true)])).toEqual({ kind: 'lesson', id: 'S2-L1' })
+  })
+})
+
+describe('考核通過（Gherkin）', () => {
+  it('第二站考核答對 8 題：通過、修為晉升為識卦、印譜出現兌印、第三站第一課可學', async () => {
+    const db = await requireDb()
+    await db.lessonProgress.bulkAdd(['S1-L1', 'S1-L2', 'S1-L3', 'S2-L1', 'S2-L2', 'S2-L3'].map(done))
+    await db.examResults.add(exam(1, true))
+    const a = await startAttempt('exam', '2', NOW)
+    for (const [i, q] of a.questions.entries()) await answer(a.id, i, i < 8 ? q.answerIndex : (q.answerIndex + 1) % q.options.length, 3000, NOW)
+    const r = await submitExam(a.id, NOW)
+    expect(r).toMatchObject({ score: 8, passed: true, rankUp: '識卦' })
+    expect(r.seals).toContain('dui')
+    expect(await db.seals.get('dui')).toBeTruthy()
+    expect(lessonStatus('S3-L1', await db.lessonProgress.toArray(), await db.examResults.toArray())).toBe('available')
   })
 })

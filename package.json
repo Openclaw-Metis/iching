@@ -11,6 +11,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json && vite build",
     "check:size": "node scripts/build/check-size.mjs",
+    "check:routes": "node scripts/check-routes.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
