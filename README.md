@@ -32,7 +32,7 @@ npm run build
 
 1. 背景：上卦面板疊在下卦面板之上（`art/raw/panels/<八卦 id>.png`，3:2）。
 2. 主體：透明背景插圖（`art/raw/subjects/<兩位數卦序>.png`，2:3），依 alpha 外框自動放進插圖視窗，`art/placements.json` 可逐卡微調 `scale`、`dx`、`dy`。
-3. 卡框與文字：`scripts/cards/card-face.mjs` 以 SVG 繪製，卦畫由卦象資料產生。
+3. 卡框與文字：`scripts/cards/card-face.mjs` 以 SVG 繪製，卦畫由卦象資料產生。上下兩條題框等高，插圖區以上下卦的分界線為中心，兩卦背景露出一樣多，主體也擺在正中央。
 
 ```bash
 npm run cards:build          # 全部 64 卦

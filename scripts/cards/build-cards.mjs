@@ -13,7 +13,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { hexagram, hexagrams } from '../../src/data/hexagrams.ts'
-import { cardFaceSvg, H, SPLIT, W } from './card-face.mjs'
+import { ART, cardFaceSvg, H, SPLIT, W } from './card-face.mjs'
 import { cardBackSvg } from './card-back.mjs'
 import { renderSvg } from './render-svg.mjs'
 
@@ -23,8 +23,8 @@ const classic = JSON.parse(readFileSync(join(root, 'src/data/classic.json'), 'ut
 const placements = JSON.parse(readFileSync(join(root, 'art/placements.json'), 'utf8'))
 const pad = n => String(n).padStart(2, '0')
 
-// 主體擺放的視窗：卡框內、題名牌之上
-const WINDOW = { x: 84, y: 104, w: 832, h: 880 }
+// 主體擺放的視窗：上下題框之間、以分界線為中心，四周留出背景
+const WINDOW = { x: 110, y: ART.top + 30, w: 780, h: ART.bottom - ART.top - 60 }
 const THUMB = { w: 400, h: 560 }
 // holo shader 讓背景放大 14% 留視差邊；縮圖照同樣比例裁切，靜止畫面才一致
 const BG_ZOOM = 1.14

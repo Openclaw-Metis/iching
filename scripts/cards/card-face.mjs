@@ -1,5 +1,5 @@
 // 卡面框與文字圖層（1000×1400，5:7，對應 webgl-holo-card 的畫布）。
-// 中央插圖區保持透明；框線、上下卦色帶、題名牌與朱印都畫在這一層。
+// 中央插圖區保持透明；框線、上下卦色帶、上下題框與朱印都畫在這一層。
 // resvg 不支援可變字型的字重軸，標題以同色描邊加粗。
 
 export const W = 1000
@@ -92,11 +92,11 @@ function cartouche(number) {
 }
 
 function seal(cx, cy, name) {
-  const s = 86
+  const s = 80
   const chars = [...name]
   const glyphs = chars.length === 1
-    ? text(cx, cy + 19, name, { size: 54, fill: '#f6eee0', weight: 1.4 })
-    : chars.map((c, k) => text(cx, cy - 4 + k * 38, c, { size: 36, fill: '#f6eee0', weight: 1.2 })).join('')
+    ? text(cx, cy + 18, name, { size: 50, fill: '#f6eee0', weight: 1.4 })
+    : chars.map((c, k) => text(cx, cy - 4 + k * 35, c, { size: 33, fill: '#f6eee0', weight: 1.2 })).join('')
   return `<g filter="url(#rough)">
     <rect x="${cx - s / 2}" y="${cy - s / 2}" width="${s}" height="${s}" rx="5" fill="${VERMILION}"/>
     <rect x="${cx - s / 2 + 6}" y="${cy - s / 2 + 6}" width="${s - 12}" height="${s - 12}" rx="2" fill="none" stroke="#f6eee0" stroke-width="2" opacity=".85"/>
@@ -104,33 +104,46 @@ function seal(cx, cy, name) {
   </g>`
 }
 
-function titlePlaque(hex, classic) {
-  const outer = 'M68,1338 V1050 C68,1024 92,1014 122,1013 L412,1013 C452,1013 472,994 500,982 C528,994 548,1013 588,1013 L878,1013 C908,1014 932,1024 932,1050 V1338 Z'
-  const inner = 'M80,1326 V1054 C80,1034 98,1025 124,1024 L415,1024 C455,1024 476,1006 500,995 C524,1006 545,1024 585,1024 L876,1024 C902,1025 920,1034 920,1054 V1326 Z'
-  const [image, moral] = splitDaxiang(classic.daxiang)
-  const cx = 515
-  const nameSize = hex.name.length === 1 ? 104 : 84
+// 上下兩條題框等高、對稱於分界線：上卦與下卦的背景露出一樣多，插圖區的正中央就是分界線。
+// ART 是兩條題框之間的插圖區；題框中央的尖角往插圖區多伸出 20px。
+const BAND = 112
+export const ART = { top: 64 + BAND, bottom: H - 64 - BAND }
+
+// 分離派的小方塊裝飾，放在題框左右兩端
+function studs(x, cy) {
+  return [-14, 0, 14].map(d => `<rect x="${x - 4}" y="${cy + d - 4}" width="8" height="8" fill="url(#gold)" transform="rotate(45 ${x} ${cy + d})"/>`).join('')
+}
+
+function topBand(hex, classic) {
+  const b = ART.top
+  const outer = `M68,72 Q68,64 76,64 H924 Q932,64 932,72 V${b} H530 L500,${b + 20} L470,${b} H68 Z`
+  const inner = `M78,74 H922 V${b - 10} H526 L500,${b + 7} L474,${b - 10} H78 Z`
+  const longLine = [...classic.daxiang].length > 20
   return `<g>
     <path d="${outer}" fill="url(#plaque)" stroke="url(#gold)" stroke-width="3.5"/>
-    <path d="${inner}" fill="none" stroke="${GOLD}" stroke-width="1" opacity=".65"/>
-    <path d="M500,970 L510,982 L500,994 L490,982 Z" fill="url(#gold)"/>
-    ${hexagramFigure(hex.lines, { x: 110, y: 1104, width: 118, bar: 13, gap: 11, fill: 'url(#gold)', stroke: '#5b4626' })}
-    ${text(169, 1272, `${hex.upper.name}上${hex.lower.name}下`, { size: 20, fill: GOLD, spacing: 3, opacity: 0.9 })}
-    ${text(cx, 1080, hex.fullName, { size: 26, fill: GOLD, spacing: 10, weight: 0.4 })}
-    ${text(cx, 1186, hex.name, { size: nameSize, fill: 'url(#goldText)', weight: 2.4, spacing: hex.name.length > 1 ? 6 : 0, filter: 'lift' })}
-    <path d="M395,1220 H492 M538,1220 H635" stroke="${GOLD}" stroke-width="1.2" opacity=".8"/>
-    <path d="M515,1212 L523,1220 L515,1228 L507,1220 Z" fill="url(#gold)"/>
-    ${text(cx, 1266, image, { size: 25, spacing: 3, opacity: 0.92, weight: 0.3 })}
-    ${moral ? text(cx, 1304, moral, { size: 23, spacing: 2, opacity: 0.78 }) : ''}
-    ${seal(846, 1166, hex.name)}
+    <path d="${inner}" fill="none" stroke="${GOLD}" stroke-width="1" opacity=".6"/>
+    ${studs(100, 120)}${studs(W - 100, 120)}
+    ${text(500, 132, hex.fullName, { size: 25, fill: GOLD, spacing: 12, weight: 0.4 })}
+    ${text(500, 166, classic.daxiang, { size: longLine ? 20 : 23, spacing: longLine ? 1 : 2, opacity: 0.9, weight: 0.2 })}
   </g>`
 }
 
-/** 大象分成「象」與「君子以…」兩行 */
-export function splitDaxiang(daxiang) {
-  const cut = daxiang.indexOf('。')
-  if (cut === -1 || cut === daxiang.length - 1) return [daxiang, '']
-  return [daxiang.slice(0, cut + 1), daxiang.slice(cut + 1)]
+function bottomBand(hex) {
+  const b = ART.bottom
+  const outer = `M68,${b} H470 L500,${b - 20} L530,${b} H932 V1328 Q932,1336 924,1336 H76 Q68,1336 68,1328 Z`
+  const inner = `M78,${b + 10} H474 L500,${b - 7} L526,${b + 10} H922 V1326 H78 Z`
+  const two = hex.name.length > 1
+  const cy = (b + 1336) / 2
+  return `<g>
+    <path d="${outer}" fill="url(#plaque)" stroke="url(#gold)" stroke-width="3.5"/>
+    <path d="${inner}" fill="none" stroke="${GOLD}" stroke-width="1" opacity=".6"/>
+    <path d="M500,${b - 32} L509,${b - 22} L500,${b - 12} L491,${b - 22} Z" fill="url(#gold)"/>
+    ${hexagramFigure(hex.lines, { x: 104, y: cy - 50, width: 96, bar: 10, gap: 8, fill: 'url(#gold)', stroke: '#5b4626' })}
+    <path d="M232,${cy} H${two ? 404 : 432} M${two ? 596 : 568},${cy} H768" stroke="${GOLD}" stroke-width="1.2" opacity=".75"/>
+    <circle cx="232" cy="${cy}" r="3" fill="url(#gold)"/><circle cx="768" cy="${cy}" r="3" fill="url(#gold)"/>
+    ${text(500, cy + (two ? 25 : 30), hex.name, { size: two ? 70 : 84, fill: 'url(#goldText)', weight: 2.2, spacing: two ? 6 : 0, filter: 'lift' })}
+    ${seal(850, cy, hex.name)}
+  </g>`
 }
 
 const DEFS = `
@@ -166,9 +179,10 @@ ${enamelBand(hex.upper, hex.lower)}
 <rect x="58" y="58" width="${W - 116}" height="${H - 116}" rx="8" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity=".75"/>
 ${corner(38, 38, hex.upper.color)}${corner(W - 38, 38, hex.upper.color)}
 ${corner(38, H - 38, hex.lower.color)}${corner(W - 38, H - 38, hex.lower.color)}
-${medallion(46, 380, hex.upper.color, hex.upper.name)}${medallion(W - 46, 380, hex.upper.color, hex.upper.image)}
-${medallion(46, 860, hex.lower.color, hex.lower.name)}${medallion(W - 46, 860, hex.lower.color, hex.lower.image)}
+${medallion(46, (ART.top + SPLIT) / 2, hex.upper.color, hex.upper.name)}${medallion(W - 46, (ART.top + SPLIT) / 2, hex.upper.color, hex.upper.image)}
+${medallion(46, (SPLIT + ART.bottom) / 2, hex.lower.color, hex.lower.name)}${medallion(W - 46, (SPLIT + ART.bottom) / 2, hex.lower.color, hex.lower.image)}
+${topBand(hex, classic)}
+${bottomBand(hex)}
 ${cartouche(hex.number)}
-${titlePlaque(hex, classic)}
 </svg>`
 }
