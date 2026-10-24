@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-24（Stage 2 完成）
+**最後更新**：2026-10-24（Stage 3 完成）
 
 **位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main`，程式最新 `e9e7045`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
 
-**下一步**：Stage 0 至 2 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 3（占卜紀錄與備份）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
+**下一步**：Stage 0 至 3 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 4（450 條白話）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
 ### 需求狀態
 - [x] 六十四卦資料：原文解析成 `src/data/classic.json`，結構由六爻推算（`hexagrams.ts`：上下卦、錯綜互、京房八宮、先天序、消息卦），序卦雜卦在 `xugua.ts`
@@ -30,7 +30,7 @@
 - [x] Stage 0：本機保存層（16 張資料表）、`routes.ts` 與 102 個路徑頁、首屏體積檢查、只在正式建置注入的 CSP、平面卡圖、測試設定、`AGENTS.md` 與 `CLAUDE.md`
 - [x] Stage 1：占卜流程（三錢、手動、大衍一鍵完成）、草稿接續、重複提問提醒、保存失敗下載單筆結果、備份格式與 readings 驗證；導覽打開「占卜」
 - [x] Stage 2：親手分蓍（點選、拖曳、鍵盤；每變寫入草稿，中斷可從同一變接續）
-- [ ] Stage 3：占卜紀錄與事後回顧、匯出匯入
+- [x] Stage 3：我的頁（紀錄列表與詳情、搜尋篩選、游標分頁、筆記與事後回顧、星號、刪除 5 秒復原與 10 秒清除）、完整匯出（40 MB 分卷）與匯入（預覽、合併、取代、單一交易）、持久保存申請、30 天備份提醒、診斷資訊、清除全部資料；導覽打開「我的」
 - [ ] Stage 4：450 條白話（384 爻、用九用六、64 條卦辭），沿用三方撰稿流程
 - [ ] Stage 5 至 8：今日一卦與行事曆提醒、學堂（8 站 24 課、14 種題型、看圖猜卦練習）、溫故與印譜與學習地圖、收藏冊
 - [ ] Stage 9 至 11：離線版、整合與邊界測試、文件與交付
@@ -57,6 +57,7 @@
 - Stage 0（2026-10-24）：`npm test` 59 項、`npm run typecheck`、`npm run build`、`npm run check:size`（126.1 KB）全過；preview 以 Playwright 在 375 與 1280 寬實測 11 個路徑（含 404）皆 200、標題正確、只有「卦殿」導覽、無橫向捲動、無 CSP 違規；停用 WebGL 時卡牌頁顯示 5:7 平面卡圖，翻面改顯示錯卦圖並換頁；另一分頁把資料庫升到 v20 時顯示「網站已在另一個分頁更新」，重新整理後顯示「網站已更新，請重新整理頁面」且資料庫維持 v20；開發模式無 CSP、熱更新不整頁重載、`?seed=demo` 寫入示範資料。
 - Stage 1（2026-10-24）：`npm test` 96 項（三錢與大衍各 200,000 爻、yarrowChange 邊界與窮舉、buildReading 4,096 組獨立規則比對、completeCast 冪等、rev 衝突、草稿佇列、備份驗證）；check:size 首屏 127.1 KB、占卜頁 104.4 KB（上限 120）；Playwright 375／1280 實測三錢、手動、大衍一鍵，第 3 爻重新整理後接續、1 秒內已存入紀錄、筆記自動保存、重複提問提醒、多一字不觸發、放棄確認、草稿寫入失敗提示、保存失敗進入 blocked 並下載單筆檔（通過驗證器）、重試保存成功、無橫向捲動。
 - Stage 2（2026-10-24）：yarrowHand 測試（固定分法 18 變與手算一致、分到零根拋錯、第 7 變中斷重開後接續）；Playwright 桌機滑鼠與 iPhone 觸控加減少動態效果各完成 18 步，邊緣點選夾到 1 根並提示，左右鍵與 Enter 可分開，無橫向捲動。
+- Stage 3（2026-10-24）：`npm test` 115 項（紀錄軟刪除與清除、篩選後分頁、同毫秒紀錄、備份往返含約 20 MB、1 MB 分卷與缺卷、取代保留草稿、部分備份不能取代、惡意檔案、整批回滾、XP 依鍵去重）；Playwright 375／1280：61 筆紀錄捲動載入、搜尋與星號篩選、詳情修改問題與星號、筆記與回顧自動保存、刪除後復原、10 秒後清除、匯出後在全新的瀏覽器空間合併與取代匯入、單筆檔停用取代、非備份檔提示、兩分頁同時寫筆記其一收到衝突提示、清除全部資料、隱私模式改用記憶體仍可占卜；占卜頁程式包 113.4 KB。只有 Chromium，沒有實際在 Firefox 匯入。
 - 未驗證：手機陀螺儀實機、iOS Safari、低階手機效能。
 
 ### 關鍵技術決策（當前有效）
@@ -102,6 +103,9 @@
 - **Dexie 的 liveQuery 在全域沒有 indexedDB 時不查詢**：node 測試與完全沒有 IndexedDB 的瀏覽器都會遇到，記憶體模式要補 `Dexie.dependencies`（`src/storage/memory.ts`）
 - **GitHub Pages 的 `<路徑>/index.html` 會先 301 到結尾斜線**：直接 200 要用 `<路徑>.html`（2026-10-24 以正式站實測）
 - **這個雲端環境預設 Node 22**：先 `export PATH=/opt/nvm/versions/node/v24.22.1/bin:$PATH`（`nvm install 24` 已裝）；Playwright 用 `/opt/node-tools/node_modules/playwright`
+- **liveQuery 的查詢函式裡不要先 await 非 Dexie 的 promise**：會失去追蹤，訂閱不再更新；畫面用 `useDb()` 拿到 db 後直接查詢（例：`queryList(db, …)`、`needsBackupReminder(db)`）
+- **筆記保存要帶開始編輯時的 rev**：即時訂閱會把 rev 更新成最新，若用最新 rev 保存會默默蓋掉另一個分頁的內容（`NoteEditor` 的 `version`）
+- **預設設定以 1970 年的時間戳寫入**：用現在時間會讓新裝置的預設值在合併匯入時蓋過舊裝置的真實設定
 - **ts-fsrs 的 `get_retrievability` 預設回傳文字**：要數值必須傳第三個參數 `false`（詳見 HISTORY `[2026-10-24 20:21]`）
 
 ---

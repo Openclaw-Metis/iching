@@ -2,9 +2,15 @@
 // 可以由其他欄位重算的值（占卜紀錄的本卦、之卦、變爻）以重算值為準並計入「已修正」。
 // 所有物件都經 sanitize 重建：丟棄 __proto__、constructor、prototype 等鍵，巢狀超過 8 層即拒絕。
 
+import { LESSON_IDS, parseLessonId } from '../../data/stations.ts'
 import { hexagramsOf, isLineValue, type LineValue } from '../../lib/castLines.ts'
+import { isDateKey } from '../../lib/dates.ts'
 import { AppError } from '../../lib/errors.ts'
-import { SCHEMA_VERSION, type Category, type ExportedTable, type Method, type Reading } from '../../storage/index.ts'
+import {
+  SCHEMA_VERSION, type Category, type CheckIn, type DailyDraw, type ExamResult, type ExportedTable, type Facet, type Favorite,
+  type FsrsCardData, type LessonProgress, type Mastery, type Method, type Quote, type QuoteKind, type Reading, type ReviewCard,
+  type ReviewLog, type Seal, type SealId, type Setting, type XpEvent, type XpSource,
+} from '../../storage/index.ts'
 import { BACKUP_APP, BACKUP_FORMAT, type BackupFile, type BackupScope } from './format.ts'
 
 export const MAX_FILE_BYTES = 50 * 1024 * 1024
@@ -122,9 +128,179 @@ export function validateReading(raw: Json): RecordCheck<Reading> {
   }
 }
 
-/** 各資料表的逐筆驗證；Stage 3 補齊其餘資料表 */
-export const RECORD_VALIDATORS: Partial<Record<ExportedTable, (raw: Json) => RecordCheck<unknown>>> = {
+const isHexagram = (v: unknown): v is number => isInt(v, 1, 64)
+const isStr = (v: unknown, max = 200): v is string => typeof v === 'string' && v.length > 0 && len(v) <= max
+const FACETS: Facet[] = ['glyph', 'image']
+const ok = <T>(value: T, corrected = false): RecordCheck<T> => ({ value, corrected })
+
+export function validateDailyDraw(raw: Json): RecordCheck<DailyDraw> {
+  if (!isObject(raw)) return invalid
+  const { date, hexagram, drawnAt, note, updatedAt, rev } = raw
+  const drawn = isoDate(drawnAt), updated = isoDate(updatedAt)
+  if (!isDateKey(date) || !isHexagram(hexagram) || !drawn || !updated || typeof note !== 'string' || len(note) > 500) return invalid
+  return ok({ date, hexagram, drawnAt: drawn, note, updatedAt: updated, rev: isInt(rev, 1) ? rev : 1 })
+}
+
+export function validateFavorite(raw: Json): RecordCheck<Favorite> {
+  if (!isObject(raw)) return invalid
+  const added = isoDate(raw.addedAt)
+  if (!isHexagram(raw.hexagram) || !added) return invalid
+  return ok({ hexagram: raw.hexagram, addedAt: added })
+}
+
+const QUOTE_KINDS: QuoteKind[] = ['judgment', 'daxiang', 'line', 'useAll']
+
+/** 金句 id 為「卦序:種類[:爻位]」；只有 line 帶 0 到 5 的爻位，useAll 只限乾坤 */
+export function quoteId(hexagram: number, kind: QuoteKind, position?: number) {
+  return kind === 'line' ? `${hexagram}:line:${position}` : `${hexagram}:${kind}`
+}
+
+export function validateQuote(raw: Json): RecordCheck<Quote> {
+  if (!isObject(raw)) return invalid
+  const { id, hexagram, kind, position } = raw
+  const added = isoDate(raw.addedAt)
+  if (!isHexagram(hexagram) || !QUOTE_KINDS.includes(kind as QuoteKind) || !added) return invalid
+  if (kind === 'line' ? !isInt(position, 0, 5) : position !== undefined && position !== null) return invalid
+  if (kind === 'useAll' && hexagram > 2) return invalid
+  if (id !== quoteId(hexagram, kind as QuoteKind, position as number)) return invalid
+  return ok({ id, hexagram, kind: kind as QuoteKind, ...(kind === 'line' ? { position: position as number } : {}), addedAt: added })
+}
+
+const PROGRESS = ['available', 'in-progress', 'completed'] as const
+
+export function validateLessonProgress(raw: Json): RecordCheck<LessonProgress> {
+  if (!isObject(raw)) return invalid
+  const { lessonId, stationId, status, step, correct, total, completedAt } = raw
+  const lesson = typeof lessonId === 'string' ? parseLessonId(lessonId) : null
+  const updated = isoDate(raw.updatedAt)
+  if (!lesson || !LESSON_IDS.includes(lessonId as string) || stationId !== lesson.station.id) return invalid
+  if (!PROGRESS.includes(status as (typeof PROGRESS)[number]) || !isInt(step, 0) || !isInt(correct, 0) || !isInt(total, 0) || !updated) return invalid
+  const completed = completedAt === null || completedAt === undefined ? null : isoDate(completedAt)
+  if (completedAt !== null && completedAt !== undefined && !completed) return invalid
+  return ok({ lessonId: lessonId as string, stationId: lesson.station.id, status: status as LessonProgress['status'], step, correct, total, completedAt: completed, updatedAt: updated })
+}
+
+export function validateExamResult(raw: Json): RecordCheck<ExamResult> {
+  if (!isObject(raw)) return invalid
+  const { id, attemptId, stationId, score, passed } = raw
+  const at = isoDate(raw.at)
+  if (!isStr(id, 100) || !isStr(attemptId, 100) || !isInt(stationId, 1, 8) || !isInt(score, 0, 10) || typeof passed !== 'boolean' || !at) return invalid
+  return ok({ id, attemptId, stationId, score, passed, at })
+}
+
+const nonNegative = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0
+
+function validateFsrs(raw: Json): FsrsCardData | null {
+  if (!isObject(raw)) return null
+  const { stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state } = raw
+  const due = isoDate(raw.due)
+  if (!due || !isInt(state, 0, 3) || !nonNegative(stability) || !nonNegative(difficulty)) return null
+  if (state === 0 ? stability !== 0 || difficulty !== 0 : difficulty < 1 || difficulty > 10) return null
+  if (!isInt(reps, 0) || !isInt(lapses, 0) || !isInt(learning_steps, 0) || !nonNegative(elapsed_days) || !nonNegative(scheduled_days)) return null
+  let lastReview: string | undefined
+  if (raw.last_review !== undefined && raw.last_review !== null) {
+    lastReview = isoDate(raw.last_review) ?? undefined
+    if (!lastReview || lastReview > due) return null
+  }
+  return { due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state: state as FsrsCardData['state'], ...(lastReview ? { last_review: lastReview } : {}) }
+}
+
+export function validateReviewCard(raw: Json): RecordCheck<ReviewCard> {
+  if (!isObject(raw)) return invalid
+  const { id, hexagram, facet } = raw
+  const fsrs = validateFsrs(raw.fsrs)
+  const added = isoDate(raw.addedAt), updated = isoDate(raw.updatedAt)
+  if (!isHexagram(hexagram) || !FACETS.includes(facet as Facet) || id !== `${hexagram}:${facet}` || !fsrs || !added || !updated) return invalid
+  let removed: string | null = null
+  if (raw.removedAt !== null && raw.removedAt !== undefined) {
+    removed = isoDate(raw.removedAt)
+    if (!removed) return invalid
+  }
+  // 索引欄位 due 一律由 fsrs.due 重建
+  return ok({ id, hexagram, facet: facet as Facet, fsrs, due: fsrs.due, addedAt: added, updatedAt: updated, removedAt: removed }, raw.due !== fsrs.due)
+}
+
+export function validateReviewLog(raw: Json): RecordCheck<ReviewLog> {
+  if (!isObject(raw)) return invalid
+  const { id, cardId, sessionId, rating, elapsedMs } = raw
+  const reviewed = isoDate(raw.reviewedAt)
+  if (!isStr(id, 100) || typeof cardId !== 'string' || !/^([1-9]|[1-5]\d|6[0-4]):(glyph|image)$/.test(cardId)) return invalid
+  if (!isStr(sessionId, 100) || !isInt(rating, 1, 4) || !reviewed || !nonNegative(elapsedMs)) return invalid
+  return ok({ id, cardId, sessionId, rating: rating as ReviewLog['rating'], reviewedAt: reviewed, elapsedMs })
+}
+
+export function validateMastery(raw: Json): RecordCheck<Mastery> {
+  if (!isObject(raw)) return invalid
+  const { id, hexagram, facet } = raw
+  const first = isoDate(raw.firstCorrectAt)
+  if (!isHexagram(hexagram) || !FACETS.includes(facet as Facet) || id !== `${hexagram}:${facet}` || !first) return invalid
+  return ok({ id, hexagram, facet: facet as Facet, firstCorrectAt: first })
+}
+
+/** 各來源的 XP 與業務鍵格式（規格「學堂內容設計：XP 與每日目標」） */
+export const XP_RULES: Record<XpSource, { amount: number; key: RegExp }> = {
+  answer: { amount: 2, key: /^answer:[^:]+:\d+$/ },
+  lesson: { amount: 10, key: /^lesson:S[1-8]-L[1-3]$/ },
+  exam: { amount: 30, key: /^exam:[1-8]$/ },
+  review: { amount: 10, key: /^review:[^:]+$/ },
+  daily: { amount: 5, key: /^daily:\d{4}-\d{2}-\d{2}$/ },
+  divine: { amount: 5, key: /^divine:\d{4}-\d{2}-\d{2}$/ },
+}
+
+export function validateXpEvent(raw: Json): RecordCheck<XpEvent> {
+  if (!isObject(raw)) return invalid
+  const { id, key, date, amount, source, ref } = raw
+  const at = isoDate(raw.at)
+  const rule = typeof source === 'string' ? XP_RULES[source as XpSource] : undefined
+  if (!isStr(id, 100) || typeof key !== 'string' || !rule || !rule.key.test(key) || amount !== rule.amount || !at || !isDateKey(date)) return invalid
+  if ((source === 'daily' || source === 'divine') && !isDateKey(key.split(':')[1])) return invalid
+  return ok({ id, key, at, date, amount, source: source as XpSource, ref: typeof ref === 'string' ? ref : '' })
+}
+
+const GOALS = [20, 30, 50]
+
+export function validateCheckIn(raw: Json): RecordCheck<CheckIn> {
+  if (!isObject(raw)) return invalid
+  const reached = isoDate(raw.reachedAt)
+  if (!isDateKey(raw.date) || !GOALS.includes(raw.goal as number) || !reached) return invalid
+  return ok({ date: raw.date, goal: raw.goal as number, reachedAt: reached })
+}
+
+export const SEAL_IDS: SealId[] = ['first', 'qian', 'dui', 'li', 'zhen', 'xun', 'kan', 'gen', 'kun', 'seven', 'thirty', 'all64', 'review10', 'yarrow', 'journal10']
+
+export function validateSeal(raw: Json): RecordCheck<Seal> {
+  if (!isObject(raw)) return invalid
+  const earned = isoDate(raw.earnedAt)
+  if (!SEAL_IDS.includes(raw.id as SealId) || !earned) return invalid
+  return ok({ id: raw.id as SealId, earnedAt: earned })
+}
+
+/** 只接受會匯出的兩個設定鍵 */
+export function validateSetting(raw: Json): RecordCheck<Setting> {
+  if (!isObject(raw)) return invalid
+  const { key, value } = raw
+  const updated = isoDate(raw.updatedAt)
+  if (!updated) return invalid
+  if (key === 'dailyGoal' && GOALS.includes(value as number)) return ok({ key, value, updatedAt: updated })
+  if (key === 'reminderTime' && typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return ok({ key, value, updatedAt: updated })
+  return invalid
+}
+
+/** 各資料表的逐筆驗證 */
+export const RECORD_VALIDATORS: Record<ExportedTable, (raw: Json) => RecordCheck<unknown>> = {
   readings: validateReading,
+  dailyDraws: validateDailyDraw,
+  favorites: validateFavorite,
+  quotes: validateQuote,
+  lessonProgress: validateLessonProgress,
+  examResults: validateExamResult,
+  reviewCards: validateReviewCard,
+  reviewLogs: validateReviewLog,
+  mastery: validateMastery,
+  xpEvents: validateXpEvent,
+  checkIns: validateCheckIn,
+  seals: validateSeal,
+  settings: validateSetting,
 }
 
 export interface TableCheck {
@@ -133,8 +309,8 @@ export interface TableCheck {
   invalid: number
 }
 
-export function validateTables(data: BackupEnvelope['data']): Partial<Record<ExportedTable, TableCheck>> {
-  const out: Partial<Record<ExportedTable, TableCheck>> = {}
+export function validateTables(data: BackupEnvelope['data']): Record<ExportedTable, TableCheck> {
+  const out = {} as Record<ExportedTable, TableCheck>
   for (const [table, validator] of Object.entries(RECORD_VALIDATORS) as [ExportedTable, (raw: Json) => RecordCheck<unknown>][]) {
     const rows = data[table]
     const check: TableCheck = { valid: [], corrected: 0, invalid: 0 }

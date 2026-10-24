@@ -16,7 +16,7 @@ const PAGES: Record<PageId, ComponentType> = {
   today: placeholder,
   divine: lazy(() => import('./pages/Divine.tsx').then(m => ({ default: m.Divine }))),
   academy: placeholder,
-  me: placeholder,
+  me: lazy(() => import('./pages/Me.tsx').then(m => ({ default: m.Me }))),
   lesson: placeholder,
   exam: placeholder,
   review: placeholder,

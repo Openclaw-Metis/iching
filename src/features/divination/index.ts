@@ -1,4 +1,5 @@
 export { DivineFlow } from './DivineFlow.tsx'
+export { ReadingView, type ReadingViewProps } from './ResultStep.tsx'
 export { buildReading, type BuiltReading } from './buildReading.ts'
 export { castCoinLine, type CoinLine } from './coins.ts'
 export { manualLine } from './manual.ts'

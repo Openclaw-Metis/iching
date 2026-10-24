@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { ERROR_MESSAGES } from '../lib/errors.ts'
 import type { StorageMode } from '../storage/open.ts'
+import { afterFirstPaint } from './idle.ts'
 
 type Mode = StorageMode | 'opening'
 
@@ -13,16 +14,6 @@ const MESSAGES: Partial<Record<Mode, string>> = {
   'upgrade-failed': ERROR_MESSAGES.STORAGE_UPGRADE_FAILED,
   blocked: ERROR_MESSAGES.STORAGE_BLOCKED,
   stale: ERROR_MESSAGES.STORAGE_STALE_TAB,
-}
-
-/** 首屏畫完、瀏覽器有空時才開始；沒有 requestIdleCallback 的瀏覽器（Safari）稍等一下 */
-function afterFirstPaint(run: () => void): () => void {
-  if ('requestIdleCallback' in window) {
-    const id = window.requestIdleCallback(run, { timeout: 2000 })
-    return () => window.cancelIdleCallback(id)
-  }
-  const id = setTimeout(run, 300)
-  return () => clearTimeout(id)
 }
 
 export function StorageBanner() {

@@ -29,3 +29,14 @@ export function addDays(key: string, days: number): string {
   const t = new Date((dayNumber(key) + days) * 86_400_000)
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`
 }
+
+/** 畫面上的日期時間：2026/10/24 13:05（本地時間） */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
+}

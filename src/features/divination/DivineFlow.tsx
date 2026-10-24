@@ -11,7 +11,7 @@ import type { LineValue } from '../../lib/castLines.ts'
 import { isAppError } from '../../lib/errors.ts'
 import { track } from '../../lib/events.ts'
 import {
-  draft as draftRepo, logError, readings as readingsRepo, useDb, useLiveQuery, useStorageMode,
+  draft as draftRepo, logError, maintenance, readings as readingsRepo, useDb, useLiveQuery, useStorageMode,
   type CastDraft, type Reading,
 } from '../../storage/index.ts'
 import { downloadFile, partialBackup, readingFileName } from '../backup/index.ts'
@@ -93,6 +93,8 @@ export function DivineFlow() {
       await queue.reset(null)
       track('divine_saved', { readingId: reading.id })
       showResult(reading)
+      // 第一次成功保存紀錄後申請持久保存，降低瀏覽器自動清除資料的機會
+      void maintenance.requestPersist().catch(() => {})
     } catch (e) {
       track('divine_save_failed', { errorCode: errorCode(e) })
       logError(isAppError(e) ? e.code : 'STORAGE_QUOTA', String((e as Error)?.message ?? e))
@@ -279,11 +281,13 @@ export function DivineFlow() {
     if (live && view.kind === 'result' && live.id === view.reading.id && live.rev > view.reading.rev) setView({ kind: 'result', reading: live })
   }, [live, view])
 
-  const saveNote = async (text: string) => {
+  const saveNote = async (text: string, rev?: number) => {
     if (view.kind !== 'result') return
     const { reading } = view
     try {
-      showResult(await readingsRepo.update(reading.id, { note: text }, reading.rev))
+      const next = await readingsRepo.update(reading.id, { note: text }, rev ?? reading.rev)
+      showResult(next)
+      return next.rev
     } catch (e) {
       if (isAppError(e, 'WRITE_CONFLICT')) {
         const latest = await readingsRepo.get(reading.id)

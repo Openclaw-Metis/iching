@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useRouteError } from 'react-router'
+import { afterFirstPaint } from './idle.ts'
 import { NAV_ITEMS } from './nav.ts'
 import { titleFor } from './routes.ts'
 import { StorageBanner } from './StorageBanner.tsx'
@@ -35,8 +36,14 @@ function useDocumentTitle() {
   useEffect(() => { document.title = titleFor(pathname) }, [pathname])
 }
 
+// 啟動時的背景工作在首屏顯示後才載入，保存層不進卦殿首屏
+function useStartupTasks() {
+  useEffect(() => afterFirstPaint(() => { void import('./startup.ts').then(m => m.runStartupTasks()) }), [])
+}
+
 export function Layout() {
   useDocumentTitle()
+  useStartupTasks()
   return (
     <>
       <Header />

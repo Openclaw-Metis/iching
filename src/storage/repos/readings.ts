@@ -4,7 +4,7 @@
 import { hexagramsOf } from '../../lib/castLines.ts'
 import { AppError, isQuotaError } from '../../lib/errors.ts'
 import { requireDb } from '../connection.ts'
-import type { CastDraft, Method, Reading } from '../db.ts'
+import type { CastDraft, Category, IchingDB, Method, Reading } from '../db.ts'
 
 export const READING_FORMAT = 1
 export const QUESTION_MIN = 2
@@ -102,4 +102,87 @@ export async function update(id: string, patch: ReadingPatch, expectedRev: numbe
     await db.readings.put(next)
     return next
   }).catch(rethrow)
+}
+
+/** 在同一個 readwrite 交易內比對 rev 後修改；不符時拋出 WRITE_CONFLICT */
+async function mutate(id: string, expectedRev: number, change: (current: Reading) => Partial<Reading>, now: Date): Promise<Reading> {
+  const db = await requireDb()
+  return db.transaction('rw', db.readings, async () => {
+    const current = await db.readings.get(id)
+    if (!current || current.rev !== expectedRev) throw new AppError('WRITE_CONFLICT')
+    const next: Reading = { ...current, ...change(current), rev: current.rev + 1, updatedAt: now.toISOString() }
+    await db.readings.put(next)
+    return next
+  }).catch(rethrow)
+}
+
+/** 軟刪除：列表隱藏，5 秒內可復原，10 秒後由 purgeDeleted 永久刪除 */
+export const softDelete = (id: string, expectedRev: number, now = new Date()) =>
+  mutate(id, expectedRev, () => ({ deletedAt: now.toISOString() }), now)
+
+export const restore = (id: string, expectedRev: number, now = new Date()) =>
+  mutate(id, expectedRev, () => ({ deletedAt: null }), now)
+
+export const PURGE_AFTER_MS = 10_000
+
+/** 永久刪除軟刪除超過 10 秒的紀錄；回傳刪除筆數 */
+export async function purgeDeleted(now = new Date()): Promise<number> {
+  const db = await requireDb()
+  const limit = now.getTime() - PURGE_AFTER_MS
+  return db.readings.filter(r => r.deletedAt !== null && Date.parse(r.deletedAt) <= limit).delete()
+}
+
+export interface ListFilters {
+  /** 問題、筆記、事後回顧的文字搜尋 */
+  query?: string
+  method?: Method
+  category?: Category
+  /** true 只看已回顧、false 只看未回顧 */
+  reviewed?: boolean
+  starred?: boolean
+  since?: string
+}
+
+export interface Cursor {
+  createdAt: string
+  id: string
+}
+
+export const PAGE_SIZE = 50
+
+function matches(r: Reading, f: ListFilters): boolean {
+  if (r.deletedAt) return false
+  if (f.method && r.method !== f.method) return false
+  if (f.category && r.category !== f.category) return false
+  if (f.reviewed !== undefined && (r.followUp !== null) !== f.reviewed) return false
+  if (f.starred && r.starred !== 1) return false
+  if (f.since && r.createdAt < f.since) return false
+  const q = f.query?.trim()
+  if (q && ![r.question, r.note, r.followUp?.text ?? ''].some(t => t.includes(q))) return false
+  return true
+}
+
+/**
+ * 依 [createdAt+id] 由新到舊，先排除已刪除並套用篩選，再取一頁。多讀一筆判斷還有沒有下一頁，
+ * 篩選後剛好整頁時才不會給出空的下一頁；同一毫秒建立的紀錄靠 id 排序，不會漏掉。
+ */
+export async function queryList(db: IchingDB, filters: ListFilters = {}, options: { limit?: number; before?: Cursor } = {}) {
+  const limit = options.limit ?? PAGE_SIZE
+  const range = options.before
+    ? db.readings.where('[createdAt+id]').below([options.before.createdAt, options.before.id])
+    : db.readings.orderBy('[createdAt+id]')
+  const rows = await range.reverse().filter(r => matches(r, filters)).limit(limit + 1).toArray()
+  const items = rows.slice(0, limit)
+  const last = items.at(-1)
+  return { items, next: rows.length > limit && last ? { createdAt: last.createdAt, id: last.id } : undefined }
+}
+
+export async function list(filters: ListFilters = {}, options: { limit?: number; before?: Cursor } = {}) {
+  return queryList(await requireDb(), filters, options)
+}
+
+/** 未刪除的紀錄數 */
+export async function countActive(): Promise<number> {
+  const db = await requireDb()
+  return db.readings.filter(r => !r.deletedAt).count()
 }

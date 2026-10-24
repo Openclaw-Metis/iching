@@ -32,12 +32,15 @@ export async function set<K extends SettingKey>(key: K, value: SettingValues[K],
   await db.settings.put({ key, value, updatedAt: now.toISOString() })
 }
 
+// 預設值的時間戳用最早的時間：合併備份時，使用者在任何裝置上真正設定過的值都比預設值新
+const DEFAULT_STAMP = new Date(0).toISOString()
+
 /** 首次使用時寫入預設值；已存在的鍵不動 */
-export async function ensureDefaults(now = new Date()) {
+export async function ensureDefaults() {
   const db = await requireDb()
   await db.transaction('rw', db.settings, async () => {
     for (const [key, value] of Object.entries(SETTING_DEFAULTS)) {
-      if (!(await db.settings.get(key))) await db.settings.add({ key, value, updatedAt: now.toISOString() })
+      if (!(await db.settings.get(key))) await db.settings.add({ key, value, updatedAt: DEFAULT_STAMP })
     }
   })
 }
