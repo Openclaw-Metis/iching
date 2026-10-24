@@ -2,3 +2,7 @@ node_modules/
 dist/
 # 每卦的 holo 工作資料夾由 npm run cards:build 重建；網站用的貼圖在 public/cards
 cards/holo/
+
+# 本機環境變數（範本在 .env.example）
+.env
+.env.local

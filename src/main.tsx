@@ -1,48 +1,37 @@
-import { StrictMode, Suspense, lazy } from 'react'
+import { StrictMode, lazy, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, NavLink, Outlet, RouterProvider, ScrollRestoration } from 'react-router'
+import { createBrowserRouter, RouterProvider } from 'react-router'
+import { Layout, RouteError } from './app/Layout.tsx'
+import { PATTERNS, type PageId } from './app/routes.ts'
 import { Hall } from './pages/Hall.tsx'
 import './styles/global.css'
 
-// 詳細頁帶 Three.js，分開載入，讓卦殿先出現
-const CardDetail = lazy(() => import('./pages/CardDetail.tsx').then(m => ({ default: m.CardDetail })))
+// 卦殿以外的頁面一律延遲載入，卦殿首屏才不會帶到 three、保存層與功能模組
+const placeholder = lazy(() => import('./app/ComingSoon.tsx').then(m => ({ default: m.ComingSoon })))
+const NotFound = lazy(() => import('./app/ComingSoon.tsx').then(m => ({ default: m.NotFound })))
 
-function Layout() {
-  return (
-    <>
-      <header className="site-header">
-        <NavLink to="/" className="brand" aria-label="易經卦殿首頁">
-          <svg viewBox="0 0 60 60" aria-hidden="true">
-            <g fill="var(--gold)">
-              <rect x="6" y="8" width="48" height="6" rx="1" />
-              <rect x="6" y="20" width="21" height="6" rx="1" /><rect x="33" y="20" width="21" height="6" rx="1" />
-              <rect x="6" y="32" width="48" height="6" rx="1" />
-              <rect x="6" y="44" width="21" height="6" rx="1" /><rect x="33" y="44" width="21" height="6" rx="1" />
-            </g>
-          </svg>
-          <strong>易經卦殿</strong>
-          <small>六十四卦卦牌</small>
-        </NavLink>
-        <nav className="site-nav" aria-label="主選單">
-          <NavLink to="/" end>卦殿</NavLink>
-        </nav>
-      </header>
-      <main>
-        <Suspense fallback={<p className="note" style={{ textAlign: 'center', marginTop: 48 }}>載入中…</p>}>
-          <Outlet />
-        </Suspense>
-      </main>
-      <ScrollRestoration />
-    </>
-  )
+const PAGES: Record<PageId, ComponentType> = {
+  hall: Hall,
+  card: lazy(() => import('./pages/CardDetail.tsx').then(m => ({ default: m.CardDetail }))),
+  today: placeholder,
+  divine: placeholder,
+  academy: placeholder,
+  me: placeholder,
+  lesson: placeholder,
+  exam: placeholder,
+  review: placeholder,
 }
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <RouteError />,
     children: [
-      { index: true, element: <Hall /> },
-      { path: 'gua/:number', element: <CardDetail /> },
+      ...(Object.entries(PATTERNS) as [PageId, string][]).map(([page, path]) => {
+        const Page = PAGES[page]
+        return path === '/' ? { index: true, element: <Page /> } : { path: path.slice(1), element: <Page /> }
+      }),
+      { path: '*', element: <NotFound /> },
     ],
   },
 ], { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' })
@@ -52,3 +41,6 @@ createRoot(document.getElementById('root')!).render(
     <RouterProvider router={router} />
   </StrictMode>,
 )
+
+// 開發用示範資料（網址帶 ?seed=demo）；正式建置時 import.meta.env.DEV 為 false，整段會被移除
+if (import.meta.env.DEV) void import('./storage/seed.ts').then(m => m.seedIfRequested())

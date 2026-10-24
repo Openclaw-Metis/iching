@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
-import classic from '../data/classic.json'
+import { textOf } from '../data/classic.ts'
 import { cuo, hexagram, hexagrams, hu, zong, type Hexagram, type PalaceGeneration } from '../data/hexagrams.ts'
 import { trigrams } from '../data/trigrams.ts'
 
@@ -24,7 +24,6 @@ export function Hall() {
   const [view, setView] = useState<View>('kingwen')
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<Hexagram | null>(null)
-  useEffect(() => { document.title = '易經卦殿｜六十四卦卦牌' }, [])
 
   const matches = useMemo(() => {
     const q = query.trim()
@@ -134,7 +133,7 @@ function Spotlight({ focus }: { focus: Hexagram | null }) {
       <HexagramGlyph lines={focus.lines} />
       <div>
         <h2>{focus.name}<small>{focus.fullName}・第{focus.number}卦</small></h2>
-        <p>{classic.hexagrams[focus.number - 1].judgment}</p>
+        <p>{textOf(focus.number).judgment}</p>
       </div>
       <div className="rels">錯 {c.name}<br />綜 {z === focus ? '（自身）' : z.name}<br />互 {x.name}</div>
     </aside>

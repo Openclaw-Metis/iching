@@ -1,12 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { missingQuotes, normalizeQuote } from '../lib/text.ts'
 import { content } from './content.ts'
 
 const source = readFileSync(new URL('../../易經_周易_原文.md', import.meta.url), 'utf8')
-// 比對引文時，句中標點一律視為同一個斷點：允許逗號、句號互換，但斷句位置須與原文一致，
-// 不能把「視履，考祥其旋」寫成「視履考祥」
-const normalize = (s: string) => s.replace(/[\s「」『』*]/g, '').replace(/[，。、；：？！]+/g, '|')
-const corpus = normalize(source)
+// 引文須照原文用字與斷句，比對規則見 src/lib/text.ts
+const corpus = normalizeQuote(source)
 const entries = Object.entries(content)
 const fields = (c: (typeof content)[string]) => [c.motto, c.meaning, c.summary, c.guidance.career, c.guidance.relations, c.guidance.decision]
 const len = (s: string) => [...s].length
@@ -32,11 +31,7 @@ describe('牌義內容', () => {
     const missing: string[] = []
     for (const [n, c] of entries) {
       for (const text of fields(c)) {
-        for (const [, quote] of text.matchAll(/「([^」]+)」/g)) {
-          for (const part of quote.split(/…+/).map(p => normalize(p).replace(/^\||\|$/g, '')).filter(Boolean)) {
-            if (!corpus.includes(part)) missing.push(`${n}：「${quote}」`)
-          }
-        }
+        for (const quote of missingQuotes(text, corpus)) missing.push(`${n}：「${quote}」`)
       }
     }
     expect(missing).toEqual([])

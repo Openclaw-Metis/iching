@@ -6,18 +6,31 @@
 
 ```bash
 npm install
-npm run dev        # http://localhost:5181
-npm test
-npm run build
+npm run dev          # http://localhost:5181（網址加 ?seed=demo 會寫入示範資料）
+npm test             # 單元與整合測試在 node（IndexedDB 用 fake-indexeddb），元件測試在 happy-dom
+npm run typecheck
+npm run build        # 型別檢查、建置、產生各路徑 HTML 與 404.html
+npm run check:size   # 卦殿首屏 JavaScript gzip ≤ 160 KB，且不含保存層與功能模組
+npm run preview      # 比照正式站（/iching/ 前綴、CSP）
 ```
 
-需要 Node 24 以上。
+需要 Node 24 以上。長期開發規則在 `CLAUDE.md`（與 `AGENTS.md` 相同），第二階段規格與分階段計畫在 `docs/spec.md`。
+
+### 程式結構
+
+- `src/app/routes.ts`：全站路徑的唯一定義（102 條），前端路由、建置時的各路徑 HTML 與部署後檢查共用。卦殿以外的頁面都延遲載入，尚未完成的頁面先顯示「即將推出」，導覽由 `src/app/nav.ts` 的旗標控制。
+- `src/storage`：使用者資料只存在瀏覽器的 IndexedDB（Dexie 管理 16 張資料表）。資料庫版本比程式新或升級失敗時停止寫入；只有 IndexedDB 不能用（隱私模式）時才改用記憶體資料庫。資料表版本只升不降，變動一律以新版號加升級函式處理。
+- `src/lib`：亂數（`crypto.getRandomValues` 加拒絕取樣）、本地日期、引文正規化、錯誤碼。
 
 ## 部署
 
 網站部署在 GitHub Pages：https://openclaw-metis.github.io/iching/
 
-推送到 `main` 時，`.github/workflows/deploy.yml` 會跑測試、建置並部署。正式版的路徑前綴是 `/iching/`（`vite.config.ts` 的 `base`），本機開發仍用根路徑；`npm run preview` 會比照正式版。Pages 不支援單頁應用的路由，建置時會把 `index.html` 複製成 `404.html`，直接打開 `/iching/gua/3` 這類網址也能載入。
+推送到 `main` 時，`.github/workflows/deploy.yml` 會跑測試、建置、首屏體積檢查並部署。正式版的路徑前綴是 `/iching/`（`vite.config.ts` 的 `base`），本機開發仍用根路徑；`npm run preview` 會比照正式版。
+
+- **各路徑 HTML**：建置後 `scripts/build/route-pages.mjs` 依 `routes.ts` 替每條路徑寫一份 `<路徑>.html`，帶入該頁標題與描述。GitHub Pages 對不帶副檔名的網址會直接回應同名 `.html`（200），若寫成 `<路徑>/index.html` 會先 301 轉到結尾斜線，所以只有同時是目錄的 `/academy` 另寫 `academy/index.html`。不在路徑表裡的網址落到 `404.html`，由前端顯示「找不到這一頁」。
+- **CSP**：只在正式建置時注入 `index.html`（開發模式的 React 熱更新會插入內嵌腳本）；除網站本身與 Google Fonts 外不允許其他來源。
+- **部署包瘦身**：已有插圖的卡用分層貼圖顯示，整張的 `face.webp` 不放進 `dist`。
 
 ## 資料
 

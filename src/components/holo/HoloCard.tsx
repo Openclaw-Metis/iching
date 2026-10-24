@@ -184,7 +184,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   observer.observe(stage)
   resize()
 
-  let raf = 0, last = performance.now(), elapsed = 0, readySent = false
+  let raf = 0, last = performance.now(), elapsed = 0, readySent = false, disposed = false
   function frame(now: number) {
     const dt = Math.min((now - last) / 1000, 0.1)
     last = now
@@ -247,6 +247,8 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
     setBack: faceLoader(backU, false),
     state,
     dispose() {
+      if (disposed) return
+      disposed = true
       cancelAnimationFrame(raf)
       observer.disconnect()
       stage.removeEventListener('pointermove', onMove)
@@ -263,17 +265,35 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   }
 }
 
+// WebGL 不能用或任一層貼圖載入失敗時，改顯示目前看得到的那一面的平面卡圖（仍維持 5:7）
+function flatImage(front: number, back: BackFace, flipped: boolean) {
+  if (!flipped) return cardAsset(front, 'thumb')
+  return back.kind === 'deck' ? deckBack : cardAsset(back.number, 'thumb')
+}
+
+const FLAT_NOTE = '這個瀏覽器無法顯示全息效果，改用平面卡圖。'
+
 export function HoloCard({ front, back, flipped, rolled, dived = false, onDoubleClick, label }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [flat, setFlat] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const e = createEngine(stageRef.current!, setError, () => setReady(true))
+    const e = createEngine(stageRef.current!, msg => {
+      console.warn(`[WEBGL_UNAVAILABLE] ${msg}`)
+      setFlat(true)
+    }, () => setReady(true))
     engine.current = e
     return () => { e?.dispose(); engine.current = null }
   }, [])
+
+  // 改用平面卡圖後就釋放 WebGL 資源，之後的換牌只換圖片
+  useEffect(() => {
+    if (!flat) return
+    engine.current?.dispose()
+    engine.current = null
+  }, [flat])
 
   useEffect(() => { engine.current?.setFront({ kind: 'card', number: front }) }, [front])
   // back 每次 render 都是新物件，以內容當依賴，避免重複載入
@@ -288,9 +308,23 @@ export function HoloCard({ front, back, flipped, rolled, dived = false, onDouble
   }, [flipped, rolled, dived, onDoubleClick])
 
   return (
-    <div className="holo-stage" ref={stageRef} role="img" aria-label={label}>
-      {!ready && !error && <div className="holo-status">展開卦牌中…</div>}
-      {error && <div className="holo-status" role="alert">{error}</div>}
+    <div className="holo-stage" ref={stageRef} role="img" aria-label={label} data-flat={flat || undefined}>
+      {flat && (
+        <>
+          <img
+            className="holo-flat"
+            src={flatImage(front, back, flipped)}
+            alt=""
+            width={400}
+            height={560}
+            data-rolled={rolled || undefined}
+            data-dived={dived || undefined}
+            onDoubleClick={onDoubleClick}
+          />
+          <p className="holo-flat-note">{FLAT_NOTE}</p>
+        </>
+      )}
+      {!ready && !flat && <div className="holo-status">展開卦牌中…</div>}
     </div>
   )
 }

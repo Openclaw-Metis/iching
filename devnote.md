@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-24 20:21
+**最後更新**：2026-10-24（Stage 0 完成）
 
 **位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main`，程式最新 `e9e7045`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
 
-**下一步**：依 `docs/spec.md` 的「Codex / Claude Code 分階段開發計畫」從 Stage 0 開始實作；規格是之後開發的依據，和規格不同的決定先改規格再實作。
+**下一步**：Stage 0 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 1（占卜流程）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
 ### 需求狀態
 - [x] 六十四卦資料：原文解析成 `src/data/classic.json`，結構由六爻推算（`hexagrams.ts`：上下卦、錯綜互、京房八宮、先天序、消息卦），序卦雜卦在 `xugua.ts`
@@ -27,7 +27,7 @@
 - [x] 重繪、翻面、牌義與卦殿說明已分四個 commit 推送並部署（`db575bf`、`7c7d1c4`、`9e47a97`、`518e836`），`devnote.md` 隨後也進版控（`a474a60`）
 - [x] 移除「回到卦殿」（`eea7702`）與互卦按鈕（`e9e7045`）已推送
 - [x] 第二階段規格 `docs/spec.md`：技術規格、白話規格、12 個階段的 Codex 與 Claude Code 指令；經 Codex 與 agy 兩輪檢視修訂（`docs/spec-review.md`，原始意見 `docs/review/spec-round1.json`、`spec-round2.json`）
-- [ ] Stage 0：本機保存層（16 張資料表）、`routes.ts` 與 102 個路徑頁、首屏體積檢查、只在正式建置注入的 CSP、平面卡圖、測試設定、`AGENTS.md` 與 `CLAUDE.md`
+- [x] Stage 0：本機保存層（16 張資料表）、`routes.ts` 與 102 個路徑頁、首屏體積檢查、只在正式建置注入的 CSP、平面卡圖、測試設定、`AGENTS.md` 與 `CLAUDE.md`
 - [ ] Stage 1 至 3：占卜（三錢、手動、大衍一鍵完成與親手分蓍）、占卜紀錄與事後回顧、匯出匯入
 - [ ] Stage 4：450 條白話（384 爻、用九用六、64 條卦辭），沿用三方撰稿流程
 - [ ] Stage 5 至 8：今日一卦與行事曆提醒、學堂（8 站 24 課、14 種題型、看圖猜卦練習）、溫故與印譜與學習地圖、收藏冊
@@ -39,9 +39,8 @@
 - 人物背後的金色圓光已改成敦煌式頭光，沒有移除；使用者若仍覺得偏西方，可整批去掉。
 - `易經_周易_原文.md` 的標點校勘出自第三方整理本（使用者要求移除來源標註），公開散布的著作權風險由使用者斟酌。
 - 倉庫約 312 MiB，大半是 `art/raw` 原圖；是否改成只提交網站貼圖未決。
-- 已有插圖的卡仍輸出 `face.webp`（網站只在無插圖時用），約 20 MB 白白進入部署包；規格 Stage 0 會在部署時排除，尚未實作。
-- 卦殿首屏 JS gzip 約 126 KB（未壓縮約 396 KB，卦殿引入了整份 `classic.json`），詳細頁 gzip 約 224 KB（three）；規格訂首屏上限 160 KB，保存層與功能模組不得進首屏。
-- 正式站深層連結靠 `404.html` 備援，HTTP 狀態碼是 404，對搜尋引擎不利；規格 Stage 0 的 route-pages 會替 102 個路徑各產生一份 `index.html`，尚未實作。
+- 卦殿首屏 JS gzip 126.1 KB（上限 160 KB，`npm run check:size` 在 CI 把關），詳細頁 gzip 約 225 KB（three）。
+- 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），尚未在正式站驗證 102 條全是 200，要等合併到 `main` 部署後跑 check-routes（Stage 10）。
 - 規格中由 Claude 自行採用、使用者還沒表態的預設：每日一卦每人當天固定、大衍筮法提供親手分蓍與一鍵完成、不做 AI 解卦、保留 Google Fonts（網站唯一的外部請求）。
 - 睽卦（38）重生後兩女並坐、沒有明確背對，可接受但不完全貼合畫面設計。
 - 牌義的「不斷定現況、不保證結果」是依 Codex 複審逐條修的，沒有被點到的卦可能還留有「自然就會」「就能」這類語氣，尚未全面掃過。
@@ -53,6 +52,7 @@
 - 瀏覽器實測：卦殿四種排列與說明切換（375、507、1280px 按鈕不跳動、無橫向捲動）、詳細頁全息卡、倒轉／翻面直接換頁（乾翻面進坤）、爻變、牌義分頁（坎、謙）；正式站（`518e836`）抽查否卦重繪貼圖與本機雜湊一致、牌義分頁、翻面進錯卦、卦殿說明切換。
 - 本機實測（互卦與移除回到卦殿）：屯取中進剝、既濟取中進未濟，乾只有兩顆按鈕；湊近時卡牌不超出畫布；375px 三顆按鈕並排、無橫向捲動；主控台無錯誤。
 - 規格 `docs/spec.md`（2026-10-24 20:21）：程式碼區塊配對、24 份階段指令各含 9 個必要欄位、Claude Code 版不依賴 Codex 版、無破折號、3 張 SVG 可解析、白話版以 spec-organizer 的 `check_plain_language.py` 檢查 PASS；本次沒有改程式，未重跑 `npm test`。
+- Stage 0（2026-10-24）：`npm test` 59 項、`npm run typecheck`、`npm run build`、`npm run check:size`（126.1 KB）全過；preview 以 Playwright 在 375 與 1280 寬實測 11 個路徑（含 404）皆 200、標題正確、只有「卦殿」導覽、無橫向捲動、無 CSP 違規；停用 WebGL 時卡牌頁顯示 5:7 平面卡圖，翻面改顯示錯卦圖並換頁；另一分頁把資料庫升到 v20 時顯示「網站已在另一個分頁更新」，重新整理後顯示「網站已更新，請重新整理頁面」且資料庫維持 v20；開發模式無 CSP、熱更新不整頁重載、`?seed=demo` 寫入示範資料。
 - 未驗證：手機陀螺儀實機、iOS Safari、低階手機效能。
 
 ### 關鍵技術決策（當前有效）
@@ -94,6 +94,10 @@
 - **Windows 檔名不分大小寫**：`DEVNOTE.md` 與 `devnote.md` 是同一個檔（詳見 HISTORY `[2026-10-24 12:11]`）
 - **長內容不要塞進 Bash heredoc**：大段提示詞或規格用 Write 工具寫成檔案再引用，heredoc 曾因長度（ENAMETOOLONG）與引號解析失敗，指令根本沒執行；`node -e '...'` 內的 `\\` 也會被收成一個反斜線，含跳脫字元的腳本一律寫成檔案再跑（詳見 HISTORY `[2026-10-24 20:21]`）
 - **Git Bash 的 grep 對中文字元類別會誤判**：`grep -c "[破折號字元]"` 以位元組比對，數字不可信；檢查破折號改用 node 以 Unicode 碼位 U+2014、U+2013 比對（詳見 HISTORY `[2026-10-24 20:21]`）
+- **Dexie 遇到 VersionError 會用無版本號重開並自行補建資料表**：等於舊程式改寫新版資料庫；`open.ts` 包一層 factory 攔下無版本號的 open（詳見 `src/storage/open.ts`）
+- **Dexie 的 liveQuery 在全域沒有 indexedDB 時不查詢**：node 測試與完全沒有 IndexedDB 的瀏覽器都會遇到，記憶體模式要補 `Dexie.dependencies`（`src/storage/memory.ts`）
+- **GitHub Pages 的 `<路徑>/index.html` 會先 301 到結尾斜線**：直接 200 要用 `<路徑>.html`（2026-10-24 以正式站實測）
+- **這個雲端環境預設 Node 22**：先 `export PATH=/opt/nvm/versions/node/v24.22.1/bin:$PATH`（`nvm install 24` 已裝）；Playwright 用 `/opt/node-tools/node_modules/playwright`
 - **ts-fsrs 的 `get_retrievability` 預設回傳文字**：要數值必須傳第三個參數 `false`（詳見 HISTORY `[2026-10-24 20:21]`）
 
 ---

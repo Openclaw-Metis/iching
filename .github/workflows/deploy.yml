@@ -28,6 +28,8 @@ jobs:
       - run: npm test
       # 卡牌貼圖已預先建好放在 public/cards，這裡只建網站，不需要 holo skill、Python 或字型
       - run: npm run build
+      # 卦殿首屏 JavaScript gzip 不超過 160 KB，且不含保存層、功能模組、Dexie、ts-fsrs
+      - run: npm run check:size
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

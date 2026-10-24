@@ -101,7 +101,7 @@
 3. **共用核心**（`src/data`、`src/lib`、`src/components`）：卦象資料、經傳原文、牌義、爻辭白話、變爻讀法、亂數與日期工具、卡牌元件。這一層不知道任何使用者資料。
 4. **本機保存層**（`src/storage`）：資料表定義、各實體的存取函式、無法保存時的記憶體替代方案、診斷資訊。功能模組只能透過這一層讀寫資料。
 
-建置流程在現有的 GitHub Actions 上增加兩件事：替每個靜態路徑產生一份 `index.html`（讓直接開啟時回 200，並帶入該頁標題與描述），以及產生 PWA 的 manifest 與 service worker。
+建置流程在現有的 GitHub Actions 上增加兩件事：替每個靜態路徑產生一份 HTML（讓直接開啟時回 200，並帶入該頁標題與描述；檔名為 `<路徑>.html`，因為 GitHub Pages 對不帶副檔名的網址會直接回應同名 `.html`，若寫成 `<路徑>/index.html` 會先 301 轉到結尾斜線，2026-10-24 以正式站實測；同時也是目錄的 `/academy` 另寫一份 `academy/index.html`），以及產生 PWA 的 manifest 與 service worker。
 
 ### 核心流程設計
 
@@ -358,7 +358,7 @@ iching/
 ├─ scripts/
 │  ├─ parse-classic.mjs           原文解析（既有）
 │  ├─ cards/                      卡牌建置（既有）
-│  └─ build/                      route-pages.mjs（依 routes.ts 產生各路徑 index.html）、check-size.mjs（首屏體積與模組檢查）（新）
+│  └─ build/                      route-pages.mjs（依 routes.ts 產生各路徑的 HTML）、check-size.mjs（首屏體積與模組檢查）（新）
 ├─ src/
 │  ├─ main.tsx                    路由表（由 app/routes.ts 產生，卦殿以外延遲載入）
 │  ├─ app/                        routes.ts（全部路徑）、版面、導覽、toast、錯誤邊界、卡圖快取整理（新）
@@ -463,7 +463,7 @@ iching/
   <text x="60" y="578" font-size="16" fill="#3d5a54" font-weight="700">建置與部署（GitHub Actions → GitHub Pages）</text>
   <g font-size="13" fill="#2b2b2b">
     <text x="60" y="606">1. npm ci → npm test → npm run build</text>
-    <text x="60" y="630">2. route-pages：依 routes.ts 替 102 個路徑產生 index.html</text>
+    <text x="60" y="630">2. route-pages：依 routes.ts 替 102 個路徑產生 HTML</text>
     <text x="60" y="654">3. vite-plugin-pwa：manifest 與 service worker</text>
     <text x="60" y="678">4. 體積檢查：卦殿首屏 JavaScript gzip ≤ 160 KB，不含保存層</text>
     <text x="60" y="702">5. 上傳 dist，部署到 openclaw-metis.github.io/iching/</text>
@@ -1227,7 +1227,7 @@ db.version(1).stores({
 | TC-16 | 整合 | 起卦途中與六爻完成時分別模擬 `QuotaExceededError` | 途中：顯示「進度暫時無法保存」並可繼續；完成時：占卜頁進入 blocked |
 | TC-17 | 元件 | 占卜頁走完三錢法 | Stepper 依序前進，主 CTA 依狀態變化 |
 | TC-18 | 元件 | 課程頁的 `read` 與 `quiz` 步驟 | `read` 顯示「繼續」；`quiz` 未選答案時「檢查」停用 |
-| TC-19 | 建置 | 執行 `route-pages` 後檢查 `dist` | `routes.ts` 的 102 個路徑都有 `index.html`，標題正確 |
+| TC-19 | 建置 | 執行 `route-pages` 後檢查 `dist` | `routes.ts` 的 102 個路徑都有對應的 HTML（`<路徑>.html`，根路徑為 `index.html`），標題正確 |
 | TC-20 | 手動 | 375px、Safari、離線、鍵盤操作 | 符合 AC-25、AC-26 與無障礙需求 |
 | TC-21 | 整合 | 以較高版本號建立資料庫後，用目前程式開啟 | 狀態為 `version-error`，沒有改用記憶體，寫入被拒絕 |
 | TC-22 | 整合 | 讓 `indexedDB.open` 拋出 `SecurityError` | 改用 `fake-indexeddb`；`useLiveQuery` 在寫入後更新畫面 |
@@ -1673,7 +1673,7 @@ AGENTS.md
 4. rng.ts：randomInt(min, max) 以 crypto.getRandomValues 加拒絕取樣；可注入亂數來源。dates.ts：localDateKey(date)、daysBetween(a, b)。text.ts：normalizeQuote(s) 去除空白、「」『』、星號與反斜線，句中標點換成同一個斷點；content.test.ts 改用它。
 5. src/data/classic.ts：textOf(n) 回傳 classic.hexagrams[n - 1]；CardDetail 改用它。
 6. src/app/routes.ts：列出全部路徑與各自的標題、描述來源：/、/today、/divine、/academy、/me、/gua/1 至 64、/academy/lesson/S1-L1 至 S8-L3、/academy/exam/1 至 8、/academy/review，共 102 條。main.tsx 由它產生路由表；卦殿以外的頁面一律 React.lazy 載入，尚未完成的頁面顯示「即將推出」占位。nav.ts 定義五個導覽項目與 enabled 旗標（卦殿 true，其餘 false）。把 main.tsx 內的 Layout 移到 src/app/Layout.tsx。
-7. route-pages.mjs：建置後讀 dist/index.html，依 routes.ts 的清單為每條路徑寫一份 index.html，替換 <title> 與 meta description（卡牌頁用卦名與 content.json 的 motto）。保留現有 404.html。
+7. route-pages.mjs：建置後讀 dist/index.html，依 routes.ts 的清單為每條路徑寫一份 <路徑>.html（GitHub Pages 對不帶副檔名的網址直接回應同名 .html；<路徑>/index.html 會先被 301 轉到結尾斜線），同時也是目錄的 /academy 另寫 academy/index.html；替換 <title> 與 meta description（卡牌頁用卦名與 content.json 的 motto）。保留現有 404.html。
 8. vite.config.ts：transformIndexHtml 只在 vite build 時插入規格「非功能需求」的 CSP meta，開發模式不插入（React 熱更新會插入內嵌腳本）；建置後刪除 cards.json 標記 art=true 的卡的 dist/cards/NN/face.webp；加一個小外掛，在 generateBundle 從 entry chunk 遞迴走訪 chunk.imports（靜態匯入），把這些 chunk 的檔名與 moduleIds 寫到 dist/first-screen.json。
 9. check-size.mjs：讀 dist/first-screen.json，去重後加總各 chunk 的 gzip 大小，超過 160 KB，或 moduleIds 含 src/storage、src/features、dexie、ts-fsrs 時，以非零碼結束；接到 deploy.yml。
 10. HoloCard：createEngine 失敗或貼圖載入失敗時（現有兩處 onError），改顯示平面卡圖並維持 5:7：依 flipped 與 back 顯示目前看得到的那一面，正面用 front 的 thumb.webp，back 為 { kind: 'deck' } 時用 back.webp，back 為另一卦時用該卦的 thumb.webp；錯誤訊息改為「這個瀏覽器無法顯示全息效果，改用平面卡圖。」。
@@ -1689,7 +1689,7 @@ AGENTS.md
 db.test.ts（fake-indexeddb）：開啟後 16 張表存在、meta.schema=1、xpEvents 的 key 重複時寫入失敗。open.test.ts：以較高版本號建立資料庫後開啟，狀態為 version-error 且沒有改用記憶體；模擬 SecurityError 時改用記憶體資料庫，liveQuery 在寫入後發出新值。rng.test.ts：randomInt(1, 4) 跑 100,000 次各值比例與 25% 相差 ≤ 1 個百分點。dates.test.ts：23:59:59 與隔日 00:00:00 的 localDateKey 不同。text.test.ts：反斜線與星號被移除、句中標點視為同一斷點。classic.test.ts：textOf(1)、textOf(2)、textOf(64) 的卦辭開頭分別是乾、坤、未濟。npm test、npm run typecheck、npm run build 全過。
 
 [驗收標準 DoD]
-dist 內 102 個路徑都有 index.html 且標題正確；已有插圖卡的 face.webp 不在 dist；check-size 通過，首屏不含禁用模組；正式建置的主控台沒有 CSP 違規，開發模式熱更新正常；停用 WebGL 時卡牌頁顯示平面卡圖；卦殿與卡牌頁其餘行為和改動前相同；導覽只顯示「卦殿」；AC-28 通過。
+dist 內 102 個路徑都有對應的 HTML 且標題正確；已有插圖卡的 face.webp 不在 dist；check-size 通過，首屏不含禁用模組；正式建置的主控台沒有 CSP 違規，開發模式熱更新正常；停用 WebGL 時卡牌頁顯示平面卡圖；卦殿與卡牌頁其餘行為和改動前相同；導覽只顯示「卦殿」；AC-28 通過。
 
 [LLM]
 本階段沒有語言模型輸出。
@@ -1728,7 +1728,7 @@ CLAUDE.md；若同時使用 Codex，AGENTS.md 保持相同內容。
 3. 建立 src/lib/rng.ts（crypto 亂數加拒絕取樣、可注入）、dates.ts、text.ts（normalizeQuote：去除空白、「」『』、星號與反斜線，句中標點換成同一斷點），content.test.ts 改用 normalizeQuote。
 4. 建立 src/data/classic.ts 的 textOf(n)（回傳 classic.hexagrams[n - 1]），CardDetail 改用它。
 5. 建立 src/app/routes.ts（102 條路徑：/、/today、/divine、/academy、/me、/gua/1 至 64、/academy/lesson/S1-L1 至 S8-L3、/academy/exam/1 至 8、/academy/review，含標題與描述來源）；拆出 Layout.tsx、nav.ts（enabled 旗標，只有卦殿為 true）、Toaster.tsx、StorageBanner.tsx、ComingSoon.tsx；main.tsx 由 routes.ts 產生路由，卦殿以外一律 React.lazy。
-6. scripts/build/route-pages.mjs 依 routes.ts 產生 102 個 index.html（標題與描述依頁面替換，保留 404.html）；vite.config.ts 掛上它、建置後刪除已有插圖卡的 face.webp、只在 vite build 時以 transformIndexHtml 注入 CSP，並加一個在 generateBundle 記錄首屏 chunk 的小外掛（從 entry 遞迴走訪 chunk.imports，輸出檔名與 moduleIds 到 dist/first-screen.json）。
+6. scripts/build/route-pages.mjs 依 routes.ts 產生 102 個路徑的 HTML（檔名為 <路徑>.html，理由見「系統說明」；標題與描述依頁面替換，保留 404.html）；vite.config.ts 掛上它、建置後刪除已有插圖卡的 face.webp、只在 vite build 時以 transformIndexHtml 注入 CSP，並加一個在 generateBundle 記錄首屏 chunk 的小外掛（從 entry 遞迴走訪 chunk.imports，輸出檔名與 moduleIds 到 dist/first-screen.json）。
 7. scripts/build/check-size.mjs 讀 first-screen.json，gzip 合計超過 160 KB，或含 src/storage、src/features、dexie、ts-fsrs 時失敗；接到 deploy.yml。
 8. HoloCard 加上平面卡圖：WebGL 或貼圖載入失敗時依 flipped 與 back 顯示目前可見面（正面 thumb.webp、統一牌背 back.webp、另一卦的 thumb.webp），維持 5:7。
 9. 調整 tsconfig.json、tsconfig.node.json（DOM、DOM.Iterable、jsx: react-jsx、包含 *.test.tsx），新增 vitest.config.ts（*.test.tsx 用 happy-dom）；新增 .editorconfig、.env.example。
@@ -1743,7 +1743,7 @@ CLAUDE.md；若同時使用 Codex，AGENTS.md 保持相同內容。
 db.test.ts（fake-indexeddb）：開啟後 16 張表存在、meta.schema=1、xpEvents 的 key 重複時寫入失敗。open.test.ts：以較高版本號建立資料庫後開啟，狀態為 version-error 且沒有改用記憶體；模擬 SecurityError 時改用記憶體資料庫，liveQuery 在寫入後發出新值。rng.test.ts：randomInt(1, 4) 跑 100,000 次各值比例與 25% 相差 ≤ 1 個百分點。dates.test.ts：23:59:59 與隔日 00:00:00 的 localDateKey 不同。text.test.ts：反斜線與星號被移除、句中標點視為同一斷點。classic.test.ts：textOf(1)、textOf(2)、textOf(64) 的卦辭開頭分別是乾、坤、未濟。npm test、npm run typecheck、npm run build 全過。
 
 [驗收標準 DoD]
-dist 內 102 個路徑都有 index.html 且標題正確；已有插圖卡的 face.webp 不在 dist；check-size 通過，首屏不含禁用模組；正式建置的主控台沒有 CSP 違規，開發模式熱更新正常；停用 WebGL 時卡牌頁顯示平面卡圖；卦殿與卡牌頁其餘行為和改動前相同；導覽只顯示「卦殿」；AC-28 通過。
+dist 內 102 個路徑都有對應的 HTML 且標題正確；已有插圖卡的 face.webp 不在 dist；check-size 通過，首屏不含禁用模組；正式建置的主控台沒有 CSP 違規，開發模式熱更新正常；停用 WebGL 時卡牌頁顯示平面卡圖；卦殿與卡牌頁其餘行為和改動前相同；導覽只顯示「卦殿」；AC-28 通過。
 
 [LLM]
 本階段沒有語言模型輸出。
@@ -2497,7 +2497,7 @@ package.json（新增 vite-plugin-pwa@2）、vite.config.ts、scripts/build/icon
 
 [具體步驟]
 1. vite-plugin-pwa 使用 generateSW，registerType 為 prompt，injectRegister 為 'script'（外部檔案註冊，配合 CSP 不用內嵌腳本）；有新版本時顯示 UpdateToast，按「重新整理」才更新。
-2. 預先快取的 globPatterns 只含 index.html、assets/**/*.{js,css}（包含白話與課程的 chunk）、cards/*/thumb.webp、cards/*/quiz.webp、cards/back.webp、icons/*、favicon.svg；不含 route-pages 產生的子目錄 index.html 與完整卡圖。navigateFallback 為 /iching/index.html，navigateFallbackAllowlist 為 [/^\/iching\//]。route-pages 在 service worker 產生之後執行也不影響預先快取清單。
+2. 預先快取的 globPatterns 只含 index.html、assets/**/*.{js,css}（包含白話與課程的 chunk）、cards/*/thumb.webp、cards/*/quiz.webp、cards/back.webp、icons/*、favicon.svg；不含 route-pages 產生的各路徑 HTML 與完整卡圖。navigateFallback 為 /iching/index.html，navigateFallbackAllowlist 為 [/^\/iching\//]。route-pages 在 service worker 產生之後執行也不影響預先快取清單。
 3. 執行時快取：卡圖四層（/iching/cards/NN/ 的 background、subject、fx、text）用 CacheFirst，快取名稱 card-layers，不設 maxEntries；fonts.googleapis.com 用 StaleWhileRevalidate；fonts.gstatic.com 用 CacheFirst（cacheableResponse 接受 0 與 200，保留一年）。不設 JSON 的執行時快取。
 4. src/app/cardCache.ts：touch(n) 把卦序移到 localStorage 'iching:card-lru' 最前面；超過 30 個時，以 caches.open('card-layers') 刪除最舊那一卦的四層。卡牌頁、今日頁、占卜解讀開啟卡牌時呼叫。離線時任一層缺少，HoloCard 已有的平面卡圖回退會改用 thumb.webp。
 5. 設定分頁說明 iOS 與 Android 加到主畫面的步驟，並說明加到主畫面後 Safari 不會因 7 天未使用清除資料。
@@ -2507,7 +2507,7 @@ package.json（新增 vite-plugin-pwa@2）、vite.config.ts、scripts/build/icon
 程式碼沿用現有風格（兩格縮排、無分號、單引號）；註解只寫原因與限制；元件 PascalCase、函式模組 camelCase；完成後回報變更檔案清單與測試結果。
 
 [測試要求]
-建置後 dist 含 manifest 與 sw.js，預先快取清單含 64 張 thumb.webp 與 64 張 quiz.webp、不含子目錄 index.html；cardCache.test.ts（以假的 caches）：第 31 張卡時刪除最舊一卦的四層，重複開啟同一卦只移動順序；preview 模式下關閉網路，重新整理後卦殿、今日、占卜、學堂、我的可開啟並完成一次三錢法占卜，看圖猜卦練習可作答。
+建置後 dist 含 manifest 與 sw.js，預先快取清單含 64 張 thumb.webp 與 64 張 quiz.webp、不含 route-pages 產生的各路徑 HTML；cardCache.test.ts（以假的 caches）：第 31 張卡時刪除最舊一卦的四層，重複開啟同一卦只移動順序；preview 模式下關閉網路，重新整理後卦殿、今日、占卜、學堂、我的可開啟並完成一次三錢法占卜，看圖猜卦練習可作答。
 
 [驗收標準 DoD]
 AC-25 通過；部署後 Chrome 可安裝；更新版本後出現 UpdateToast；正式建置沒有 CSP 違規。
@@ -2537,13 +2537,13 @@ package.json（新增 vite-plugin-pwa@2）、vite.config.ts、scripts/build/icon
 2. 設定 PWA：generateSW、registerType prompt、injectRegister 'script'；globPatterns 只含網站外殼、全部 JS 與 CSS chunk、64 張 thumb.webp、64 張 quiz.webp、牌背、圖示；navigateFallback 與 allowlist 帶 /iching/ 前綴；卡圖四層與 Google Fonts 用執行時快取，不設 JSON 規則。
 3. 寫 src/app/cardCache.ts（以卦為單位保留最近 30 張，四層一起刪除）與測試，接到卡牌頁、今日頁、占卜解讀。
 4. 寫圖示產生腳本、UpdateToast、設定頁「加到主畫面」說明、README 的回滾方式。
-5. 用 npm run preview 實測：devtools 的 Application 面板確認 manifest、service worker 與預先快取清單（不含子目錄 html）；切成離線後操作，看過的卡為全息、沒看過的為平面卡圖；正式建置的主控台沒有 CSP 違規；改一行文字重新建置確認更新提示。
+5. 用 npm run preview 實測：devtools 的 Application 面板確認 manifest、service worker 與預先快取清單（不含各路徑 HTML）；切成離線後操作，看過的卡為全息、沒看過的為平面卡圖；正式建置的主控台沒有 CSP 違規；改一行文字重新建置確認更新提示。
 
 [輸出格式要求]
 程式碼沿用現有風格（兩格縮排、無分號、單引號）；註解只寫原因與限制；元件 PascalCase、函式模組 camelCase；完成後回報變更檔案清單與測試結果。不 commit。
 
 [測試要求]
-建置後 dist 含 manifest 與 sw.js，預先快取清單含 64 張 thumb.webp 與 64 張 quiz.webp、不含子目錄 index.html；cardCache.test.ts（以假的 caches）：第 31 張卡時刪除最舊一卦的四層，重複開啟同一卦只移動順序；preview 模式下關閉網路，重新整理後卦殿、今日、占卜、學堂、我的可開啟並完成一次三錢法占卜，看圖猜卦練習可作答。
+建置後 dist 含 manifest 與 sw.js，預先快取清單含 64 張 thumb.webp 與 64 張 quiz.webp、不含 route-pages 產生的各路徑 HTML；cardCache.test.ts（以假的 caches）：第 31 張卡時刪除最舊一卦的四層，重複開啟同一卦只移動順序；preview 模式下關閉網路，重新整理後卦殿、今日、占卜、學堂、我的可開啟並完成一次三錢法占卜，看圖猜卦練習可作答。
 
 [驗收標準 DoD]
 AC-25 通過；部署後 Chrome 可安裝；更新版本後出現 UpdateToast；正式建置沒有 CSP 違規。

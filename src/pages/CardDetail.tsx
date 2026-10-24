@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
 import artDirection from '../data/art-direction.json'
-import classic from '../data/classic.json'
 import { hasArt } from '../data/cards.ts'
+import { textOf } from '../data/classic.ts'
 import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
 import { xugua, zagua } from '../data/xugua.ts'
@@ -18,8 +18,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'lab', label: '爻變' },
   { id: 'source', label: '來源' },
 ]
-
-const textOf = (h: Hexagram) => classic.hexagrams[h.number - 1]
 
 export function CardDetail() {
   const { number } = useParams()
@@ -49,7 +47,6 @@ function Detail({ n }: { n: number }) {
     setDived(false)
     if (!keepCaption.current) setCaption('')
     keepCaption.current = false
-    document.title = `${hex.name}・${hex.fullName}｜易經卦殿`
     return () => window.clearTimeout(timer.current)
   }, [hex])
 
@@ -176,7 +173,7 @@ function ArtNote({ hex }: { hex: Hexagram }) {
 
 function Meaning({ hex }: { hex: Hexagram }) {
   const c = content[hex.number]
-  const t = textOf(hex)
+  const t = textOf(hex.number)
   if (!c) {
     return (
       <>
@@ -211,7 +208,7 @@ function Meaning({ hex }: { hex: Hexagram }) {
 }
 
 function Classic({ hex }: { hex: Hexagram }) {
-  const t = textOf(hex)
+  const t = textOf(hex.number)
   return (
     <>
       <h3>卦辭</h3>
@@ -325,7 +322,7 @@ function Lab({ hex }: { hex: Hexagram }) {
 }
 
 function FocusText({ focus, main }: { focus: ReadingFocus; main: boolean }) {
-  const t = textOf(focus.hexagram)
+  const t = textOf(focus.hexagram.number)
   const tag = main ? '主' : '輔'
   if (focus.kind === 'judgment') return <p className="classic">〔{tag}〕{focus.hexagram.name}卦辭：{t.judgment}</p>
   if (focus.kind === 'useAll') {
