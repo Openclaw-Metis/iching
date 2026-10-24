@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-24（Stage 10 完成）
+**最後更新**：2026-10-24（Stage 11 完成，交付）
 
 **位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main`，程式最新 `e9e7045`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
 
-**下一步**：Stage 0 至 10 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 11（文件化與交付）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
+**下一步**：Stage 0 至 11 已在分支 `claude/keen-mayer-v9g6tt` 完成並推送，尚未合併到 `main`。使用者審閱後合併部署，再依 `docs/qa-checklist.md`「部署後要做的事」跑 `npm run check:routes`（AC-23）、檢查正式站 CSP 與外部請求（AC-27）、Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 匯入；未完成與未驗證的項目在 `docs/known-issues.md`。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
 ### 需求狀態
 - [x] 六十四卦資料：原文解析成 `src/data/classic.json`，結構由六爻推算（`hexagrams.ts`：上下卦、錯綜互、京房八宮、先天序、消息卦），序卦雜卦在 `xugua.ts`
@@ -38,7 +38,8 @@
 - [x] Stage 8：收藏卦牌（卡牌頁、解讀頁的星號）與金句（經文分頁的卦辭、大象、每條爻辭、用九用六，解讀頁主讀輔讀的書籤），我的頁「收藏」分頁（卡牌牆、金句列表點擊回到那一句）；金句 id 規則移到 storage/repos/quotes.ts 與備份驗證共用
 - [x] Stage 9：離線版（vite-plugin-pwa 2.0.0 generateSW、prompt 更新、manifest 與圖示、預先快取外殼與全部程式、白話、64 縮圖與 64 看圖卡，卡圖四層與字型執行時快取、最近 30 卦的卡圖快取整理、UpdateToast、設定頁加到主畫面說明、README 回滾方式）
 - [x] Stage 10：AC-01 到 AC-31 對照表與手動檢查（`docs/qa-checklist.md`）、占卜頁與課程頁與匯入預覽的元件測試、五個 Gherkin 情境、TC-07／12／24、`scripts/check-routes.mjs`（`npm run check:routes`）、`.claude/commands/acceptance-audit.md`
-- [ ] Stage 11：文件與交付
+- [x] Stage 11：README（功能、使用須知、分卷備份、加到主畫面、字型來源、資料表版本只升不降、程式回滾）、站內使用說明（我的 › 設定與備份，文字與規格非技術版一致並有測試把關）、`docs/known-issues.md`、規格總覽加上完成狀態
+- [ ] 正式站驗收：合併到 `main` 部署後執行（AC-23、AC-27 與實機項目）
 - [ ] 抽牌占卜：使用者之後另談，規格只保留 `method = 'draw'`
 - [ ] 授權條款（倉庫目前沒有 LICENSE，等使用者決定）
 
@@ -46,8 +47,8 @@
 - 人物背後的金色圓光已改成敦煌式頭光，沒有移除；使用者若仍覺得偏西方，可整批去掉。
 - `易經_周易_原文.md` 的標點校勘出自第三方整理本（使用者要求移除來源標註），公開散布的著作權風險由使用者斟酌。
 - 倉庫約 312 MiB，大半是 `art/raw` 原圖；是否改成只提交網站貼圖未決。
-- 卦殿首屏 JS gzip 126.1 KB（上限 160 KB，`npm run check:size` 在 CI 把關），詳細頁 gzip 約 225 KB（three）。
-- 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），尚未在正式站驗證 102 條全是 200，要等合併到 `main` 部署後跑 check-routes（Stage 10）。
+- 卦殿首屏 JS gzip 130.1 KB（上限 160 KB）、占卜頁 113.1 KB（上限 120 KB），`npm run check:size` 在 CI 把關；卡牌頁的 `HoloCard` chunk 約 568 KB（three），建置有超過 500 kB 的警告。
+- 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），本機 preview 102 條全過，正式站要等合併到 `main` 部署後跑 `npm run check:routes`。
 - 規格中由 Claude 自行採用、使用者還沒表態的預設：每日一卦每人當天固定、大衍筮法提供親手分蓍與一鍵完成、不做 AI 解卦、保留 Google Fonts（網站唯一的外部請求）。
 - 睽卦（38）重生後兩女並坐、沒有明確背對，可接受但不完全貼合畫面設計。
 - 白話 450 條只有 Claude 撰稿與自我複審，雲端環境沒有 `codex`、`agy`；之後在本機用 `.claude/commands/three-way-draft.md` 補跑三方撰稿與交叉複審。
@@ -71,6 +72,7 @@
 - Stage 8（2026-10-24）：`npm test` 235 項（收藏切換兩次回到未收藏、金句 id 解析含 line-0 與坤用六、非乾坤 useAll 拒絕、所有種類通過備份驗證、匯出匯入後收藏一致）；Playwright 375／1280：卡牌頁收藏卦牌、經文分頁收藏卦辭與六二、坤用六、解讀頁收藏本卦與主讀、收藏分頁卡牌牆 5:7 與金句出處、點金句回到屯六二並標示、取消收藏後從列表消失、無橫向捲動；首屏 130.1 KB（延遲載入的頁面變多，入口的預載清單變長）、占卜頁 112.7 KB。
 - Stage 9（2026-10-24）：`npm test` 238 項（卡圖快取：第 31 卦刪最舊一卦四層、重複開啟只移動順序、壞資料從頭記起）；建置產生 sw.js 與 manifest，預先快取 168 筆（含 64 thumb、64 quiz、lines.json，HTML 只有 index.html）；Playwright（preview）：註冊後離線開卦殿、今日、占卜、學堂、我的都可用，離線完成三錢法占卜並保存、白話可讀、看圖猜卦可作答，看過的卡牌離線仍是全息卡、沒看過的改平面卡圖，改動 sw.js 後出現 UpdateToast 並可重新整理換版，無 CSP 違規；CDP 檢查 Chrome 可安裝（installabilityErrors 為空）；首屏 130.1 KB、占卜頁 113.1 KB。
 - Stage 10（2026-10-24）：`npm test` 255 項（新增占卜頁三錢走完、連點只成一爻、中斷接續、重複提問對話框、問題上限與 HTML 文字、途中與完成時保存失敗；課程 read／quiz 按鈕狀態、考核不揭露；匯入預覽筆數與部分備份停用取代；Gherkin 今日卦固定、考核通過、合併預覽；TC-07、TC-12、TC-24）；`check:routes` 對本機 preview 102 條全過；QA 自動檢查 375／1280 十頁無橫向捲動、主操作在視窗內、無 CSP 違規、外部請求只有 Google Fonts、鍵盤翻今日卦與作答。
+- Stage 11（2026-10-24）：`npm test` 257 項（新增使用說明與規格「限制與注意事項」「常見問題」逐條一致）、`npm run typecheck`、`npm run build`、`npm run check:size`（首屏 130.1 KB、占卜頁 113.1 KB）全過；Playwright 375／1280：我的 › 設定與備份展開使用說明，10 條限制與 10 則問答都在、位於加到主畫面說明之前、無橫向捲動、主控台無錯誤；新文件無破折號。
 - 未驗證：手機陀螺儀實機、iOS Safari、Firefox 匯入、低階手機效能、.ics 在 Google 日曆與 Apple 行事曆的實際匯入、正式站（Pages）上的路徑、安裝與更新（分支尚未部署）。
 
 ### 關鍵技術決策（當前有效）
@@ -342,3 +344,45 @@
 - 檢視過程的工作檔（提示詞、輸出格式、替換腳本、下載查證用的套件）在 scratchpad，完成後已清除。
 - 白話規格的術語檢查：`python -I ~/.claude/skills/spec-organizer/scripts/check_plain_language.py <抽出的白話章節>`。
 - 規格查證的版本：ts-fsrs 5.4.2、dexie 4.4.7、dexie-react-hooks 4.4.0、fake-indexeddb 6.2.6、vite-plugin-pwa 2.0.0、Vite 8.3.5。
+
+---
+
+## [2026-10-24 23:30] Stage 0 到 11 開發與交付
+
+### 本次做了什麼（增量）
+在雲端環境（分支 `claude/keen-mayer-v9g6tt`）依 `docs/spec.md` 從 Stage 0 做到 Stage 11，每個階段完成後檢查 DoD 與驗收條件，`npm test`、`npm run typecheck`、`npm run build`、`npm run check:size` 全過並以 Playwright 在 375 與 1280 寬實測後才提交推送（`36945fa` Stage 0、`2032ff9` Stage 1、`aed8782` Stage 2、`ed1610f` Stage 3、`58f21eb` Stage 4、`13c3ab5` Stage 5、`4a98494` Stage 6、`fef05ff` Stage 7、`0bc1c17` Stage 8、`1b4dc73` Stage 9、`0181ede` Stage 10，Stage 11 為文件交付）。測試從 59 項增加到 257 項。Stage 11 補上 README、站內使用說明、`docs/known-issues.md` 與規格的完成狀態；正式站驗收要等合併到 `main`。
+
+### 本次重大技術決策
+- **白話以 `?url` 加 `fetch` 載入**
+  - 內容：`lines.json` 不用動態 `import()`，改用 `import linesUrl from './lines.json?url'` 再 `fetch`。
+  - 理由：Chromium 會記住失敗的動態 import，同一頁再 import 不會重新請求，「重試」按鈕無效。
+  - 影響：規格的載入方式一併改寫；離線版把 `assets/**/*.json` 放進預先快取。
+- **解鎖狀態不存，由進度推算**
+  - 內容：課程與站的解鎖由 `lessonProgress` 與 `examResults` 計算；連續天數由 `checkIns` 計算。
+  - 理由：存一份衍生狀態會在匯入合併、重設學堂後和真實進度不一致。
+  - 影響：重設學堂只要清掉進度，匯入後也不需修補。
+- **印章判定與補發延遲載入學堂模組**
+  - 內容：占卜、紀錄、今日頁判定印章時 `import('../academy/index.ts')`；啟動補發先檢查有沒有資料。
+  - 理由：學堂模組含 ts-fsrs，靜態匯入會讓占卜頁超過 120 KB、新訪客的卦殿也會載入它。
+  - 影響：首屏 130.1 KB、占卜頁 113.1 KB。
+- **站內使用說明以測試對齊規格**
+  - 內容：`src/app/UserGuide.tsx` 的文字取自規格非技術版，`UserGuide.test.tsx` 逐條比對「限制與注意事項」「常見問題與錯誤提示」。
+  - 理由：兩處各寫一份，改規格時容易漏改網站。
+  - 影響：常見問題「今天的卦可以重抽嗎」的位置改成「我的 › 紀錄 › 每日」，規格同步修正。
+
+### 本次失敗經驗與填坑
+- **今日頁替隔天記了 XP**
+  - 現象：跨日後畫面拿到前一天的 `useLiveQuery` 結果，誤以為今天已翻開。
+  - 最終解法：把日期帶進查詢結果並比對。
+- **元件測試的白話 fetch 打到 localhost:3000**
+  - 最終解法：元件測試 `vi.stubGlobal('fetch', ...)`；happy-dom 的 `<dialog>` 不在無障礙樹，對話框內的按鈕用 `getByText`。
+- **happy-dom 環境讀不到 `import.meta.url` 的檔案**
+  - 現象：`readFileSync(new URL(..., import.meta.url))` 報「The URL must be of scheme file」。
+  - 最終解法：以專案根目錄（vitest 的工作目錄）的相對路徑讀檔。
+- **卡圖快取漏掉背面**
+  - 現象：卡牌頁背面的錯卦也會載入四層卡圖，只記正面時背面的貼圖永遠不會被清掉。
+  - 最終解法：開啟卡牌時連錯卦一起記。
+
+### 備註
+- 雲端環境沒有 `codex`、`agy`，白話只有 Claude 撰稿與自我複審；也連不到 github.io，正式站的檢查與實機項目都列在 `docs/known-issues.md`「尚未驗證」。
+- 開發用的 Playwright 腳本、截圖與 ical.js 驗證套件都在 scratchpad，交付後已清除。

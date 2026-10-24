@@ -1,6 +1,25 @@
 # 易經卦殿
 
-六十四卦卦牌網站：卦牌展廳、全息卡詳細頁（倒轉看綜卦、翻面看錯卦、取中看互卦）、經文與爻變。之後會加上占卜、每日一卦、學堂與收藏。
+六十四卦卦牌網站：照傳統方法問事、看得懂該讀哪段經文，再加上每日一卦、從零開始的學堂與收藏冊。網址：https://openclaw-metis.github.io/iching/
+
+## 功能
+
+- **卦殿**：64 張全息卦牌，可依文王卦序、上下卦、京房八宮、十二消息排列與搜尋；「學習地圖」依記憶程度調整每張牌的亮度。
+- **卡牌頁**：倒轉看綜卦、翻面看錯卦、取中看互卦；牌義、經文（卦辭、大象、爻辭都有白話）、卦象、爻變與來源分頁。
+- **占卜**：三枚銅錢、手動輸入、大衍筮法（親手分蓍或一鍵完成）；依朱熹規則指出主讀與輔讀，起卦中斷可接續，完成自動存入紀錄。
+- **今日**：每天固定一張牌，可寫心得；下載 `.ics` 讓行事曆每天提醒。
+- **學堂**：8 站 24 課與 8 場考核、看圖猜卦、XP 與每日目標、連續天數、修為等級；學過的卦進入「溫故」，依 FSRS 排程複習。
+- **我的**：占卜與每日紀錄（搜尋、篩選、筆記、事後回顧）、收藏的卦牌與經文句子、15 枚印章的印譜、設定與備份。
+
+站內說明在「我的 › 設定與備份 › 使用說明」，已知問題整理在 `docs/known-issues.md`。
+
+## 使用須知
+
+- **資料只存在這台裝置的瀏覽器**：沒有帳號與雲端，紀錄、收藏、學習進度都在 IndexedDB。換裝置或清除網站資料前，請在「我的 › 設定與備份」匯出。
+- **備份**：「匯出全部資料」存成 `iching-backup-YYYYMMDD.json`；超過 40 MB 自動分成好幾個檔（`-1of3` 這類檔名），匯入時要一起選取。匯入前會先預覽筆數，可選「合併」或「取代」；占卜保存失敗時下載的單筆結果檔只能合併。超過 30 天沒備份會提醒。
+- **加到主畫面**：可離線使用，iOS 的 Safari 也不會因為 7 天沒開啟就清掉資料。步驟在「我的 › 設定與備份 › 加到主畫面與離線使用」。
+- **字型**：Noto Serif TC 由 Google Fonts 提供，是網站唯一的外部請求，不會送出任何紀錄；沒有網路又沒快取過時改用裝置字型。
+- **無痕視窗**：可以使用但不會保存，畫面上方會提示。
 
 ## 開發
 
@@ -10,17 +29,28 @@ npm run dev          # http://localhost:5181（網址加 ?seed=demo 會寫入示
 npm test             # 單元與整合測試在 node（IndexedDB 用 fake-indexeddb），元件測試在 happy-dom
 npm run typecheck
 npm run build        # 型別檢查、建置、產生各路徑 HTML 與 404.html
-npm run check:size   # 卦殿首屏 JavaScript gzip ≤ 160 KB，且不含保存層與功能模組
-npm run preview      # 比照正式站（/iching/ 前綴、CSP）
+npm run check:size   # 卦殿首屏 JavaScript gzip ≤ 160 KB 且不含保存層與功能模組；占卜頁 ≤ 120 KB
+npm run preview      # 比照正式站（/iching/ 前綴、CSP、service worker）
+npm run check:routes # 檢查正式站 102 條路徑（見「部署後的檢查」）
 ```
 
-需要 Node 24 以上。長期開發規則在 `CLAUDE.md`（與 `AGENTS.md` 相同），第二階段規格與分階段計畫在 `docs/spec.md`。
+需要 Node 24 以上。長期開發規則在 `CLAUDE.md`（與 `AGENTS.md` 相同），第二階段規格與分階段計畫在 `docs/spec.md`（Stage 0 到 11 已完成），驗收對照在 `docs/qa-checklist.md`。
 
 ### 程式結構
 
-- `src/app/routes.ts`：全站路徑的唯一定義（102 條），前端路由、建置時的各路徑 HTML 與部署後檢查共用。卦殿以外的頁面都延遲載入，尚未完成的頁面先顯示「即將推出」，導覽由 `src/app/nav.ts` 的旗標控制。
-- `src/storage`：使用者資料只存在瀏覽器的 IndexedDB（Dexie 管理 16 張資料表）。資料庫版本比程式新或升級失敗時停止寫入；只有 IndexedDB 不能用（隱私模式）時才改用記憶體資料庫。資料表版本只升不降，變動一律以新版號加升級函式處理。
+- `src/app/routes.ts`：全站路徑的唯一定義（102 條），前端路由、建置時的各路徑 HTML 與部署後檢查共用。卦殿以外的頁面都延遲載入，導覽由 `src/app/nav.ts` 的旗標控制。
+- `src/pages`：各頁的外殼；功能放在 `src/features/<名稱>`（`divination`、`records`、`backup`、`daily`、`academy`、`review`、`collection`），只從各自的 `index.ts` 對外匯出。
+- `src/storage`：使用者資料只存在瀏覽器的 IndexedDB（Dexie 管理 16 張資料表），也只有這個資料夾能碰 IndexedDB。資料庫版本比程式新或升級失敗時停止寫入；只有 IndexedDB 不能用（隱私模式）時才改用記憶體資料庫。
+- `src/data`：卦象、原文、牌義、450 條白話（`lines.json`，以 `fetch` 載入）、學堂課程在 `src/features/academy/lessons`。
 - `src/lib`：亂數（`crypto.getRandomValues` 加拒絕取樣）、本地日期、引文正規化、錯誤碼。
+
+### 資料表版本只升不降
+
+`src/storage/db.ts` 的 `db.version(n)` 一旦部署就不能改回較小的數字：使用者瀏覽器裡的資料庫已經升級，舊程式打不開（會顯示「網站已更新，請重新整理頁面」並停止寫入）。新增資料表或欄位時：
+
+1. 宣告 `db.version(n + 1)` 並寫 `upgrade` 函式，不修改舊版本的宣告。
+2. 同步更新備份格式（`src/features/backup/format.ts`）、匯入驗證（`validate.ts`）與合併規則（`merge.ts`）。
+3. 補上升級與備份往返的測試。
 
 ## 部署
 
@@ -44,6 +74,10 @@ service worker 一旦裝上，即使撤回程式，使用者的瀏覽器仍會�
 
 1. 在 `vite.config.ts` 的 `VitePWA({ ... })` 加上 `selfDestroying: true`，推送部署。這一版的 service worker 會在使用者下次開啟時解除註冊並清掉快取。
 2. 確認大部分使用者都已開過一次之後，修正設定，移除 `selfDestroying` 再部署。
+
+### 程式出問題時的回滾
+
+以 `git revert` 撤回有問題的提交再推送 `main`，但 `db.ts` 的資料表版本宣告不可倒退；問題牽涉資料表變更時，改以修正版往前部署，不部署舊程式。使用者資料在各自的瀏覽器裡，不受網站回滾影響。
 
 ## 資料
 
