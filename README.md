@@ -25,6 +25,7 @@ npm run build
 - `src/data/hexagrams.ts`：六十四卦結構，全部由六爻推算（上下卦、錯綜互、八宮、先天序、消息卦）。
 - `src/data/xugua.ts`：序卦傳、雜卦傳依卦拆分。
 - `src/data/content.ts`：本站原創的白話導讀與牌義，尚未撰寫的卦不在表內。
+- `docs/hexagram-review.md`：Claude、Codex、agy 三方對 64 卦卦義與卡面的檢視紀錄與重繪決定，原始評審在 `docs/review/`。
 
 ## 卡牌
 

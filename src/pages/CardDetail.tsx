@@ -144,7 +144,9 @@ function ArtNote({ hex }: { hex: Hexagram }) {
       <h3>卡面</h3>
       <p className="note">
         {subject?.zh}
-        背景上半是{hex.upper.image}（{hex.upper.name}）的紋樣面板，下半是{hex.lower.image}（{hex.lower.name}）的紋樣面板。
+        {hex.upper === hex.lower
+          ? `背景上下兩半都是${hex.upper.image}（${hex.upper.name}）的紋樣面板。`
+          : `背景上半是${hex.upper.image}（${hex.upper.name}）的紋樣面板，下半是${hex.lower.image}（${hex.lower.name}）的紋樣面板。`}
       </p>
     </>
   )
