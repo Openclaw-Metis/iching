@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
+import artDirection from '../data/art-direction.json'
 import classic from '../data/classic.json'
 import { hasArt } from '../data/cards.ts'
 import { content } from '../data/content.ts'
@@ -136,6 +137,19 @@ function SequenceNav({ hex }: { hex: Hexagram }) {
   )
 }
 
+function ArtNote({ hex }: { hex: Hexagram }) {
+  const subject = artDirection.subjects[String(hex.number) as keyof typeof artDirection.subjects]
+  return (
+    <>
+      <h3>卡面</h3>
+      <p className="note">
+        {subject?.zh}
+        背景上半是{hex.upper.image}（{hex.upper.name}）的紋樣面板，下半是{hex.lower.image}（{hex.lower.name}）的紋樣面板。
+      </p>
+    </>
+  )
+}
+
 function Meaning({ hex }: { hex: Hexagram }) {
   const c = content[hex.number]
   const t = textOf(hex)
@@ -146,6 +160,7 @@ function Meaning({ hex }: { hex: Hexagram }) {
         <p className="classic">{t.daxiang}</p>
         <h3>卦辭</h3>
         <p className="classic">{t.judgment}</p>
+        <ArtNote hex={hex} />
         <p className="note">這一卦的白話導讀與牌義還在撰寫中，經文、卦象與爻變都已可查看。</p>
       </>
     )
@@ -160,8 +175,7 @@ function Meaning({ hex }: { hex: Hexagram }) {
       <p>{c.guidance}</p>
       <h3>大象</h3>
       <p className="classic">{t.daxiang}</p>
-      <h3>卡面</h3>
-      <p className="note">{c.art}</p>
+      <ArtNote hex={hex} />
     </>
   )
 }

@@ -43,6 +43,12 @@ npm run cards:build -- 5 6   # 只建置指定卦
 
 字型使用 Noto Serif TC（SIL OFL 1.1），預設讀 `C:/Windows/Fonts/NotoSerifTC-VF.ttf`，其他環境以 `ICHING_FONT` 指定。skill 路徑預設為 `~/.claude/skills/webgl-holo-card`，可用 `HOLO_CARD` 指定。
 
-插圖以 Codex image_gen 生成，統一畫風描述：
+插圖以 Codex image_gen 生成。每卦的畫面設計（中文說明與英文提示詞）、八張面板的提示詞與統一畫風都在 `src/data/art-direction.json`，網站的「卡面」說明也讀這份資料。
 
-> Vienna Secession and Art Nouveau symbolist style fused with Eastern ink wash mood, Byzantine flat sacred composition, delicate cloisonne enamel gold metal outlines, flowing botanical vine curves, gilded gold leaf flakes, precise geometric ornament and inlaid jewel cabochons, soft diluted ink wash in the shadows, low saturation antique mineral palette of antique gold, ink black, grey blue and ochre with one small accent of vermilion seal red, restrained, serene, luxurious antique jewelry decorative art.
+重繪某幾張時，先產生批次提示檔，再讓互動式 Codex 讀檔逐張生成（終端只收單行 ASCII，提示詞因此放在檔案裡）：
+
+```bash
+node scripts/cards/codex-batch.mjs C:/Users/jimai/exports/iching redo 7 panel:li
+```
+
+已存在的輸出檔會被略過，不會覆寫。
