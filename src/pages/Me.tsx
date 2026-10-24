@@ -3,12 +3,13 @@ import { useSearchParams } from 'react-router'
 import { DiagnosticsPanel } from '../app/DiagnosticsPanel.tsx'
 import { ResetAcademyButton, SealBook } from '../features/academy/index.ts'
 import { BackupPanel, BackupReminder, ClearDataButton } from '../features/backup/index.ts'
+import { CollectionTab } from '../features/collection/index.ts'
 import { RecordDetail, RecordList } from '../features/records/index.ts'
 
-// 收藏分頁在之後的階段打開
-type Tab = 'records' | 'seals' | 'settings'
+type Tab = 'records' | 'collection' | 'seals' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'records', label: '紀錄' },
+  { id: 'collection', label: '收藏' },
   { id: 'seals', label: '印譜' },
   { id: 'settings', label: '設定與備份' },
 ]
@@ -50,6 +51,7 @@ export function Me() {
       </div>
       <div className="panel" role="tabpanel">
         {tab === 'records' && <RecordList onRestoreBackup={() => setTab('settings')} />}
+        {tab === 'collection' && <CollectionTab />}
         {tab === 'seals' && <SealBook />}
         {tab === 'settings' && (
           <>

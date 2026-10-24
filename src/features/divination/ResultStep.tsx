@@ -11,6 +11,7 @@ import { SaveStatusPill, type SaveStatus } from '../../components/SaveStatusPill
 import { cardAsset } from '../../data/cards.ts'
 import type { Hexagram } from '../../data/hexagrams.ts'
 import { keyOf } from '../../data/lines.ts'
+import { FavoriteButton, QuoteButton, type QuoteRef } from '../collection/index.ts'
 import { ERROR_MESSAGES, isAppError } from '../../lib/errors.ts'
 import type { ReadingFocus } from '../../lib/reading.ts'
 import type { Reading } from '../../storage/index.ts'
@@ -30,18 +31,27 @@ interface Props {
 
 function Card({ hex, label }: { hex: Hexagram; label: string }) {
   return (
-    <Link to={`/gua/${hex.number}`} className="result-card">
-      <img src={cardAsset(hex.number, 'thumb')} alt={`${label}：${hex.fullName}`} width={400} height={560} />
-      <span>{label}・{hex.name}</span>
-    </Link>
+    <div className="result-card-wrap">
+      <Link to={`/gua/${hex.number}`} className="result-card">
+        <img src={cardAsset(hex.number, 'thumb')} alt={`${label}：${hex.fullName}`} width={400} height={560} />
+        <span>{label}・{hex.name}</span>
+      </Link>
+      <FavoriteButton hexagram={hex.number} label={`${hex.name}卦`} />
+    </div>
   )
 }
+
+const quoteOf = (f: ReadingFocus): QuoteRef =>
+  f.kind === 'line' ? { hexagram: f.hexagram.number, kind: 'line', position: f.position } : { hexagram: f.hexagram.number, kind: f.kind }
 
 /** 主讀與輔讀：原文一律顯示，下方依 focus.kind 接上對應的白話與占得提醒 */
 function FocusBlock({ focus, main }: { focus: ReadingFocus; main: boolean }) {
   return (
     <div className={main ? 'focus-block main' : 'focus-block'}>
-      <FocusText focus={focus} main={main} />
+      <div className="focus-head">
+        <FocusText focus={focus} main={main} />
+        <QuoteButton quote={quoteOf(focus)} />
+      </div>
       <LinePlain entryKey={keyOf(focus)} label={focusTitle(focus)} />
     </div>
   )

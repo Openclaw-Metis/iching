@@ -719,3 +719,27 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .new-seals p { margin: 0 0 6px; color: var(--gold-hi); }
 .new-seals div { display: flex; flex-wrap: wrap; gap: 8px; }
 .review-toggle { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+
+/* ---------- 收藏與金句 ---------- */
+.fav-button { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+.fav-button span { color: var(--gold); font-size: 16px; }
+.fav-button[aria-pressed='true'] { border-color: var(--gold); color: var(--gold-hi); }
+.detail-head .fav-button { margin-left: auto; }
+.result-card-wrap { flex: 1 1 0; display: grid; gap: 4px; justify-items: center; }
+.result-card-wrap .result-card { width: 100%; }
+.quote-button { display: inline-grid; place-items: center; width: 44px; height: 44px; margin: -10px -6px -10px 2px; padding: 0; border: 0; background: transparent; color: var(--faint); cursor: pointer; vertical-align: middle; }
+.quote-button svg { width: 13px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.quote-button:hover { color: var(--gold); }
+.quote-button[aria-pressed='true'] { color: var(--vermilion); }
+.quote-button[aria-pressed='true'] svg { fill: currentColor; }
+.with-quote { display: flex; align-items: center; gap: 4px; }
+.line-list .label { display: flex; align-items: flex-start; flex-wrap: wrap; }
+.focus-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.focus-head .classic { flex: 1; }
+.collection h3 { margin: 18px 0 8px; color: var(--gold); font-size: 15px; font-weight: 500; letter-spacing: .2em; }
+.fav-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+.quote-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.quote-list li { display: flex; align-items: center; gap: 8px; padding: 10px 6px 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
+.quote-list a { flex: 1; display: grid; gap: 4px; color: var(--text); }
+.quote-list .classic { font-size: 16px; }
+.quote-source { color: var(--muted); font-size: 13px; }

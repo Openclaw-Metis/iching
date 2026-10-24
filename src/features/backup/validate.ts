@@ -9,7 +9,7 @@ import { AppError } from '../../lib/errors.ts'
 import {
   SCHEMA_VERSION, type Category, type CheckIn, type DailyDraw, type ExamResult, type ExportedTable, type Facet, type Favorite,
   type FsrsCardData, type LessonProgress, type Mastery, type Method, type Quote, type QuoteKind, type Reading, type ReviewCard,
-  type ReviewLog, type Seal, type SealId, type Setting, type XpEvent, type XpSource, xp,
+  type ReviewLog, type Seal, type SealId, type Setting, type XpEvent, type XpSource, quotes, xp,
 } from '../../storage/index.ts'
 import { BACKUP_APP, BACKUP_FORMAT, type BackupFile, type BackupScope } from './format.ts'
 
@@ -150,10 +150,8 @@ export function validateFavorite(raw: Json): RecordCheck<Favorite> {
 
 const QUOTE_KINDS: QuoteKind[] = ['judgment', 'daxiang', 'line', 'useAll']
 
-/** 金句 id 為「卦序:種類[:爻位]」；只有 line 帶 0 到 5 的爻位，useAll 只限乾坤 */
-export function quoteId(hexagram: number, kind: QuoteKind, position?: number) {
-  return kind === 'line' ? `${hexagram}:line:${position}` : `${hexagram}:${kind}`
-}
+// 金句 id 的規則與收藏時共用（storage/repos/quotes.ts）：只有 line 帶 0 到 5 的爻位，useAll 只限乾坤
+export const quoteId = quotes.quoteId
 
 export function validateQuote(raw: Json): RecordCheck<Quote> {
   if (!isObject(raw)) return invalid

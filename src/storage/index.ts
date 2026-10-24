@@ -17,6 +17,8 @@ export * as exams from './repos/exams.ts'
 export * as mastery from './repos/mastery.ts'
 export * as review from './repos/review.ts'
 export * as seals from './repos/seals.ts'
+export * as favorites from './repos/favorites.ts'
+export * as quotes from './repos/quotes.ts'
 export { useDb, useLiveQuery, useStorageMode } from './react.ts'
 // 非 React 的訂閱（例如卦殿學習地圖在動態載入後才訂閱）
 export { liveQuery } from 'dexie'

@@ -11,6 +11,7 @@ import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
 import { lineKey, parseTextFocus, type TextFocus } from '../data/lines.ts'
 import { xugua, zagua } from '../data/xugua.ts'
+import { FavoriteButton, QuoteButton } from '../features/collection/index.ts'
 import { ReviewToggle } from '../features/review/index.ts'
 import { interpret } from '../lib/reading.ts'
 
@@ -147,6 +148,7 @@ function Detail({ n }: { n: number }) {
               <h1>{hex.name}</h1>
               <div className="meta">第<b>{n}</b>卦・{hex.fullName}・{hex.upper.name}上{hex.lower.name}下・{n <= 30 ? '上經' : '下經'}</div>
             </div>
+            <FavoriteButton hexagram={n} label={`${hex.name}卦`} />
           </header>
 
           <div className="tabs" role="tablist">
@@ -266,14 +268,14 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
   return (
     <>
       <div className="text-target" {...target('judgment')}>
-        <h3>卦辭</h3>
+        <h3 className="with-quote">卦辭<QuoteButton quote={{ hexagram: n, kind: 'judgment' }} /></h3>
         <p className="classic">{t.judgment}</p>
         {plainFor('judgment', lineKey(n, { kind: 'judgment' }), `${hex.name}卦辭`)}
       </div>
       <h3>彖傳</h3>
       <p>{t.tuan}</p>
       <div className="text-target" {...target('daxiang')}>
-        <h3>大象</h3>
+        <h3 className="with-quote">大象<QuoteButton quote={{ hexagram: n, kind: 'daxiang' }} /></h3>
         <p>{t.daxiang}</p>
       </div>
       <h3>爻辭與小象</h3>
@@ -284,7 +286,7 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
           const key = i === 6 ? lineKey(n, { kind: 'useAll' }) : lineKey(n, { kind: 'line', position: i })
           return (
             <li key={i} className="text-target" {...target(id)}>
-              <span className="label">{l.label}</span>
+              <span className="label">{l.label}<QuoteButton quote={i === 6 ? { hexagram: n, kind: 'useAll' } : { hexagram: n, kind: 'line', position: i }} /></span>
               <span className="classic">{l.text}</span>
               <span className="xiang">象曰：{l.xiang}</span>
               {plainFor(id, key, `${hex.name}${l.label}`)}
