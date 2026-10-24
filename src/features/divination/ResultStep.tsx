@@ -4,6 +4,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { touch as touchCardCache } from '../../app/cardCache.ts'
+import { FLAGS } from '../../app/flags.ts'
 import { FocusText, focusTitle } from '../../components/FocusText.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
 import { LinePlain } from '../../components/LinePlain.tsx'
@@ -37,7 +38,7 @@ function Card({ hex, label }: { hex: Hexagram; label: string }) {
         <img src={cardAsset(hex.number, 'thumb')} alt={`${label}：${hex.fullName}`} width={400} height={560} />
         <span>{label}・{hex.name}</span>
       </Link>
-      <FavoriteButton hexagram={hex.number} label={`${hex.name}卦`} />
+      {FLAGS.collection && <FavoriteButton hexagram={hex.number} label={`${hex.name}卦`} />}
     </div>
   )
 }
@@ -51,7 +52,7 @@ function FocusBlock({ focus, main }: { focus: ReadingFocus; main: boolean }) {
     <div className={main ? 'focus-block main' : 'focus-block'}>
       <div className="focus-head">
         <FocusText focus={focus} main={main} />
-        <QuoteButton quote={quoteOf(focus)} />
+        {FLAGS.collection && <QuoteButton quote={quoteOf(focus)} />}
       </div>
       <LinePlain entryKey={keyOf(focus)} label={focusTitle(focus)} />
     </div>

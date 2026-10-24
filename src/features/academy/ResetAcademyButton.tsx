@@ -1,6 +1,7 @@
 // 重設學堂進度：要輸入「重設」兩字才能確認。占卜紀錄、今日卦、收藏與「筮」「錄」兩枚印章保留。
 
 import { useState } from 'react'
+import { FLAGS } from '../../app/flags.ts'
 import { toast } from '../../app/toast.ts'
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx'
 import { logError, maintenance } from '../../storage/index.ts'
@@ -10,7 +11,7 @@ export function ResetAcademyButton() {
   return (
     <section className="settings-section">
       <h3>重設學堂進度</h3>
-      <p className="note">清除課程與考核進度、溫故卡、XP、打卡與學堂印章，修行路線回到第一站。占卜紀錄與「筮」「錄」兩枚印章不受影響。</p>
+      <p className="note">清除課程與考核進度、{FLAGS.review && '溫故卡、'}XP、打卡與學堂印章，修行路線回到第一站。占卜紀錄與「筮」「錄」兩枚印章不受影響。</p>
       <button type="button" className="btn btn-danger" onClick={() => setOpen(true)}>重設學堂進度</button>
       <ConfirmDialog
         open={open}
@@ -27,7 +28,7 @@ export function ResetAcademyButton() {
           )
         }}
       >
-        <p>課程、考核、溫故、XP、打卡與學堂印章都會刪除，無法復原。需要的話先匯出備份。</p>
+        <p>課程、考核、{FLAGS.review && '溫故、'}XP、打卡與學堂印章都會刪除，無法復原。需要的話先匯出備份。</p>
       </ConfirmDialog>
     </section>
   )

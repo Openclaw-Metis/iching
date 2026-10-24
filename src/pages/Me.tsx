@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { DiagnosticsPanel } from '../app/DiagnosticsPanel.tsx'
+import { FLAGS } from '../app/flags.ts'
 import { InstallHelp } from '../app/InstallHelp.tsx'
 import { UserGuide } from '../app/UserGuide.tsx'
 import { ResetAcademyButton, SealBook } from '../features/academy/index.ts'
@@ -9,12 +10,14 @@ import { CollectionTab } from '../features/collection/index.ts'
 import { RecordDetail, RecordList } from '../features/records/index.ts'
 
 type Tab = 'records' | 'collection' | 'seals' | 'settings'
-const TABS: { id: Tab; label: string }[] = [
+const ALL_TABS: { id: Tab; label: string }[] = [
   { id: 'records', label: '紀錄' },
   { id: 'collection', label: '收藏' },
   { id: 'seals', label: '印譜' },
   { id: 'settings', label: '設定與備份' },
 ]
+// 記住的分頁若是已關閉的收藏，loadTab 找不到就回到紀錄
+const TABS = ALL_TABS.filter(t => FLAGS.collection || t.id !== 'collection')
 const TAB_KEY = 'iching:me-tab'
 
 function loadTab(): Tab {

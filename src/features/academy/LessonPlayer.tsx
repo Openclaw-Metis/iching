@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { FLAGS } from '../../app/flags.ts'
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx'
 import { HexagramGlyph } from '../../components/HexagramGlyph.tsx'
 import { hexagram } from '../../data/hexagrams.ts'
@@ -17,6 +18,7 @@ import { attempts as attemptsRepo, lessons, logError, type Attempt, type SealId 
 import { advance, answer, completeLesson, restart, select, startAttempt, submitExam, type ExamOutcome, type LessonOutcome } from './attempts.ts'
 import { EXAM_SIZE, flatten, lessonById, PASS_SCORE, type ReadStep } from './curriculum.ts'
 import { ExamResult } from './ExamResult.tsx'
+import { isSealShown } from './seals.ts'
 import { SealStamp } from './SealStamp.tsx'
 import { QuestionCard } from './QuestionCard.tsx'
 
@@ -72,11 +74,12 @@ const xpNote = (r: { xp: number; capped: boolean } | null): ReactNode =>
   r && (r.xp ? <p className="q-xp">＋{r.xp} XP</p> : r.capped ? <p className="q-xp">今天的作答 XP 已滿，仍可繼續練習</p> : null)
 
 export function NewSeals({ ids }: { ids: SealId[] }) {
-  if (!ids.length) return null
+  const shown = ids.filter(isSealShown)
+  if (!shown.length) return null
   return (
     <div className="new-seals">
       <p>取得新的印章</p>
-      <div>{ids.map(id => <SealStamp key={id} id={id} earned />)}</div>
+      <div>{shown.map(id => <SealStamp key={id} id={id} earned />)}</div>
     </div>
   )
 }
@@ -156,7 +159,7 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
         <dl className="kv">
           <dt>答對</dt><dd>{outcome.correct}／{outcome.total} 題</dd>
           <dt>這次得到</dt><dd>{phase.gained} XP</dd>
-          <dt>加入溫故</dt><dd>{phase.reviewAdded} 張</dd>
+          {FLAGS.review && <><dt>加入溫故</dt><dd>{phase.reviewAdded} 張</dd></>}
         </dl>
         <NewSeals ids={outcome.seals} />
         <div className="step-actions player-actions">

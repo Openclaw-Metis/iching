@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { getStorage, maintenance, readErrors, requireDb, review, storageStatus, type StorageStatus } from '../storage/index.ts'
+import { FLAGS } from './flags.ts'
 import { toast } from './toast.ts'
 
 const MODE_LABEL: Record<string, string> = {
@@ -19,7 +20,7 @@ export function DiagnosticsPanel() {
   useEffect(() => {
     void getStorage().then(storageStatus).then(setStatus)
     void maintenance.tableCounts().then(setCounts).catch(() => setCounts(null))
-    void requireDb().then(db => review.dueCount(db)).then(setDue).catch(() => setDue(null))
+    if (FLAGS.review) void requireDb().then(db => review.dueCount(db)).then(setDue).catch(() => setDue(null))
   }, [])
 
   const report = () => JSON.stringify({ at: new Date().toISOString(), userAgent: navigator.userAgent, status, counts, due, errors: readErrors() }, null, 2)

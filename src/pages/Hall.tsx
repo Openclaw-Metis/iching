@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { FLAGS } from '../app/flags.ts'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { textOf } from '../data/classic.ts'
@@ -26,6 +27,8 @@ type MapCells = Map<number, { opacity: number; due: boolean }>
 type MapView = { cells: MapCells; dueCount: number } | null
 
 function loadMapOn(): boolean {
+  // 溫故關閉時不理會記住的開關，卦殿不載入溫故模組
+  if (!FLAGS.review) return false
   try { return localStorage.getItem(MAP_KEY) === '1' } catch { return false }
 }
 
@@ -101,7 +104,7 @@ export function Hall() {
           {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
         </div>
         <input className="search" type="search" placeholder="搜尋卦名或卦序" value={query} onChange={e => setQuery(e.target.value)} aria-label="搜尋卦名或卦序" />
-        <button type="button" className="btn map-toggle" aria-pressed={mapOn} onClick={toggleMap}>學習地圖</button>
+        {FLAGS.review && <button type="button" className="btn map-toggle" aria-pressed={mapOn} onClick={toggleMap}>學習地圖</button>}
       </div>
       {mapOn && (
         <p className="map-status" aria-live="polite">

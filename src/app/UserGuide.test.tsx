@@ -3,9 +3,14 @@
 import { cleanup, render } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
+import { FLAGS } from './flags.ts'
 import { UserGuide } from './UserGuide.tsx'
 
-afterEach(cleanup)
+const savedFlags = { ...FLAGS }
+afterEach(() => {
+  cleanup()
+  Object.assign(FLAGS, savedFlags)
+})
 
 // happy-dom 環境的 import.meta.url 不是 file:，改以專案根目錄（vitest 的工作目錄）為準
 const spec = readFileSync('docs/spec.md', 'utf8')
@@ -29,7 +34,8 @@ describe('使用說明', () => {
     for (const item of items) expect(text.replace(/：/g, '')).toContain(item)
   })
 
-  it('常見問題每一列的問與答都在站內說明裡', () => {
+  it('常見問題每一列的問與答都在站內說明裡（功能開關全開時）', () => {
+    Object.assign(FLAGS, { review: true, collection: true })
     const { container } = render(<UserGuide />)
     const text = plain(container.textContent ?? '')
     const rows = section('常見問題與錯誤提示').split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| 問題'))
@@ -39,5 +45,13 @@ describe('使用說明', () => {
       expect(text).toContain(q)
       expect(text).toContain(a)
     }
+  })
+
+  it('溫故關閉時不顯示「學習地圖」的問答，其他問答照常', () => {
+    FLAGS.review = false
+    const { container } = render(<UserGuide />)
+    const text = container.textContent ?? ''
+    expect(text).not.toContain('學習地圖')
+    expect(container.querySelectorAll('.guide-faq dt')).toHaveLength(9)
   })
 })

@@ -1,6 +1,7 @@
 import { StrictMode, lazy, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
+import { FLAGS } from './app/flags.ts'
 import { Layout, RouteError } from './app/Layout.tsx'
 import { PATTERNS, type PageId } from './app/routes.ts'
 import { Hall } from './pages/Hall.tsx'
@@ -18,7 +19,8 @@ const PAGES: Record<PageId, ComponentType> = {
   me: lazy(() => import('./pages/Me.tsx').then(m => ({ default: m.Me }))),
   lesson: lazy(() => import('./pages/Lesson.tsx').then(m => ({ default: m.Lesson }))),
   exam: lazy(() => import('./pages/Exam.tsx').then(m => ({ default: m.Exam }))),
-  review: lazy(() => import('./pages/Review.tsx').then(m => ({ default: m.Review }))),
+  // 溫故關閉時路徑照樣存在（建置出的頁面回 200），進入後轉回學堂
+  review: FLAGS.review ? lazy(() => import('./pages/Review.tsx').then(m => ({ default: m.Review }))) : () => <Navigate to="/academy" replace />,
 }
 
 const router = createBrowserRouter([

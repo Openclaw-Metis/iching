@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { FLAGS } from '../../app/flags.ts'
 import { addDays } from '../../lib/dates.ts'
 import type { CheckIn, ExamResult, LessonProgress, Mastery, Reading, XpEvent } from '../../storage/index.ts'
-import { evaluateSeals, SEALS, type AchievementData } from './seals.ts'
+import { evaluateSeals, isSealShown, SEALS, shownSeals, type AchievementData } from './seals.ts'
 
 const T = (d: number, h = 10) => new Date(Date.UTC(2026, 9, d, h)).toISOString()
 const empty = (): AchievementData => ({ progress: [], exams: [], checkIns: [], mastery: [], xpEvents: [], readings: [] })
@@ -75,5 +76,26 @@ describe('15 枚印章（AC-19）', () => {
     expect(earnedOf(d).journal10).toBe(T(10))
     d.readings.pop()
     expect(earnedOf(d).journal10).toBeUndefined()
+  })
+})
+
+describe('功能開關與「溫」印', () => {
+  const saved = FLAGS.review
+  afterEach(() => { FLAGS.review = saved })
+
+  it('溫故關閉時印譜只列 14 枚、不通知「溫」印，判定照常', () => {
+    FLAGS.review = false
+    expect(shownSeals()).toHaveLength(14)
+    expect(isSealShown('review10')).toBe(false)
+    expect(isSealShown('yarrow')).toBe(true)
+    const d = empty()
+    d.xpEvents = Array.from({ length: 10 }, (_, i): XpEvent => ({ id: `r${i}`, key: `review:s${i}`, at: T(i + 1), date: '2026-10-01', amount: 10, source: 'review', ref: '' }))
+    expect(earnedOf(d).review10).toBe(T(10))
+  })
+
+  it('溫故打開時 15 枚全部列出', () => {
+    FLAGS.review = true
+    expect(shownSeals()).toHaveLength(15)
+    expect(isSealShown('review10')).toBe(true)
   })
 })

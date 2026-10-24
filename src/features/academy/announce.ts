@@ -3,10 +3,10 @@
 
 import { toast } from '../../app/toast.ts'
 import { logError, type SealId } from '../../storage/index.ts'
-import { checkSeals, sealInfo } from './seals.ts'
+import { checkSeals, isSealShown, sealInfo } from './seals.ts'
 
 export function announceSeals(ids: SealId[]) {
-  for (const id of ids) toast(`取得「${sealInfo(id).char}」印：${sealInfo(id).condition}`)
+  for (const id of ids.filter(isSealShown)) toast(`取得「${sealInfo(id).char}」印：${sealInfo(id).condition}`)
 }
 
 export async function checkAndAnnounce(): Promise<void> {

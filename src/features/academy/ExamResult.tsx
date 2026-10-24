@@ -1,6 +1,7 @@
 // 考核送出後：分數、通過與否、晉升，以及 10 題的對錯與解說。答錯的題預設展開。
 
 import { Link } from 'react-router'
+import { FLAGS } from '../../app/flags.ts'
 import type { Attempt } from '../../storage/index.ts'
 import type { ExamOutcome } from './attempts.ts'
 import { PASS_SCORE } from './curriculum.ts'
@@ -24,7 +25,7 @@ export function ExamResult({ attempt, outcome, nextHref, onRetake }: Props) {
       </p>
       {outcome.rankUp && <p className="exam-rank">修為晉升為「{outcome.rankUp}」</p>}
       {!outcome.passed && <p className="note">答對 {PASS_SCORE} 題以上就能通過，看完解說再考一次。</p>}
-      <p className="note">這次得到 {outcome.xp} XP{outcome.reviewAdded ? `，${outcome.reviewAdded} 張卡加入溫故` : ''}。</p>
+      <p className="note">這次得到 {outcome.xp} XP{FLAGS.review && outcome.reviewAdded ? `，${outcome.reviewAdded} 張卡加入溫故` : ''}。</p>
       <NewSeals ids={outcome.seals} />
       <div className="step-actions player-actions">
         {outcome.passed

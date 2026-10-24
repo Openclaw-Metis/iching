@@ -1,6 +1,7 @@
 // 印譜 15 枚（規格「印譜」）：條件全部由既有資料判定，取得時間採實際達成的時間，
 // 事件發生時與成就補發都呼叫同一個 checkSeals，所以重跑結果相同。
 
+import { FLAGS } from '../../app/flags.ts'
 import { STATIONS } from '../../data/stations.ts'
 import { requireDb, seals as sealsRepo, type CheckIn, type ExamResult, type LessonProgress, type Mastery, type Reading, type Seal, type SealId, type XpEvent } from '../../storage/index.ts'
 import { firstRunReached } from './streak.ts'
@@ -26,6 +27,12 @@ export const SEALS: SealInfo[] = [
 ]
 
 export const sealInfo = (id: SealId) => SEALS.find(s => s.id === id)!
+
+/** 溫故關閉時不列出、不通知「溫」印；判定與保存照常，打開即恢復 */
+export const isSealShown = (id: SealId) => FLAGS.review || id !== 'review10'
+
+/** 印譜列出的印章 */
+export const shownSeals = () => SEALS.filter(s => isSealShown(s.id))
 
 export interface AchievementData {
   progress: LessonProgress[]
