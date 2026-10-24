@@ -787,7 +787,7 @@ iching/
 | `plain` 白話 | 60 到 140 字 | 這一爻或這段卦辭在說什麼：卦象、處境、吉凶的白話，爻可引用小象，卦辭可引用彖傳 |
 | `advice` 占得提醒 | 40 到 90 字 | 占得此爻或此卦時可以怎麼應對，不斷定現況、不保證結果 |
 
-- 鍵：爻為 `卦序-爻位`（爻位 0 到 5，初爻為 0）；乾卦用九、坤卦用六為 `1-use`、`2-use`；卦辭為 `卦序-judgment`。共 384 + 2 + 64 = 450 條，存在 `src/data/lines.json`，以動態載入使用。
+- 鍵：爻為 `卦序-爻位`（爻位 0 到 5，初爻為 0）；乾卦用九、坤卦用六為 `1-use`、`2-use`；卦辭為 `卦序-judgment`。共 384 + 2 + 64 = 450 條，存在 `src/data/lines.json`，建置時輸出成獨立的雜湊檔，需要時才以 `fetch` 載入（`lines.json?url` 取得檔名）。不用 `import()`，因為瀏覽器會記住載入失敗的動態模組，同一頁面重試不會重新請求。
 - 解讀頁依 `focus.kind` 取條目：`judgment` 取 `n-judgment`，`line` 取 `n-position`，`useAll` 取 `1-use` 或 `2-use`。
 - 經文一律以 `textOf(n)`（即 `classic.hexagrams[n - 1]`）取用。爻位對應原始索引：`lines[0]` 到 `lines[5]` 是初爻到上爻，乾坤的 `lines[6]` 是用九、用六；卡牌頁經文分頁由上爻往下顯示時，不可用倒序後的索引當爻位。
 - 卡牌頁支援深層連結 `?tab=text&focus=<目標>`，目標為 `judgment`、`daxiang`、`line-0` 到 `line-5`（零起算，`line-2` 是第三爻）或 `use`（只適用乾坤）。頁面切到經文分頁，等分頁與白話內容都渲染完成後捲動到該句並短暫標示；目標不合法時只切分頁不捲動。
@@ -2048,7 +2048,7 @@ src/pages/CardDetail.tsx（經文分頁加白話、原始索引對應爻位、?t
 
 [具體步驟]
 1. 撰稿：每批 8 卦，讀完該卦卦辭、彖傳、大象、六爻與小象後，為卦辭與每爻各寫 plain（60 到 140 字）與 advice（40 到 90 字）；鍵為「卦序-judgment」與「卦序-爻位」（0 到 5），乾坤加「1-use」「2-use」。輸出 {"drafts":[{"key","plain","advice","notes"}]}。
-2. lines.ts：export interface LinePlain { plain: string; advice: string }；loadLines() 以 import('./lines.json') 動態載入並快取在模組內；keyOf(focus) 依 focus.kind 回傳 n-judgment、n-position 或 1-use、2-use。
+2. lines.ts：export interface LinePlain { plain: string; advice: string }；loadLines() 以 fetch 載入 lines.json?url 取得的雜湊檔並快取在模組內，失敗時清掉快取以便重試（不用 import()，瀏覽器會記住失敗的動態模組）；keyOf(focus) 依 focus.kind 回傳 n-judgment、n-position 或 1-use、2-use。
 3. lines.test.ts：450 個鍵齊全；長度在範圍內；每段「」引文以 src/lib/text.ts 的 normalizeQuote 比對，斷句位置一致且能在原文找到；沒有破折號。
 4. LinePlain 元件顯示白話與提醒，提供「原文／白話」切換；載入失敗顯示「白話載入失敗，先顯示原文」與重試。
 5. 解讀頁的主讀與輔讀依 focus.kind 接上 LinePlain。

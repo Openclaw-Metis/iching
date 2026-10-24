@@ -3,12 +3,14 @@
 
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { FocusText } from '../../components/FocusText.tsx'
+import { FocusText, focusTitle } from '../../components/FocusText.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
+import { LinePlain } from '../../components/LinePlain.tsx'
 import { NoteEditor } from '../../components/NoteEditor.tsx'
 import { SaveStatusPill, type SaveStatus } from '../../components/SaveStatusPill.tsx'
 import { cardAsset } from '../../data/cards.ts'
 import type { Hexagram } from '../../data/hexagrams.ts'
+import { keyOf } from '../../data/lines.ts'
 import { ERROR_MESSAGES, isAppError } from '../../lib/errors.ts'
 import type { ReadingFocus } from '../../lib/reading.ts'
 import type { Reading } from '../../storage/index.ts'
@@ -35,12 +37,12 @@ function Card({ hex, label }: { hex: Hexagram; label: string }) {
   )
 }
 
-/** 主讀與輔讀的經文；白話與占得提醒在 Stage 4 接上，先保留位置 */
+/** 主讀與輔讀：原文一律顯示，下方依 focus.kind 接上對應的白話與占得提醒 */
 function FocusBlock({ focus, main }: { focus: ReadingFocus; main: boolean }) {
   return (
     <div className={main ? 'focus-block main' : 'focus-block'}>
       <FocusText focus={focus} main={main} />
-      <p className="plain-pending note">白話與占得提醒撰寫中，先以原文為準。</p>
+      <LinePlain entryKey={keyOf(focus)} label={focusTitle(focus)} />
     </div>
   )
 }

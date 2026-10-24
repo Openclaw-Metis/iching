@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { FocusText } from '../components/FocusText.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
+import { LinePlain } from '../components/LinePlain.tsx'
 import artDirection from '../data/art-direction.json'
 import { hasArt } from '../data/cards.ts'
 import { textOf } from '../data/classic.ts'
 import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
+import { lineKey, parseTextFocus, type TextFocus } from '../data/lines.ts'
 import { xugua, zagua } from '../data/xugua.ts'
 import { interpret } from '../lib/reading.ts'
 
@@ -19,6 +21,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'lab', label: '爻變' },
   { id: 'source', label: '來源' },
 ]
+
+const isTab = (v: string | null): v is Tab => TABS.some(t => t.id === v)
 
 export function CardDetail() {
   const { number } = useParams()
@@ -36,7 +40,11 @@ function Detail({ n }: { n: number }) {
   const [rolled, setRolled] = useState(false)
   const [dived, setDived] = useState(false)
   const [caption, setCaption] = useState('')
-  const [tab, setTab] = useState<Tab>('meaning')
+  const location = useLocation()
+  const [params, setParams] = useSearchParams()
+  const linkedTab = params.get('tab')
+  const [tab, setTab] = useState<Tab>(isTab(linkedTab) ? linkedTab : 'meaning')
+  const focus = tab === 'text' && linkedTab === 'text' ? parseTextFocus(params.get('focus'), n) : null
   const timer = useRef<number | undefined>(undefined)
   const keepCaption = useRef(false)
   const c = cuo(hex), z = zong(hex), x = hu(hex)
@@ -97,6 +105,17 @@ function Detail({ n }: { n: number }) {
     }, 2200)
   }
 
+  // 已在這一頁時再點到深層連結，也要切到指定分頁
+  useEffect(() => {
+    if (isTab(linkedTab)) setTab(linkedTab)
+  }, [linkedTab, location.key])
+
+  // 手動換分頁時清掉深層連結，回到經文分頁才不會又捲一次
+  const chooseTab = (id: Tab) => {
+    setTab(id)
+    if (params.has('tab') || params.has('focus')) setParams({}, { replace: true })
+  }
+
   return (
     <>
       <div className="detail">
@@ -130,12 +149,12 @@ function Detail({ n }: { n: number }) {
 
           <div className="tabs" role="tablist">
             {TABS.map(t => (
-              <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>
+              <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => chooseTab(t.id)}>{t.label}</button>
             ))}
           </div>
           <div className="panel" role="tabpanel">
             {tab === 'meaning' && <Meaning hex={hex} />}
-            {tab === 'text' && <Classic hex={hex} />}
+            {tab === 'text' && <Classic key={location.key} hex={hex} focus={focus} />}
             {tab === 'structure' && <Structure hex={hex} />}
             {tab === 'lab' && <Lab hex={hex} />}
             {tab === 'source' && <Sources hex={hex} />}
@@ -208,25 +227,68 @@ function Meaning({ hex }: { hex: Hexagram }) {
   )
 }
 
-function Classic({ hex }: { hex: Hexagram }) {
-  const t = textOf(hex.number)
+/** 經文分頁。爻由上往下排，但 id 與白話的鍵一律用 classic 的原始索引（初爻為 0，乾坤的 6 為用九用六）。 */
+function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
+  const n = hex.number
+  const t = textOf(n)
+  const [flash, setFlash] = useState<TextFocus | null>(null)
+  const done = useRef(false)
+
+  // 內容就位後才捲動，標示一陣子再淡掉；每次掛載只捲一次
+  const reveal = useCallback(() => {
+    if (!focus || done.current) return
+    const el = document.getElementById(`text-${focus}`)
+    if (!el) return
+    done.current = true
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' })
+    setFlash(focus)
+  }, [focus])
+
+  useEffect(() => {
+    if (focus === 'daxiang') reveal()
+  }, [focus, reveal])
+
+  useEffect(() => {
+    if (!flash) return
+    const id = window.setTimeout(() => setFlash(null), 2400)
+    return () => window.clearTimeout(id)
+  }, [flash])
+
+  const target = (id: TextFocus) => ({ id: `text-${id}`, 'data-flash': flash === id || undefined })
+  const plainFor = (id: TextFocus, key: string, label: string) => (
+    <LinePlain entryKey={key} label={label} initial={focus === id ? 'plain' : 'original'} onSettled={focus === id ? reveal : undefined} />
+  )
+  const order = t.lines.map((_, i) => i).reverse()
+
   return (
     <>
-      <h3>卦辭</h3>
-      <p className="classic">{t.judgment}</p>
+      <div className="text-target" {...target('judgment')}>
+        <h3>卦辭</h3>
+        <p className="classic">{t.judgment}</p>
+        {plainFor('judgment', lineKey(n, { kind: 'judgment' }), `${hex.name}卦辭`)}
+      </div>
       <h3>彖傳</h3>
       <p>{t.tuan}</p>
-      <h3>大象</h3>
-      <p>{t.daxiang}</p>
+      <div className="text-target" {...target('daxiang')}>
+        <h3>大象</h3>
+        <p>{t.daxiang}</p>
+      </div>
       <h3>爻辭與小象</h3>
       <ul className="line-list">
-        {[...t.lines].reverse().map(l => (
-          <li key={l.label}>
-            <span className="label">{l.label}</span>
-            <span className="classic">{l.text}</span>
-            <span className="xiang">象曰：{l.xiang}</span>
-          </li>
-        ))}
+        {order.map(i => {
+          const l = t.lines[i]
+          const id: TextFocus = i === 6 ? 'use' : `line-${i as 0 | 1 | 2 | 3 | 4 | 5}`
+          const key = i === 6 ? lineKey(n, { kind: 'useAll' }) : lineKey(n, { kind: 'line', position: i })
+          return (
+            <li key={i} className="text-target" {...target(id)}>
+              <span className="label">{l.label}</span>
+              <span className="classic">{l.text}</span>
+              <span className="xiang">象曰：{l.xiang}</span>
+              {plainFor(id, key, `${hex.name}${l.label}`)}
+            </li>
+          )
+        })}
       </ul>
       {t.wenyan.length > 0 && (
         <>
