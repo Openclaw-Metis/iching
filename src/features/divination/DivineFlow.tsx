@@ -22,6 +22,7 @@ import { QUESTION_MIN, QuestionStep } from './QuestionStep.tsx'
 import { ResultStep } from './ResultStep.tsx'
 import { YarrowAnimation } from './YarrowAnimation.tsx'
 import { yarrowLine, type YarrowLine } from './yarrow.ts'
+import { applySplit, handStart } from './yarrowHand.ts'
 
 type View =
   | { kind: 'loading' }
@@ -221,10 +222,27 @@ export function DivineFlow() {
       await complete(done)
       return
     }
-    const next: CastDraft = { ...base, phase: 'casting', lines: [] }
+    const next: CastDraft = { ...base, phase: 'casting', lines: [], yarrow: base.method === 'yarrow' ? handStart() : null }
     setDraft(next)
     setView({ kind: 'casting' })
     void queue.update(next)
+  }
+
+  /** 親手分蓍的一變：每一變都放進完整草稿寫入，重新整理後從同一變繼續 */
+  const split = (left: number) => {
+    const current = draftRef.current
+    if (current.lines.length >= 6) return
+    const { draft: next, step: hand } = applySplit(current, left)
+    if (hand.value !== undefined) track('divine_line_cast', { index: next.lines.length - 1, value: hand.value, method: 'yarrow-hand' })
+    setDraft(next)
+    if (next.phase !== 'complete') {
+      void queue.update(next)
+      return
+    }
+    void (async () => {
+      await queue.update(next)
+      await complete(next)
+    })()
   }
 
   const addLine = (value: LineValue) => {
@@ -337,6 +355,7 @@ export function DivineFlow() {
           draft={draft}
           saveState={saveState}
           onLine={addLine}
+          onSplit={split}
           onAbandon={() => { if (draftRef.current.lines.length) setConfirm('abandon'); else void startFresh() }}
         />
       )}

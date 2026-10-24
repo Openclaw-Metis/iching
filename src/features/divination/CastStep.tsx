@@ -9,6 +9,9 @@ import { castCoinLine, type Coin } from './coins.ts'
 import type { DraftSaveState } from './draftQueue.ts'
 import { LINE_NAMES, MANUAL_RULE } from './labels.ts'
 import { manualLine } from './manual.ts'
+import { yarrowChange, type YarrowChange } from './yarrow.ts'
+import { handStart, stepNumber } from './yarrowHand.ts'
+import { YarrowSplitter } from './YarrowSplitter.tsx'
 
 const ORDINAL = ['初', '二', '三', '四', '五', '上']
 const COOLDOWN_MS = 300
@@ -17,12 +20,15 @@ interface Props {
   draft: CastDraft
   saveState: DraftSaveState
   onLine: (value: LineValue) => void
+  /** 親手分蓍的一變 */
+  onSplit: (left: number) => void
   onAbandon: () => void
 }
 
-export function CastStep({ draft, saveState, onLine, onAbandon }: Props) {
+export function CastStep({ draft, saveState, onLine, onSplit, onAbandon }: Props) {
   const [coins, setCoins] = useState<Coin[] | null>(null)
   const [cooling, setCooling] = useState(false)
+  const [lastChange, setLastChange] = useState<YarrowChange | null>(null)
   const castButton = useRef<HTMLButtonElement>(null)
   const done = draft.lines.length
   const next = Math.min(done + 1, 6)
@@ -82,6 +88,25 @@ export function CastStep({ draft, saveState, onLine, onAbandon }: Props) {
             <p className="note">{MANUAL_RULE}</p>
           </>
         )}
+
+        {draft.method === 'yarrow' && (() => {
+          const hand = draft.yarrow ?? handStart(done)
+          return (
+            <YarrowSplitter
+              remaining={hand.remaining}
+              step={stepNumber(hand)}
+              lastChange={lastChange}
+              disabled={cooling || done >= 6}
+              onSplit={left => {
+                if (cooling) return
+                setCooling(true)
+                setTimeout(() => setCooling(false), COOLDOWN_MS)
+                setLastChange(yarrowChange(hand.remaining, left))
+                onSplit(left)
+              }}
+            />
+          )
+        })()}
 
         {saveState === 'failed' && <p className="inline-warning" role="alert">進度暫時無法保存，關閉頁面會遺失。</p>}
 

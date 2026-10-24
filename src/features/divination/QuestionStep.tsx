@@ -77,7 +77,11 @@ export function QuestionStep({ draft, saveState, onChange, onStart }: Props) {
             {draft.method === 'yarrow' && (
               <div className="segmented-radio yarrow-mode" role="radiogroup" aria-label="大衍筮法的方式">
                 <label>
-                  <input type="radio" name={`${id}-yarrow`} value="quick" checked onChange={() => onChange({ yarrowMode: 'quick' })} />
+                  <input type="radio" name={`${id}-yarrow`} value="hand" checked={draft.yarrowMode === 'hand'} onChange={() => onChange({ yarrowMode: 'hand' })} />
+                  <span>親手分蓍（18 步）</span>
+                </label>
+                <label>
+                  <input type="radio" name={`${id}-yarrow`} value="quick" checked={draft.yarrowMode === 'quick'} onChange={() => onChange({ yarrowMode: 'quick' })} />
                   <span>一鍵完成</span>
                 </label>
               </div>
