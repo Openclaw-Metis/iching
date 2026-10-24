@@ -32,7 +32,8 @@ const entries = items.map(item => {
   return {
     path: join(outDir, `subject-${String(item).padStart(2, '0')}.png`),
     mode: 'TRANSPARENT, portrait 2:3 (1024x1536)',
-    prompt: `${s.en}. ${art.style}. Vertical portrait 2:3 composition, the whole subject inside the central 80 percent of the canvas, centered both horizontally and vertically, with an empty transparent margin on every side. ${NO_TEXT}`,
+    // 人物規則對動物、器物主體沒有影響，所以一律附上，避免畫出西方人物
+    prompt: `${s.en}. ${art.style}. ${art.peopleRule}. Vertical portrait 2:3 composition, the whole subject inside the central 80 percent of the canvas, centered both horizontally and vertically, with an empty transparent margin on every side. ${NO_TEXT}`,
   }
 })
 

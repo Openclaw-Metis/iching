@@ -38,15 +38,15 @@
     },
     "7": {
       "zh": "取卦辭「師貞，丈人吉」：老成持重的將領身披金甲，手持令旗，象徵有紀律的眾人與統帥。",
-      "en": "a seasoned elderly general in ornate gold cloisonne armor standing steady and composed, holding a tall command banner that shows only geometric pattern and a sheathed sword at his side"
+      "en": "a seasoned elderly Chinese general in ornate Tang dynasty mingguang armor with round chest plates, standing steady and composed, holding a tall command banner that shows only geometric pattern and a sheathed Chinese sword at his side"
     },
     "8": {
       "zh": "取卦辭「比，吉」與大象「地上有水」：三位同伴並肩挽臂而立，象徵親近、相輔與團結。",
-      "en": "three companions in patterned robes standing close together shoulder to shoulder with arms linked, warm and friendly expressions, forming one compact united group"
+      "en": "three young Chinese companions in hanfu robes standing close together shoulder to shoulder with arms linked, warm and friendly expressions, forming one compact united group"
     },
     "9": {
       "zh": "取卦辭「密雲不雨」：牧童以繩輕牽小牛，頭上密雲聚而未雨，象徵以柔制剛、小有蓄積。",
-      "en": "a young herder gently holding a small calf on a loose rope, the calf calm, a few dense small rain clouds gathered above them with no rain falling"
+      "en": "a young Chinese herd boy with his hair tied in two small buns, wearing a simple hanfu tunic and straw sandals, gently holding a small calf on a loose rope, a few dense small rain clouds gathered above them with no rain falling"
     },
     "10": {
       "zh": "取卦辭「履虎尾，不咥人」：一人小心翼翼踩在老虎尾後，老虎回首卻不傷人。",
@@ -62,7 +62,7 @@
     },
     "13": {
       "zh": "取卦辭「同人于野」：不同年紀的人圍著一團火聚在曠野，象徵與人同心、廣結志同道合者。",
-      "en": "a small group of people of different ages gathered around a bonfire, raising their hands together in fellowship, robes patterned in gold geometric motifs"
+      "en": "a small group of Chinese villagers of different ages in hanfu robes gathered around a bonfire, raising their hands together in fellowship"
     },
     "14": {
       "zh": "取大象「火在天上，大有」：光芒四射的太陽懸在盛滿穀物、果實與珠寶的金盤之上，象徵豐盛與光明普照。",
@@ -74,11 +74,11 @@
     },
     "16": {
       "zh": "取大象「先王以作樂崇德」：擊鐘鼓起舞的樂人，象徵和樂、振奮與預作準備。",
-      "en": "a joyful musician dancing as he strikes a hanging bronze bell and a small drum, ribbons and sleeves flowing in rhythm"
+      "en": "a joyful Chinese court musician in flowing Tang dynasty dance robes with long sleeves dancing as she strikes a hanging bronze bell and a small drum, ribbons flowing in rhythm"
     },
     "17": {
       "zh": "取卦名「隨」與大象「嚮晦入宴息」：少年提燈跟隨老者於暮色中前行，象徵順時而隨、擇善而從。",
-      "en": "a young boy holding a small glowing lantern following an old guide with a walking staff, both walking forward together at dusk"
+      "en": "a young Chinese boy with hair tied in two buns holding a small glowing paper lantern, following an old Chinese guide in a hanfu robe with a topknot and a bamboo walking staff, both walking forward together at dusk"
     },
     "18": {
       "zh": "取「蠱」字器皿生蟲的本義：工匠修補生了蟲的古器，象徵整治積弊、撥亂反正。",
@@ -90,7 +90,7 @@
     },
     "20": {
       "zh": "取卦辭「盥而不薦，有孚顒若」：祭祀前虔敬洗手的人，象徵觀察、瞻仰與以誠示人。",
-      "en": "a solemn ritualist washing hands in a bronze basin before a ceremony, devout and reverent expression"
+      "en": "a solemn Chinese ritual officiant in Zhou dynasty ceremonial robes and a mian crown with hanging beads, washing hands in a bronze basin before a ceremony, devout and reverent expression"
     },
     "21": {
       "zh": "取彖傳「頤中有物，曰噬嗑」：金色狻猊咬斷口中的銅棒，象徵咬合障礙、明斷是非。",
@@ -126,7 +126,7 @@
     },
     "29": {
       "zh": "取卦辭「習坎，有孚，維心亨」：旅人持心專一，走過急流深谷上的獨木，象徵重重險陷中守信前行。",
-      "en": "a determined traveler carefully crossing a narrow log bridge over a deep rushing gorge, arms out for balance, focused and steady"
+      "en": "a determined Chinese traveler in a hanfu robe and straw sandals with hair in a topknot carefully crossing a narrow log bridge over a deep rushing gorge, arms out for balance, focused and steady"
     },
     "30": {
       "zh": "取說卦「離為火，為雉」：羽翼如火焰的錦雉振翅，象徵光明、依附與文明。",
@@ -134,15 +134,15 @@
     },
     "31": {
       "zh": "取彖傳「咸，感也」與卦辭「取女吉」：一對年輕男女相對而立，指尖相觸，象徵感應與相互吸引。",
-      "en": "a young man and a young woman standing face to face, their fingertips just touching, gentle and tender"
+      "en": "a young Chinese man and a young Chinese woman in hanfu robes standing face to face, their fingertips just touching, gentle and tender"
     },
     "32": {
       "zh": "取彖傳「恒，久也」：白髮夫婦攜手同行，象徵恆久不變的道。",
-      "en": "an elderly couple with white hair walking together hand in hand, serene and devoted"
+      "en": "an elderly Chinese couple with white hair tied in buns, wearing hanfu robes, walking together hand in hand, serene and devoted"
     },
     "33": {
-      "zh": "取卦名「遯」：隱者持杖退入山林，回首一望，象徵適時退避、保全自身。",
-      "en": "a hermit with a walking staff walking away toward distant mountains, glancing back over his shoulder once"
+      "zh": "取卦名「遯」：披蓑戴笠的隱者持杖退入山林，回首一望，象徵適時退避、保全自身。",
+      "en": "an old Chinese hermit in a straw rain cape and a conical bamboo hat with a bamboo walking staff walking away toward distant misty mountains, glancing back over his shoulder once"
     },
     "34": {
       "zh": "取九三「羝羊觸藩，羸其角」：公羊奮力撞籬，角被纏住，象徵壯盛之時更要守正、不可妄動。",
@@ -150,23 +150,23 @@
     },
     "35": {
       "zh": "取大象「明出地上，晉」與卦辭「康侯用錫馬」：諸侯乘駿馬迎著初升的太陽前進，象徵晉升與光明前進。",
-      "en": "a noble lord riding forward on a fine horse toward a rising sun disc, confident and bright"
+      "en": "a Chinese noble lord in Han dynasty court robes and a black guan hat riding forward on a fine horse toward a rising sun disc, confident and bright"
     },
     "36": {
-      "zh": "取大象「明入地中，明夷」與初九「明夷于飛，垂其翼」：披斗篷的人把燈藏在袖中，腳邊一隻垂翼的鳥，象徵韜光養晦。",
-      "en": "a cloaked figure carefully hiding a glowing lantern beneath his sleeve, a small wounded bird with a drooping wing resting at his feet"
+      "zh": "取大象「明入地中，明夷」與初九「明夷于飛，垂其翼」：身著深色長袍的書生把燈藏在袖中，腳邊一隻垂翼的鳥，象徵韜光養晦。",
+      "en": "a Chinese scholar in a dark hanfu robe with wide sleeves and a black gauze hat, carefully hiding a glowing paper lantern beneath his sleeve, a small wounded bird with a drooping wing resting at his feet"
     },
     "37": {
       "zh": "取大象「風自火出，家人」：婦人與孩子圍著爐火備餐，象徵家道與各守其位。",
-      "en": "a woman and a child tending a warm cooking hearth together, a pot simmering over the fire, cozy family scene"
+      "en": "a Chinese mother in a hanfu robe with her hair in a bun and a small child with hair in two buns tending a warm cooking hearth together, a clay pot simmering over the fire, cozy family scene"
     },
     "38": {
       "zh": "取彖傳「二女同居，其志不同行」：兩名女子背對而坐、望向不同方向，象徵乖離中求同存異。",
-      "en": "two young women sitting back to back, each looking in a different direction, calm but apart"
+      "en": "two young Chinese women in hanfu robes with black hair in elegant buns, sitting back to back, each looking in a different direction, calm but apart"
     },
     "39": {
-      "zh": "取彖傳「蹇，難也」：旅人拄杖在險峻雪坡上艱難前行，象徵險阻在前，宜反身修德、尋求助力。",
-      "en": "a traveler struggling up a steep snowy mountain slope leaning heavily on a staff, limping but persistent"
+      "zh": "取彖傳「蹇，難也」：披蓑戴笠的旅人拄杖在險峻雪坡上艱難前行，象徵險阻在前，宜反身修德、尋求助力。",
+      "en": "a Chinese traveler in a straw rain cape and a conical bamboo hat struggling up a steep snowy mountain slope, leaning heavily on a bamboo staff, limping but persistent"
     },
     "40": {
       "zh": "取彖傳「雷雨作」與上六「公用射隼于高墉之上」：城牆上的射手張弓射隼，象徵困難解除、除去禍患。",
@@ -178,7 +178,7 @@
     },
     "42": {
       "zh": "取卦名「益」的損上益下：長者從大甕中將穀物倒入孩子的籃中，象徵施惠與增益。",
-      "en": "a generous elder pouring golden grain from a large jar into a child basket held up by a smiling child"
+      "en": "a generous elderly Chinese man in a hanfu robe with a white beard and a topknot pouring golden grain from a large ceramic jar into a bamboo basket held up by a smiling Chinese child with hair in two buns"
     },
     "43": {
       "zh": "取彖傳「夬，決也」與卦辭「揚于王庭」：官員高舉笏板果決宣告，腳邊是斷開的鎖鏈，象徵剛決柔、果斷去除弊端。",
@@ -202,7 +202,7 @@
     },
     "48": {
       "zh": "取卦辭「改邑不改井」：古井與轆轤，汲水的人，象徵恆常的資源與養人之德。",
-      "en": "an ancient stone well with a wooden pulley and rope, a person drawing up a bucket of clear water"
+      "en": "an ancient stone well with a wooden pulley and rope, a Chinese woman in a hanfu robe with her hair in a bun drawing up a bucket of clear water"
     },
     "49": {
       "zh": "取九五「大人虎變」：斑紋煥然一新的猛虎，象徵變革與去故。",
@@ -226,7 +226,7 @@
     },
     "54": {
       "zh": "取卦名「歸妹」與上六「女承筐无實」：手捧竹筐、低首的新嫁娘，象徵婚姻與名分，也提醒守正知終。",
-      "en": "a young bride wearing a jeweled veil holding an empty bamboo basket, eyes lowered"
+      "en": "a young Chinese bride wearing a phoenix crown with pearl tassels and an embroidered xiapei shawl, holding an empty bamboo basket, eyes lowered"
     },
     "55": {
       "zh": "取卦辭「宜日中」與六二「日中見斗」：正午烈日高懸於華麗樓閣之上，周圍隱約見星，象徵豐盛到頂點，提醒盛極必衰。",
@@ -242,7 +242,7 @@
     },
     "58": {
       "zh": "取大象「麗澤，兌，君子以朋友講習」：兩位少女說笑相談，象徵喜悅與溝通。",
-      "en": "two young friends laughing and conversing joyfully, one holding a lotus flower"
+      "en": "two young Chinese girls in hanfu robes with black hair in buns and flower hairpins, laughing and conversing joyfully, one holding a lotus flower"
     },
     "59": {
       "zh": "取大象「風行水上，渙」：風帆鼓起的船行於破冰散開的水面，象徵離散與化解，也宜聚合人心。",
@@ -268,5 +268,6 @@
       "zh": "取卦辭「小狐汔濟，濡其尾」：小狐狸涉水將過岸，尾巴卻沾濕了，象徵事未完成、仍須謹慎。",
       "en": "a young fox wading across a shallow stream almost reaching the far bank, its bushy tail dipping into the water"
     }
-  }
+  },
+  "peopleRule": "All human figures are East Asian people with East Asian facial features and straight black hair, wearing ancient Chinese hanfu robes of the Han to Tang dynasties with Chinese hairstyles, hairpins and headwear; any halo is a round Dunhuang mural style Buddhist nimbus. No European faces, no blonde, brown or red hair, no curly hair, no laurel wreaths, no Western medieval, Greek or Roman clothing, no boots or leather backpacks, no Christian iconography, no European buildings or castles"
 }
