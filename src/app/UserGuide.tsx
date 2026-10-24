@@ -1,13 +1,13 @@
 // 設定分頁的「使用說明」：文字取自規格非技術版的「限制與注意事項」與「常見問題」，改規格時要一起改這裡。
-// 屬於功能開關的問答（feature）在該功能關閉時不顯示。
+// 屬於功能開關的條目與問答（feature）在該功能關閉時不顯示。
 
 import { FLAGS } from './flags.ts'
 
-const LIMITS: { title: string; body: string }[] = [
+const LIMITS: { title: string; body: string; feature?: keyof typeof FLAGS }[] = [
   { title: '資料只在這台裝置', body: '紀錄、收藏、學習進度都存在你現在用的這個瀏覽器。換瀏覽器、換裝置、或清除瀏覽器的網站資料，內容就不會跟過去，請定期匯出備份。' },
   { title: 'iPhone 與 iPad 的 Safari 特別注意', body: '如果你連續一段時間（Safari 的使用累計 7 天）都沒有打開這個網站，Safari 可能會自動清掉它存的內容。把網站「加到主畫面」再從主畫面打開，就不受這個規則影響。' },
   { title: '無痕視窗不會保存', body: '在無痕或私密視窗裡占卜、學習都可以，但關掉後就不會留下。' },
-  { title: '每日提醒靠行事曆', body: '網站本身沒辦法在固定時間跳出通知，所以改用下載提醒檔，由你的行事曆每天提醒。' },
+  { title: '每日提醒靠行事曆', body: '網站本身沒辦法在固定時間跳出通知，所以改用下載提醒檔，由你的行事曆每天提醒。', feature: 'reminder' },
   { title: '不是預言', body: '解讀是幫你整理思緒的參考，不保證結果，也不提供醫療、法律、投資方面的建議。' },
   { title: '親手分蓍的機率', body: '自己決定蓍草分在哪裡，就像真的拿蓍草一樣，結果的機率會受你的手影響；選「一鍵完成」則符合古法的理論機率。' },
   { title: '抽牌占卜還沒有', body: '這一版只有「今日一卦」會抽牌；用多張牌問事的玩法之後再加。' },
@@ -36,7 +36,7 @@ export function UserGuide() {
       <div className="install-body">
         <h4>限制與注意事項</h4>
         <ul className="guide-list">
-          {LIMITS.map(l => <li key={l.title}><b>{l.title}</b>：{l.body}</li>)}
+          {LIMITS.filter(l => !l.feature || FLAGS[l.feature]).map(l => <li key={l.title}><b>{l.title}</b>：{l.body}</li>)}
         </ul>
         <h4>常見問題</h4>
         <dl className="guide-faq">

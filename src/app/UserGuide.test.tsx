@@ -26,7 +26,8 @@ function section(heading: string) {
 const plain = (s: string) => s.replace(/\*\*/g, '').replace(/\s+/g, '')
 
 describe('使用說明', () => {
-  it('限制與注意事項每一條都在站內說明裡', () => {
+  it('限制與注意事項每一條都在站內說明裡（功能開關全開時）', () => {
+    Object.assign(FLAGS, { review: true, collection: true, reminder: true })
     const { container } = render(<UserGuide />)
     const text = plain(container.textContent ?? '')
     const items = section('限制與注意事項').split('\n').filter(l => l.startsWith('- ')).map(l => plain(l.slice(2)).replace('：', ''))
@@ -35,7 +36,7 @@ describe('使用說明', () => {
   })
 
   it('常見問題每一列的問與答都在站內說明裡（功能開關全開時）', () => {
-    Object.assign(FLAGS, { review: true, collection: true })
+    Object.assign(FLAGS, { review: true, collection: true, reminder: true })
     const { container } = render(<UserGuide />)
     const text = plain(container.textContent ?? '')
     const rows = section('常見問題與錯誤提示').split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| 問題'))
@@ -53,5 +54,12 @@ describe('使用說明', () => {
     const text = container.textContent ?? ''
     expect(text).not.toContain('學習地圖')
     expect(container.querySelectorAll('.guide-faq dt')).toHaveLength(9)
+  })
+
+  it('每日提醒關閉時不顯示「每日提醒靠行事曆」，其他條目照常', () => {
+    FLAGS.reminder = false
+    const { container } = render(<UserGuide />)
+    expect(container.textContent).not.toContain('每日提醒靠行事曆')
+    expect(container.querySelectorAll('.guide-list li')).toHaveLength(9)
   })
 })

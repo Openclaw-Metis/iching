@@ -1,6 +1,7 @@
 // 今日一卦。換日時（頁面開著跨過午夜，或隔天從背景切回來）回到牌背，提示可以翻開新的一卦。
 
 import { useEffect, useState } from 'react'
+import { FLAGS } from '../app/flags.ts'
 import { toast } from '../app/toast.ts'
 import { IcsReminder, TodayCard } from '../features/daily/index.ts'
 import { watchDate } from '../lib/dateWatch.ts'
@@ -27,7 +28,7 @@ export function Today() {
         <p className="note">{date.replace(/-/g, '/')}</p>
       </header>
       {current ? <TodayCard key={date} date={date} row={current.row} /> : <div className="today-placeholder" aria-hidden="true" />}
-      <IcsReminder />
+      {FLAGS.reminder && <IcsReminder />}
     </div>
   )
 }
