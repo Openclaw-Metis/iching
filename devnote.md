@@ -11,7 +11,7 @@
 
 **最後更新**：2026-10-24（Stage 11 完成，交付）
 
-**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main` 的部署版為 `2d24456`；之後的驗收紀錄提交在 `claude/keen-mayer-v9g6tt`）；網站 https://openclaw-metis.github.io/iching/
+**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main` 與 `claude/keen-mayer-v9g6tt` 同步；網站程式最後一次變動為 `2d24456`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
 
 **下一步**：Stage 0 至 11 已完成並部署（使用者同意後把分支快轉合併到 `main`），正式站通過 AC-23 與 AC-27。剩下要在實機做的：正式站 Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 在 Google 日曆與 Apple 行事曆匯入、Firefox 匯入、陀螺儀與低階手機；等使用者決定的事（授權、抽牌占卜、白話三方撰稿）在 `docs/known-issues.md`。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
