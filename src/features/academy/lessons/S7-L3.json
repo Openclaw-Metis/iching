@@ -1,0 +1,31 @@
+{
+  "id": "S7-L3",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "初與四、二與五、三與上，分別是下卦與上卦相同位置的爻，稱為對位。對位的兩爻一陰一陽為有應，同陰或同陽為無應。",
+      "hexagram": 11
+    },
+    {
+      "kind": "read",
+      "text": "相鄰的兩爻稱為比，例如二與三、四與五。讀爻辭時，常從應與比看這一爻得到誰的支持。"
+    },
+    {
+      "kind": "quiz",
+      "type": "position",
+      "count": 2,
+      "params": {
+        "variant": "counterpart"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "position",
+      "count": 2,
+      "params": {
+        "variant": "resonance"
+      }
+    }
+  ]
+}

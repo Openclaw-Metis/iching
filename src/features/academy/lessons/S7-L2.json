@@ -1,0 +1,30 @@
+{
+  "id": "S7-L2",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "二爻在下卦正中，五爻在上卦正中，稱為中爻。居中有不偏不倚的意思，五爻又是全卦的尊位。"
+    },
+    {
+      "kind": "read",
+      "text": "繫辭說「二多譽，四多懼」，又說「三多凶，五多功」。二、五居中，爻辭常較吉；三、四在上下卦交界，處境較不安穩。"
+    },
+    {
+      "kind": "quiz",
+      "type": "position",
+      "count": 2,
+      "params": {
+        "variant": "central"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "position",
+      "count": 1,
+      "params": {
+        "variant": "proper"
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "S6-L2",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "傳是解釋經的文字。彖傳解釋卦辭與卦名；象傳分兩部分，大象說上下卦之象與君子的作為，小象逐條解釋爻辭。"
+    },
+    {
+      "kind": "read",
+      "text": "大象常以君子以起句，例如屯卦大象「雲雷，屯。君子以經綸」。先看前半句的自然之象，再看後半句君子怎麼做。",
+      "hexagram": 3
+    },
+    {
+      "kind": "quiz",
+      "type": "daxiang-to-name",
+      "count": 2
+    },
+    {
+      "kind": "quiz",
+      "type": "text-kind",
+      "count": 1,
+      "params": {
+        "variant": "xiang"
+      }
+    }
+  ]
+}

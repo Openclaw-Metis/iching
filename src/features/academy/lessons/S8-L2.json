@@ -1,0 +1,30 @@
+{
+  "id": "S8-L2",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "繫辭說「大衍之數五十，其用四十有九」。大衍筮法用四十九根蓍草，每一變經過分二、掛一、揲四、歸奇，三變得一爻，十八變成一卦。"
+    },
+    {
+      "kind": "read",
+      "text": "大衍筮法的機率和三錢法不同：老陰十六分之一、少陽十六分之五、少陰十六分之七、老陽十六分之三。老陽比老陰常見。"
+    },
+    {
+      "kind": "quiz",
+      "type": "method-probability",
+      "count": 1,
+      "params": {
+        "variant": "yarrow-most"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "method-probability",
+      "count": 1,
+      "params": {
+        "variant": "yarrow-compare"
+      }
+    }
+  ]
+}

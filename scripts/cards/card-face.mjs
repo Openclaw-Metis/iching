@@ -6,6 +6,8 @@ export const W = 1000
 export const H = 1400
 /** 上下卦背景的分界（卡面像素） */
 export const SPLIT = 700
+/** holo shader 讓背景放大 14% 留視差邊；靜止的縮圖與看圖卡照同樣比例裁切，畫面才一致 */
+export const BG_ZOOM = 1.14
 
 const GOLD = '#c9a96b'
 const IVORY = '#f1e8d4'

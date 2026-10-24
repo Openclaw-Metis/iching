@@ -1,0 +1,31 @@
+{
+  "id": "S2-L2",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "八卦各有自然之象：乾為天、坤為地、震為雷、巽為風、坎為水、離為火、艮為山、兌為澤。",
+      "trigram": "kan"
+    },
+    {
+      "kind": "read",
+      "text": "說卦說「天地定位，山澤通氣，雷風相薄，水火不相射」，八卦兩兩相對：天與地、山與澤、雷與風、水與火。"
+    },
+    {
+      "kind": "quiz",
+      "type": "trigram",
+      "count": 2,
+      "params": {
+        "variant": "glyph-image"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "trigram",
+      "count": 1,
+      "params": {
+        "variant": "name-image"
+      }
+    }
+  ]
+}

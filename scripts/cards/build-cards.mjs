@@ -13,8 +13,9 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { hexagram, hexagrams } from '../../src/data/hexagrams.ts'
-import { ART, cardFaceSvg, H, SPLIT, W } from './card-face.mjs'
+import { ART, BG_ZOOM, cardFaceSvg, H, SPLIT, W } from './card-face.mjs'
 import { cardBackSvg } from './card-back.mjs'
+import { writeQuizImage } from './quiz-images.mjs'
 import { renderSvg } from './render-svg.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -26,8 +27,6 @@ const pad = n => String(n).padStart(2, '0')
 // 主體擺放的視窗：上下題框之間、以分界線為中心，四周留出背景
 const WINDOW = { x: 110, y: ART.top + 30, w: 780, h: ART.bottom - ART.top - 60 }
 const THUMB = { w: 400, h: 560 }
-// holo shader 讓背景放大 14% 留視差邊；縮圖照同樣比例裁切，靜止畫面才一致
-const BG_ZOOM = 1.14
 
 async function panelHalf(trigram) {
   const file = join(root, 'art/raw/panels', `${trigram.id}.png`)
@@ -154,6 +153,8 @@ async function buildCard(n) {
   const flat = await flatten(bg, subject, text)
   await webp(flat, false).resize(THUMB.w, THUMB.h).toFile(join(web, 'thumb.webp'))
   await webp(flat, false).toFile(join(web, 'face.webp'))
+  // 學堂看圖猜卦用：同一組背景與主體，不含卡框文字
+  await writeQuizImage(web)
   return { number: n, art: true, warnings: prepared.warnings, qa: prepared.qa }
 }
 

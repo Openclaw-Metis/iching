@@ -15,7 +15,6 @@ import {
   draft as draftRepo, logError, maintenance, readings as readingsRepo, useDb, useLiveQuery, useStorageMode, xp,
   type CastDraft, type Reading,
 } from '../../storage/index.ts'
-import { downloadFile, partialBackup, readingFileName } from '../backup/index.ts'
 import { CastStep } from './CastStep.tsx'
 import { createDraftQueue, type DraftSaveState } from './draftQueue.ts'
 import { CATEGORY_LABELS, DRAFT_METHOD_LABELS, METHOD_LABELS } from './labels.ts'
@@ -24,6 +23,9 @@ import { ResultStep } from './ResultStep.tsx'
 import { YarrowAnimation } from './YarrowAnimation.tsx'
 import { yarrowLine, type YarrowLine } from './yarrow.ts'
 import { applySplit, handStart } from './yarrowHand.ts'
+
+// 只有保存失敗時才需要下載單筆結果，備份模組在進入 blocked 時才載入，不佔占卜頁的程式包
+const loadBackup = () => import('../backup/index.ts')
 
 type View =
   | { kind: 'loading' }
@@ -104,6 +106,7 @@ export function DivineFlow() {
       track('divine_save_failed', { errorCode: errorCode(e) })
       logError(isAppError(e) ? e.code : 'STORAGE_QUOTA', String((e as Error)?.message ?? e))
       setView({ kind: 'blocked', reading: built, error: e })
+      void loadBackup().catch(() => {})
     }
   }
 
@@ -302,10 +305,15 @@ export function DivineFlow() {
     }
   }
 
-  const download = () => {
+  const download = async () => {
     if (view.kind !== 'blocked') return
-    downloadFile(JSON.stringify(partialBackup(view.reading), null, 2), readingFileName(new Date()))
-    toast('已下載這次結果，之後可以在「我的 › 設定與備份」匯入。')
+    try {
+      const { downloadFile, partialBackup, readingFileName } = await loadBackup()
+      downloadFile(JSON.stringify(partialBackup(view.reading), null, 2), readingFileName(new Date()))
+      toast('已下載這次結果，之後可以在「我的 › 設定與備份」匯入。')
+    } catch {
+      toast('無法下載，請確認網路後再試一次。')
+    }
   }
 
   const onAnimationDone = useCallback(() => setAnimation(null), [])

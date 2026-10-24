@@ -12,6 +12,8 @@ import { SETTING_DEFAULTS, type SettingValues } from './settings.ts'
 export const XP_AMOUNTS = { answer: 2, lesson: 10, exam: 30, review: 10, daily: 5, divine: 5 } as const satisfies Record<XpSource, number>
 
 export const ANSWER_DAILY_CAP = 100
+/** 同一題（作答事件的 ref 是 questionKey）10 秒內重複作答不給 XP */
+export const ANSWER_COOLDOWN_MS = 10_000
 export const REVIEW_DAILY_ROUNDS = 3
 
 export interface AwardInput {
@@ -96,6 +98,9 @@ export async function award(input: AwardInput, now = new Date()): Promise<AwardR
     const sameDay = await db.xpEvents.where('date').equals(date).toArray()
     const sum = (source: XpSource) => sameDay.filter(e => e.source === source).reduce((n, e) => n + e.amount, 0)
     if (input.source === 'answer' && sum('answer') >= ANSWER_DAILY_CAP) return { awarded: 0, capped: true }
+    if (input.source === 'answer' && input.ref && sameDay.some(e => e.source === 'answer' && e.ref === input.ref && now.getTime() - Date.parse(e.at) < ANSWER_COOLDOWN_MS)) {
+      return { awarded: 0, capped: false }
+    }
     if (input.source === 'review' && sameDay.filter(e => e.source === 'review').length >= REVIEW_DAILY_ROUNDS) return { awarded: 0, capped: true }
     await db.xpEvents.add({ id: crypto.randomUUID(), key: input.key, at, date, amount: input.amount, source: input.source, ref: input.ref ?? '' })
     await checkInWithin(db, date, at)

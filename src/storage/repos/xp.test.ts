@@ -10,7 +10,8 @@ beforeEach(async () => provideStorage(await openStorage({ indexedDB: new IDBFact
 // 用本地時間建構，測試結果不受執行環境時區影響
 const at = (y: number, m: number, d: number, h = 10) => new Date(y, m - 1, d, h)
 const DAY = at(2026, 10, 24)
-const answer = (i: number, now = DAY) => xp.award({ key: `answer:a1:${i}`, source: 'answer', amount: xp.XP_AMOUNTS.answer, ref: 'a1' }, now)
+// 每題的 ref 是各自的 questionKey，才不會碰到 10 秒防刷
+const answer = (i: number, now = DAY) => xp.award({ key: `answer:a1:${i}`, source: 'answer', amount: xp.XP_AMOUNTS.answer, ref: `glyph-to-name:${i}` }, now)
 
 describe('xp.award', () => {
   it('同一個業務鍵只記一次', async () => {

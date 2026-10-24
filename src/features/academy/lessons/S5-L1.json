@@ -1,0 +1,23 @@
+{
+  "id": "S5-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "把一卦六爻的陰陽全部反過來，得到的卦稱為錯卦，也叫旁通。例如乾的錯卦是坤，屯的錯卦是鼎。",
+      "hexagram": 50
+    },
+    {
+      "kind": "read",
+      "text": "在卡牌頁按翻面按鈕，卡背就是這一卦的錯卦。錯卦像是同一件事的另一面。"
+    },
+    {
+      "kind": "quiz",
+      "type": "relation",
+      "count": 3,
+      "params": {
+        "variant": "cuo"
+      }
+    }
+  ]
+}

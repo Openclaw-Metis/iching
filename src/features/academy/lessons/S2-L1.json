@@ -1,0 +1,24 @@
+{
+  "id": "S2-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "三條爻疊成一個三畫卦，陰陽排列共有八種，就是八卦：乾、兌、離、震、巽、坎、艮、坤。這是先天八卦的次序，也是學堂修行路線的順序。",
+      "trigram": "qian"
+    },
+    {
+      "kind": "read",
+      "text": "記卦畫有個口訣：乾三連，坤六斷，震仰盂，艮覆碗，離中虛，坎中滿，兌上缺，巽下斷。卦畫同樣由下往上讀。",
+      "trigram": "zhen"
+    },
+    {
+      "kind": "quiz",
+      "type": "trigram",
+      "count": 3,
+      "params": {
+        "variant": "glyph-name"
+      }
+    }
+  ]
+}

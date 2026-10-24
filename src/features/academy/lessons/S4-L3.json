@@ -1,0 +1,31 @@
+{
+  "id": "S4-L3",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "序卦用因果把六十四卦串起來，開頭說「有天地，然後萬物生焉，盈天地之間者唯萬物，故受之以屯」。"
+    },
+    {
+      "kind": "read",
+      "text": "結尾說「物不可窮也，故受之以未濟終焉」。事物沒有窮盡，所以最後一卦是未濟，而不是已經完成的既濟。",
+      "hexagram": 64
+    },
+    {
+      "kind": "quiz",
+      "type": "sequence",
+      "count": 2,
+      "params": {
+        "variant": "next"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "sequence",
+      "count": 1,
+      "params": {
+        "variant": "prev"
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LinesData } from '../data/lines.ts'
 
@@ -19,7 +19,8 @@ describe('LinePlain', () => {
     render(<LinePlain entryKey="3-1" label="屯六二" onSettled={settled} />)
     expect(await screen.findByText('屯六二的白話')).toBeTruthy()
     expect(screen.getByText('屯六二的提醒')).toBeTruthy()
-    expect(settled).toHaveBeenCalledTimes(1)
+    // onSettled 在 effect 裡呼叫，可能比文字出現晚一點
+    await waitFor(() => expect(settled).toHaveBeenCalledTimes(1))
   })
 
   it('預設收合時不載入，切到白話才載入；切回原文就隱藏', async () => {

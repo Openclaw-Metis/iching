@@ -1,0 +1,30 @@
+{
+  "id": "S6-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "周易的經文有卦辭與爻辭。卦辭總說一卦，如屯卦「元亨利貞，勿用有攸往，利建侯」；爻辭分說每一爻，如乾初九「潛龍勿用」。"
+    },
+    {
+      "kind": "read",
+      "text": "繫辭說「彖者，言乎象者也。爻者，言乎變者也」，卦辭與彖傳談整體，爻辭談每一爻的變化。"
+    },
+    {
+      "kind": "quiz",
+      "type": "text-kind",
+      "count": 2,
+      "params": {
+        "variant": "judgment"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "text-kind",
+      "count": 1,
+      "params": {
+        "variant": "line"
+      }
+    }
+  ]
+}

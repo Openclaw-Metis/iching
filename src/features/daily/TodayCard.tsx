@@ -122,6 +122,9 @@ export function TodayCard({ date, row }: Props) {
               onSave={(t, rev) => daily.saveNote(date, t, rev ?? row.rev)}
             />
           )}
+          <div className="step-actions">
+            <Link className="btn" to="/academy">去學堂</Link>
+          </div>
         </section>
       )}
     </div>

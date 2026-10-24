@@ -1,0 +1,23 @@
+{
+  "id": "S7-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "初、三、五是陽位，二、四、上是陰位。陽爻居陽位、陰爻居陰位稱為當位，反過來稱為不當位。"
+    },
+    {
+      "kind": "read",
+      "text": "既濟六爻全都當位，未濟六爻全不當位。當位不等於吉，但常被用來說明一爻是否處在合適的位置。",
+      "hexagram": 63
+    },
+    {
+      "kind": "quiz",
+      "type": "position",
+      "count": 3,
+      "params": {
+        "variant": "proper"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "S8-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "三錢法同時擲三枚錢幣，正面算三、背面算二，三枚相加得六到九：六是老陰、七是少陽、八是少陰、九是老陽。"
+    },
+    {
+      "kind": "read",
+      "text": "擲六次由下往上排成一卦。老陰與老陽會變，變了之後得到之卦。三錢法中老陽、老陰各占八分之一，少陽、少陰各占八分之三。"
+    },
+    {
+      "kind": "quiz",
+      "type": "method-probability",
+      "count": 1,
+      "params": {
+        "variant": "coins-old-yang"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "method-probability",
+      "count": 1,
+      "params": {
+        "variant": "coins-moving"
+      }
+    }
+  ]
+}

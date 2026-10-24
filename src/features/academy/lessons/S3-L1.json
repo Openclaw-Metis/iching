@@ -1,0 +1,25 @@
+{
+  "id": "S3-L1",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "繫辭說「八卦成列，象在其中矣。因而重之，爻在其中矣」。兩個三畫卦上下相疊成為六畫卦，八卦兩兩相重，共得六十四卦。"
+    },
+    {
+      "kind": "read",
+      "text": "下面三爻稱為下卦，也叫內卦；上面三爻稱為上卦，也叫外卦。例如屯卦，上卦是坎，下卦是震。",
+      "hexagram": 3
+    },
+    {
+      "kind": "quiz",
+      "type": "pair-to-name",
+      "count": 2
+    },
+    {
+      "kind": "quiz",
+      "type": "glyph-to-name",
+      "count": 1
+    }
+  ]
+}

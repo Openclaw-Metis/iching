@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "data:classic": "node scripts/parse-classic.mjs",
-    "cards:build": "node scripts/cards/build-cards.mjs"
+    "cards:build": "node scripts/cards/build-cards.mjs",
+    "cards:quiz": "node scripts/cards/quiz-images.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",

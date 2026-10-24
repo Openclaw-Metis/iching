@@ -1,0 +1,30 @@
+{
+  "id": "S2-L3",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "說卦說「乾健也，坤順也，震動也，巽入也，坎陷也，離麗也，艮止也，兌說也」，這是八卦的性情。說是喜悅，麗是附著。"
+    },
+    {
+      "kind": "read",
+      "text": "說卦又以一家人作比喻：乾為父、坤為母；震、坎、艮是長男、中男、少男；巽、離、兌是長女、中女、少女。這是古代的取象方式。"
+    },
+    {
+      "kind": "quiz",
+      "type": "trigram",
+      "count": 2,
+      "params": {
+        "variant": "name-nature"
+      }
+    },
+    {
+      "kind": "quiz",
+      "type": "trigram",
+      "count": 2,
+      "params": {
+        "variant": "name-family"
+      }
+    }
+  ]
+}

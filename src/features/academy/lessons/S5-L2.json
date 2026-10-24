@@ -1,0 +1,23 @@
+{
+  "id": "S5-L2",
+  "minutes": 3,
+  "steps": [
+    {
+      "kind": "read",
+      "text": "把一卦上下顛倒過來，得到的卦稱為綜卦。屯倒過來是蒙，需倒過來是訟。",
+      "hexagram": 6
+    },
+    {
+      "kind": "read",
+      "text": "乾、坤、坎、離、頤、大過、中孚、小過這八卦上下對稱，倒過來仍是自己。在卡牌頁按倒轉按鈕可以看到綜卦。"
+    },
+    {
+      "kind": "quiz",
+      "type": "relation",
+      "count": 3,
+      "params": {
+        "variant": "zong"
+      }
+    }
+  ]
+}
