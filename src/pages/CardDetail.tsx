@@ -35,16 +35,18 @@ function Detail({ n }: { n: number }) {
   const navigate = useNavigate()
   const [flipped, setFlipped] = useState(false)
   const [rolled, setRolled] = useState(false)
+  const [dived, setDived] = useState(false)
   const [caption, setCaption] = useState('')
   const [tab, setTab] = useState<Tab>('meaning')
   const timer = useRef<number | undefined>(undefined)
   const keepCaption = useRef(false)
-  const c = cuo(hex), z = zong(hex)
+  const c = cuo(hex), z = zong(hex), x = hu(hex)
 
-  // 換卦時回到正面、清空說明；只有倒轉或翻面換來的卦保留那句說明
+  // 換卦時回到正面、清空說明；只有倒轉、翻面或看互卦換來的卦保留那句說明
   useEffect(() => {
     setFlipped(false)
     setRolled(false)
+    setDived(false)
     if (!keepCaption.current) setCaption('')
     keepCaption.current = false
     document.title = `${hex.name}・${hex.fullName}｜易經卦殿`
@@ -54,6 +56,7 @@ function Detail({ n }: { n: number }) {
   const rollToZong = () => {
     window.clearTimeout(timer.current)
     setFlipped(false)
+    setDived(false)
     if (z === hex) {
       setRolled(r => !r)
       setCaption(`「${hex.name}」上下對稱，倒轉過來仍是自己。`)
@@ -72,6 +75,7 @@ function Detail({ n }: { n: number }) {
   const flipToCuo = () => {
     window.clearTimeout(timer.current)
     setRolled(false)
+    setDived(false)
     setFlipped(true)
     setCaption(`翻到背面，六爻陰陽全部相反，就成了「${c.name}」。`)
     timer.current = window.setTimeout(() => {
@@ -79,6 +83,20 @@ function Detail({ n }: { n: number }) {
       setCaption(`這是「${hex.name}」翻面而成的錯卦「${c.name}」。`)
       navigate(`/gua/${c.number}`)
     }, 1700)
+  }
+
+  // 互卦沒有實體翻轉可對應，改成湊近看卦的中間四爻；乾、坤的互卦是自己，不提供這個按鈕
+  const diveToHu = () => {
+    window.clearTimeout(timer.current)
+    setFlipped(false)
+    setRolled(false)
+    setDived(true)
+    setCaption(`取中間四爻：二到四爻成下卦${x.lower.name}，三到五爻成上卦${x.upper.name}，合成「${x.name}」。`)
+    timer.current = window.setTimeout(() => {
+      keepCaption.current = true
+      setCaption(`這是「${hex.name}」中間四爻合成的互卦「${x.name}」。`)
+      navigate(`/gua/${x.number}`)
+    }, 2200)
   }
 
   return (
@@ -90,6 +108,7 @@ function Detail({ n }: { n: number }) {
             back={{ kind: 'card', number: c.number }}
             flipped={flipped}
             rolled={rolled}
+            dived={dived}
             onDoubleClick={flipToCuo}
             label={`${hex.fullName}卦牌，移動游標或拖曳可傾斜，雙擊翻面`}
           />
@@ -97,6 +116,7 @@ function Detail({ n }: { n: number }) {
           <div className="card-actions">
             <button className="btn" type="button" aria-pressed={rolled} onClick={rollToZong}>倒轉 <small>看綜卦</small></button>
             <button className="btn" type="button" aria-pressed={flipped} onClick={flipToCuo}>翻面 <small>看錯卦</small></button>
+            {x !== hex && <button className="btn" type="button" aria-pressed={dived} onClick={diveToHu}>取中 <small>看互卦</small></button>}
           </div>
           <SequenceNav hex={hex} />
         </section>

@@ -12,6 +12,8 @@ interface Props {
   flipped: boolean
   /** 牌面在平面內轉 180°：卦象上下顛倒即成綜卦 */
   rolled: boolean
+  /** 卡牌往前湊近：看進卦的中間四爻，即成互卦 */
+  dived?: boolean
   onDoubleClick?: () => void
   label: string
 }
@@ -19,6 +21,8 @@ interface Props {
 const CARD_W = 2.5, CARD_H = 3.5, CARD_T = 0.035, RADIUS = 0.12
 const MAX_TILT = THREE.MathUtils.degToRad(20)
 const REST = { yaw: THREE.MathUtils.degToRad(-7), pitch: THREE.MathUtils.degToRad(4) }
+// 湊近的距離：相機約在 7.9 外，前移 0.7 讓卡牌放大約一成；再多卡角會超出畫布（卡牌原本佔畫布高的 89%）
+const DIVE_Z = 0.7
 
 type FaceUniforms = Record<string, THREE.IUniform>
 
@@ -85,7 +89,7 @@ function remapUV(geo: THREE.BufferGeometry) {
 interface Engine {
   setFront(face: BackFace): void
   setBack(face: BackFace): void
-  state: { flipped: boolean; rolled: boolean; onDouble?: () => void }
+  state: { flipped: boolean; rolled: boolean; dived: boolean; onDouble?: () => void }
   dispose(): void
 }
 
@@ -133,8 +137,8 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   card.add(new THREE.Mesh(edgeGeo, [hidden, materials[2]]))
   scene.add(card)
 
-  const state = { flipped: false, rolled: false, onDouble: undefined as undefined | (() => void) }
-  const motion = { yaw: REST.yaw, pitch: REST.pitch, roll: 0, tYaw: REST.yaw, tPitch: REST.pitch, pressed: false }
+  const state = { flipped: false, rolled: false, dived: false, onDouble: undefined as undefined | (() => void) }
+  const motion = { yaw: REST.yaw, pitch: REST.pitch, roll: 0, z: 0, tYaw: REST.yaw, tPitch: REST.pitch, pressed: false }
   const inverse = new THREE.Matrix4()
 
   function resize() {
@@ -151,6 +155,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
 
   function render(time: number) {
     card.rotation.set(motion.pitch, motion.yaw, motion.roll)
+    card.position.z = motion.z
     card.updateMatrixWorld(true)
     shared.uCam.value.copy(camera.position).applyMatrix4(inverse.copy(card.matrixWorld).invert())
     shared.uTime.value = time
@@ -190,6 +195,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
       motion.yaw += ((state.flipped ? Math.PI : 0) + motion.tYaw - motion.yaw) * ease
       motion.pitch += (motion.tPitch - motion.pitch) * ease
       motion.roll += ((state.rolled ? Math.PI : 0) - motion.roll) * (reduced ? 1 : 1 - Math.exp(-dt * 4))
+      motion.z += ((state.dived ? DIVE_Z : 0) - motion.z) * (reduced ? 1 : 1 - Math.exp(-dt * 3))
     }
     for (const u of [frontU, backU]) {
       u.uFade.value += ((fadeTarget.get(u) ?? 0) - u.uFade.value) * (reduced ? 1 : 1 - Math.exp(-dt * 9))
@@ -207,7 +213,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); onError('WebGL 已中斷，請重新整理頁面。') })
 
   // 換牌時先淡出、等畫面暗下來再換貼圖並淡入；同時有新的請求時只採用最後一次。
-  // 正面換牌的瞬間把翻面與平面旋轉一起歸位，倒轉或翻面後換上的新牌才會是正面朝上
+  // 正面換牌的瞬間把翻面、平面旋轉與湊近一起歸位，倒轉、翻面或看互卦後換上的新牌才會是正面朝上
   function faceLoader(u: FaceUniforms, settlePose: boolean) {
     let token = 0
     return (face: BackFace) => {
@@ -220,6 +226,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
           if (settlePose) {
             motion.yaw = (state.flipped ? Math.PI : 0) + motion.tYaw
             motion.roll = state.rolled ? Math.PI : 0
+            motion.z = state.dived ? DIVE_Z : 0
           }
           fadeTarget.set(u, 1)
         })
@@ -256,7 +263,7 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   }
 }
 
-export function HoloCard({ front, back, flipped, rolled, onDoubleClick, label }: Props) {
+export function HoloCard({ front, back, flipped, rolled, dived = false, onDoubleClick, label }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const engine = useRef<Engine | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -276,8 +283,9 @@ export function HoloCard({ front, back, flipped, rolled, onDoubleClick, label }:
     if (!engine.current) return
     engine.current.state.flipped = flipped
     engine.current.state.rolled = rolled
+    engine.current.state.dived = dived
     engine.current.state.onDouble = onDoubleClick
-  }, [flipped, rolled, onDoubleClick])
+  }, [flipped, rolled, dived, onDoubleClick])
 
   return (
     <div className="holo-stage" ref={stageRef} role="img" aria-label={label}>
