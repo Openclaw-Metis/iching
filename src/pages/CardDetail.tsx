@@ -173,11 +173,17 @@ function Meaning({ hex }: { hex: Hexagram }) {
   return (
     <>
       <div className="chips">{c.keywords.map(k => <span key={k} className="chip">{k}</span>)}</div>
-      <p className="advice">{c.advice}</p>
+      <h3>整體牌義</h3>
+      <p className="advice">{c.motto}</p>
+      <p>{c.meaning}</p>
       <h3>白話導讀</h3>
       <p>{c.summary}</p>
       <h3>問事指引</h3>
-      <p>{c.guidance}</p>
+      <dl className="guidance">
+        <dt>事業與學業</dt><dd>{c.guidance.career}</dd>
+        <dt>感情與人際</dt><dd>{c.guidance.relations}</dd>
+        <dt>行動與決策</dt><dd>{c.guidance.decision}</dd>
+      </dl>
       <h3>大象</h3>
       <p className="classic">{t.daxiang}</p>
       <ArtNote hex={hex} />

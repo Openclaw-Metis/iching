@@ -24,8 +24,9 @@ npm run build
 - `易經_周易_原文.md`：經傳原文，底本為王弼《周易注》。`npm run data:classic` 解析成 `src/data/classic.json`。
 - `src/data/hexagrams.ts`：六十四卦結構，全部由六爻推算（上下卦、錯綜互、八宮、先天序、消息卦）。
 - `src/data/xugua.ts`：序卦傳、雜卦傳依卦拆分。
-- `src/data/content.ts`：本站原創的白話導讀與牌義，尚未撰寫的卦不在表內。
+- `src/data/content.json`：本站原創的 64 卦牌義（關鍵詞、一句話牌義、整體牌義、白話導讀、問事指引），型別在 `src/data/content.ts`，`content.test.ts` 會核對長度與引文。
 - `docs/hexagram-review.md`：Claude、Codex、agy 三方對 64 卦卦義與卡面的檢視紀錄與重繪決定，原始評審在 `docs/review/`。
+- `docs/content-review.md`：三方撰寫與複審牌義的過程與主要修正，原始稿件在 `docs/review/content-round*.json`。
 
 ## 卡牌
 
