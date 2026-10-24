@@ -184,10 +184,13 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
     const dt = Math.min((now - last) / 1000, 0.1)
     last = now
     elapsed += dt
-    const ease = reduced ? 1 : 1 - Math.exp(-dt * 6)
-    motion.yaw += ((state.flipped ? Math.PI : 0) + motion.tYaw - motion.yaw) * ease
-    motion.pitch += (motion.tPitch - motion.pitch) * ease
-    motion.roll += ((state.rolled ? Math.PI : 0) - motion.roll) * (reduced ? 1 : 1 - Math.exp(-dt * 4))
+    // 正面換牌淡出期間維持原姿勢：倒轉或翻面後換卦時，若先轉回正面會短暫露出舊牌
+    if (fadeTarget.get(frontU) !== 0) {
+      const ease = reduced ? 1 : 1 - Math.exp(-dt * 6)
+      motion.yaw += ((state.flipped ? Math.PI : 0) + motion.tYaw - motion.yaw) * ease
+      motion.pitch += (motion.tPitch - motion.pitch) * ease
+      motion.roll += ((state.rolled ? Math.PI : 0) - motion.roll) * (reduced ? 1 : 1 - Math.exp(-dt * 4))
+    }
     for (const u of [frontU, backU]) {
       u.uFade.value += ((fadeTarget.get(u) ?? 0) - u.uFade.value) * (reduced ? 1 : 1 - Math.exp(-dt * 9))
       const swap = pendingSwap.get(u)
@@ -204,8 +207,8 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); onError('WebGL 已中斷，請重新整理頁面。') })
 
   // 換牌時先淡出、等畫面暗下來再換貼圖並淡入；同時有新的請求時只採用最後一次。
-  // 換牌的瞬間把平面旋轉歸位，倒轉看綜卦後換上的新牌才會是正的
-  function faceLoader(u: FaceUniforms) {
+  // 正面換牌的瞬間把翻面與平面旋轉一起歸位，倒轉或翻面後換上的新牌才會是正面朝上
+  function faceLoader(u: FaceUniforms, settlePose: boolean) {
     let token = 0
     return (face: BackFace) => {
       const mine = ++token
@@ -214,7 +217,10 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
         if (mine !== token) return
         pendingSwap.set(u, () => {
           applyFace(u, t)
-          motion.roll = state.rolled ? Math.PI : 0
+          if (settlePose) {
+            motion.yaw = (state.flipped ? Math.PI : 0) + motion.tYaw
+            motion.roll = state.rolled ? Math.PI : 0
+          }
           fadeTarget.set(u, 1)
         })
       }).catch(err => onError('卡牌貼圖載入失敗：' + (err as Error).message))
@@ -230,8 +236,8 @@ function createEngine(stage: HTMLElement, onError: (msg: string) => void, onRead
   }
 
   return {
-    setFront: faceLoader(frontU),
-    setBack: faceLoader(backU),
+    setFront: faceLoader(frontU, true),
+    setBack: faceLoader(backU, false),
     state,
     dispose() {
       cancelAnimationFrame(raf)

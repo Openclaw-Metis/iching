@@ -41,7 +41,7 @@ function Detail({ n }: { n: number }) {
   const keepCaption = useRef(false)
   const c = cuo(hex), z = zong(hex)
 
-  // 換卦時回到正面、清空說明；只有倒轉換來的綜卦保留那句說明
+  // 換卦時回到正面、清空說明；只有倒轉或翻面換來的卦保留那句說明
   useEffect(() => {
     setFlipped(false)
     setRolled(false)
@@ -68,13 +68,17 @@ function Detail({ n }: { n: number }) {
     }, 1700)
   }
 
-  const flip = () => {
+  // 與倒轉相同：先讓人看到背面的錯卦，再換到那一卦的頁面
+  const flipToCuo = () => {
     window.clearTimeout(timer.current)
     setRolled(false)
-    setFlipped(f => {
-      setCaption(f ? '' : `背面是錯卦「${c.name}」：六爻陰陽全部相反。`)
-      return !f
-    })
+    setFlipped(true)
+    setCaption(`翻到背面，六爻陰陽全部相反，就成了「${c.name}」。`)
+    timer.current = window.setTimeout(() => {
+      keepCaption.current = true
+      setCaption(`這是「${hex.name}」翻面而成的錯卦「${c.name}」。`)
+      navigate(`/gua/${c.number}`)
+    }, 1700)
   }
 
   return (
@@ -87,14 +91,13 @@ function Detail({ n }: { n: number }) {
             back={{ kind: 'card', number: c.number }}
             flipped={flipped}
             rolled={rolled}
-            onDoubleClick={flip}
+            onDoubleClick={flipToCuo}
             label={`${hex.fullName}卦牌，移動游標或拖曳可傾斜，雙擊翻面`}
           />
           <p className="stage-caption" aria-live="polite">{caption}</p>
           <div className="card-actions">
             <button className="btn" type="button" aria-pressed={rolled} onClick={rollToZong}>倒轉 <small>看綜卦</small></button>
-            <button className="btn" type="button" aria-pressed={flipped} onClick={flip}>翻面 <small>看錯卦</small></button>
-            {flipped && <Link className="btn" to={`/gua/${c.number}`}>前往{c.name}卦</Link>}
+            <button className="btn" type="button" aria-pressed={flipped} onClick={flipToCuo}>翻面 <small>看錯卦</small></button>
           </div>
           <SequenceNav hex={hex} />
         </section>
