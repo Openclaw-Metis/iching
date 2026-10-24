@@ -1,0 +1,398 @@
+{
+  "date": "2026-10-24",
+  "target": "docs/spec-review.md 的 M1 到 M38 擬定處理方式",
+  "note": "stance：agree 同意、amend 方向同意但需修改、disagree 不同意；missed 為合併時遺漏的第一輪問題",
+  "codex": {
+    "responses": [
+      {
+        "id": "M1",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M2",
+        "stance": "agree",
+        "comment": "同意；內容數量、測試與兩份分階段指令中的 386 條也須同步改為 450 條。"
+      },
+      {
+        "id": "M3",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M4",
+        "stance": "amend",
+        "comment": "過濾已刪除與其他條件後才能套用每頁 limit，避免出現假空頁；分頁游標應包含 createdAt 與 id，避免同時間紀錄漏列。"
+      },
+      {
+        "id": "M5",
+        "stance": "amend",
+        "comment": "versionchange 由舊連線關閉自身；blocked 則提示關閉其他舊分頁並等待，不應關閉正在升級的新連線。升級失敗也不得自動切換成空白記憶體資料庫繼續寫入。"
+      },
+      {
+        "id": "M6",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M7",
+        "stance": "amend",
+        "comment": "原子版本比對也須涵蓋 castDraft、刪除與復原；匯入覆寫既有紀錄時須遞增本機 rev，不能直接採用備份中的 rev。XP 的去重與每日額度檢查須放在同一交易。"
+      },
+      {
+        "id": "M8",
+        "stance": "amend",
+        "comment": "同意 UUID 與唯一業務鍵，但仍須保留原有的 10 秒防重複與每日作答 100 XP 上限。兩裝置的不同作答事件合併後可能超過上限，須明訂一致的去重、排序與額度計算規則。"
+      },
+      {
+        "id": "M9",
+        "stance": "amend",
+        "comment": "reviewCards 應明訂有 last_review 者優先，兩者皆無時才比較 addedAt。僅憑 XP 與目前 dailyGoal 無法重建歷史打卡，須保存每日目標快照或達標紀錄，合併後同時重算 streakBest。"
+      },
+      {
+        "id": "M10",
+        "stance": "amend",
+        "comment": "FSRS 除有限值與可解析日期外，還須驗證狀態列舉、數值範圍、計數整數與日期關係；明訂以 fsrs.due 為準重建索引欄位。金句也須驗證 id 與 hexagram、kind、position 一致，useAll 僅限乾坤。"
+      },
+      {
+        "id": "M11",
+        "stance": "amend",
+        "comment": "按年份分卷仍可能遇到單年或其他資料表本身超過上限，應依實際序列化位元組數對所有表分卷，並調整每表 100,000 筆限制。分卷須帶備份組識別與卷次，取代還原應收齊全組後一次交易套用，不能逐卷清空。"
+      },
+      {
+        "id": "M12",
+        "stance": "amend",
+        "comment": "補上完整／部分備份標記，單筆檔只允許合併；否則缺表視為空陣列後選取代，會清除其他資料。Stage 1 同時驗證單筆檔能被共用匯入驗證器接受。"
+      },
+      {
+        "id": "M13",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M14",
+        "stance": "amend",
+        "comment": "平面回退須依 flipped 與 back 顯示目前可見面：正面用 thumb.webp，統一牌背用 back.webp，另一卦背面則用該卦縮圖。"
+      },
+      {
+        "id": "M15",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M16",
+        "stance": "amend",
+        "comment": "120 個檔案的逐檔淘汰不能保證最近 30 張卡四層完整；須依卦序管理最近使用順序，四層成組保存與淘汰。若任一層缺少，整張卡改用 thumb.webp。"
+      },
+      {
+        "id": "M17",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M18",
+        "stance": "amend",
+        "comment": "須明訂考核 attempt 的持久化模型，並保存題庫／出題器版本或完整題目快照，避免更新後同 seed 生成不同題目。同步補上 attempts 的備份、合併與學堂重設規則。"
+      },
+      {
+        "id": "M19",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M20",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M21",
+        "stance": "amend",
+        "comment": "依賴與 lazy 調整同意，但體積檢查不能只算 HTML 直接引用檔案；須遞迴追蹤 entry 的全部靜態 imports，去重後計算 gzip，排除尚未觸發的動態 imports。"
+      },
+      {
+        "id": "M22",
+        "stance": "amend",
+        "comment": "補發溫故卡須尊重使用者曾經「移出溫故」的選擇，保存退出標記，避免每次啟動又建回來。reconcile 也須在匯入後執行，印章時間盡量採實際達成條件的時間。"
+      },
+      {
+        "id": "M23",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M24",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M25",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M26",
+        "stance": "amend",
+        "comment": "重試須寫入最新完整草稿快照，並序列化寫入，避免只補下一個 patch 而遺漏先前失敗的欄位，或較舊重試覆蓋較新進度。"
+      },
+      {
+        "id": "M27",
+        "stance": "agree",
+        "comment": "同意；預期值不可再呼叫被測的 interpret、changed 或 buildReading 推導。"
+      },
+      {
+        "id": "M28",
+        "stance": "amend",
+        "comment": "onFrontReady 須在每次正面更換後重新觸發，並以請求識別排除過期載入結果；WebGL 或貼圖失敗時，縮圖回退完成也須解除等待。onClick 同時提供鍵盤可操作的按鈕語意。"
+      },
+      {
+        "id": "M29",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M30",
+        "stance": "amend",
+        "comment": "明訂深層連結也採零起算，例如 line-2 代表第三爻；捲動須等待分頁與非同步白話內容完成渲染，並驗證 use 僅適用乾坤。"
+      },
+      {
+        "id": "M31",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M32",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M33",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M34",
+        "stance": "amend",
+        "comment": "以開始時的待溫卡集合為準，計算不同 cardId，避免 Again 重複出現或新到期卡改變完成條件。保存 sessionId 與完成狀態，同一場完成只能領一次 XP、計一次輪數。"
+      },
+      {
+        "id": "M35",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M36",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M37",
+        "stance": "agree",
+        "comment": "同意；限制也涵蓋 Layout、共用匯出檔與 reconcileAchievements 間接引入的依賴。"
+      },
+      {
+        "id": "M38",
+        "stance": "amend",
+        "comment": "IndexedDB 模式可用 useLiveQuery，但記憶體實作的變更不會自動觸發 Dexie 訂閱；須提供統一訂閱介面與記憶體通知機制，讓降級模式的畫面同樣更新。"
+      }
+    ],
+    "missed": [
+      "X-R7：M7 的原子比對目前只涵蓋 readings，規格中的跨分頁 castDraft 仍使用 updatedAt，尚未消除先讀後寫競態。",
+      "X-R11：M11 未處理原規格每表最多 100,000 筆限制；永久保存 XP 後，自產備份仍可能因筆數而無法完整還原。"
+    ]
+  },
+  "agy": {
+    "responses": [
+      {
+        "id": "M1",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M2",
+        "stance": "agree",
+        "comment": "同意，補齊 64 條卦辭白話（共 450 條）並依 focus.kind 分別驗收最完整。"
+      },
+      {
+        "id": "M3",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M4",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M5",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M6",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M7",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M8",
+        "stance": "agree",
+        "comment": "同意，xpEvents 在資料表索引設為 &key 即可同時確保本機寫入與跨裝置合併去重。"
+      },
+      {
+        "id": "M9",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M10",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M11",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M12",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M13",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M14",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M15",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M16",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M17",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M18",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M19",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M20",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M21",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M22",
+        "stance": "agree",
+        "comment": "同意，建議在匯入備份完成後也執行一次 reconcileAchievements()。"
+      },
+      {
+        "id": "M23",
+        "stance": "amend",
+        "comment": "方向同意；請同步將 mastery 與 M18 的 lessonAttempts 一併納入 Stage 0 的 db.version(1) 初始資料表宣告（共 15 張表），並明訂匯入合併時 mastery 取 firstCorrectAt 較早者，lessonAttempts 視為當下進度不匯出、重設學堂時清除。"
+      },
+      {
+        "id": "M24",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M25",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M26",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M27",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M28",
+        "stance": "amend",
+        "comment": "方向同意；現行 HoloCard.tsx 在 front 為 null 時有三個細節需一併在 Stage 5 寫明：(1) 初始 flipped=true 時 motion.yaw 須直接定位在 Math.PI + REST.yaw 避免掛載時從正面轉向背面，(2) frame() 的 readySent 在 front===null 時改看 backU.uFade.value > 0.9 才能解除「展開卦牌中…」，(3) 姿勢更新條件不可因 frontU 未載入而鎖住傾斜與翻面動畫。"
+      },
+      {
+        "id": "M29",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M30",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M31",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M32",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M33",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M34",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M35",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M36",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M37",
+        "stance": "agree",
+        "comment": "同意。"
+      },
+      {
+        "id": "M38",
+        "stance": "agree",
+        "comment": "同意。"
+      }
+    ],
+    "missed": []
+  }
+}

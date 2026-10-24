@@ -1,0 +1,411 @@
+{
+  "date": "2026-10-24",
+  "target": "docs/spec.md（修訂前版本）",
+  "note": "兩方各自獨立檢視，互不參考；Codex 以 --output-schema 限定格式，agy 依提示輸出",
+  "codex": {
+    "summary": "整體架構可在純靜態網站實作，三錢法換算與大衍「均勻餘數」取樣的理論分布也正確，後者已用精確機率枚舉核對。真正需要先修的是經文索引、起卦完成交易、資料版本處理、跨裝置合併及離線資產策略，這些會直接影響結果正確性或資料保存。學堂另有續學資料不足、題型與課綱不一致，以及後續階段無法追補先前成果的缺口。本次未修改任何檔案；外部文件讀取共 6 頁，5 頁成功、1 頁失敗，套件精確版號與行事曆互通性未另行實測。",
+    "issues": [
+      {
+        "id": "R1",
+        "area": "正確性",
+        "section": "Stage 4：撰寫並接上 384 爻白話",
+        "severity": "high",
+        "problem": "經文陣列索引說明少減一，照寫會讀到下一卦，第 64 卦則越界。",
+        "evidence": "docs/spec.md:1853 寫「hexagrams[n].lines[0..5]」。實際 classic.hexagrams[0].number 為 1；src/pages/CardDetail.tsx:22 使用 classic.hexagrams[h.number - 1]。",
+        "suggestion": "統一寫成 classic.hexagrams[n - 1]，提供共用取文函式，並測試乾、坤、未濟的卦序、爻題與原文對應。"
+      },
+      {
+        "id": "R2",
+        "area": "一致性",
+        "section": "384 爻白話內容規格、驗收條件",
+        "severity": "high",
+        "problem": "要求所有主讀都有白話，但只定義了爻辭白話。零爻變、三爻變及部分六爻全變的主讀是卦辭，無法用 lines.json 的鍵取得內容。",
+        "evidence": "docs/spec.md:745 只有「卦序-爻位」及用九、用六鍵；AC-05 與 Stage 4 要求全部 4,096 組主讀都有白話。src/lib/reading.ts:26-41 的 focus 包含 judgment；content.json 則是整體牌義與導讀，沒有逐段卦辭白話欄位。",
+        "suggestion": "明訂 judgment、line、useAll 各自的原文與白話來源；若 judgment 使用既有 summary 或 meaning，說明其為整卦導讀。驗收應分三種 focus 檢查。"
+      },
+      {
+        "id": "R3",
+        "area": "易學內容",
+        "section": "學堂內容設計",
+        "severity": "medium",
+        "problem": "讀法題只描述為依變爻數出題，缺少乾坤全變等必要情境；同時未揭露既有三爻變讀法採簡化規則，容易把簡化版教成完整朱熹規則。",
+        "evidence": "docs/spec.md:702 寫「幾爻變時該讀什麼」。src/lib/reading.ts:39-41 依本卦是否乾坤分流；該檔第 2 行明載三爻變省略「前十卦主貞，後十卦主悔」細分。",
+        "suggestion": "讀法題傳入具體本卦與變爻位置，答案由 interpret() 產生；課程與解讀說明本站採用的通行簡化規則，避免另寫一套完整規則而與現有程式分歧。"
+      },
+      {
+        "id": "R4",
+        "area": "可行性",
+        "section": "核心資料模型",
+        "severity": "high",
+        "problem": "starred 是布林值，卻被宣告為 IndexedDB 索引；布林值不會進入有效索引，以 equals(true) 查詢會失敗。",
+        "evidence": "docs/spec.md:773 宣告 readings 的 starred 索引，並要求依星號篩選。[Dexie Indexable Type](https://dexie.org/docs/Indexable-Type) 明列 boolean 為不可索引型別。",
+        "suggestion": "改用可索引的 0/1 欄位，或明確採非索引篩選；同時明訂持久化 primary、result 存卦序數字，避免直接存 interpret() 回傳的 Hexagram 物件作索引。"
+      },
+      {
+        "id": "R5",
+        "area": "可行性",
+        "section": "State 管理與持久化、Stage 11：完成文件化與交付",
+        "severity": "high",
+        "problem": "新版資料庫的保護檢查放在開啟成功之後，但舊版程式可能先因資料庫版本較新而開啟失敗，接著被通用失敗處理錯誤降級為空白記憶體資料庫。正式回滾到舊程式後，重新整理也不會解決版本落差。",
+        "evidence": "docs/spec.md:855 先開啟再讀 meta.schema；856 與 Stage 0 指示開啟失敗即改用 memory；2505 宣稱回滾舊版只需提示重新整理。[Dexie.open()](https://dexie.org/docs/Dexie/Dexie.open()) 說明開啟包含版本處理，失敗會拒絕 Promise。",
+        "suggestion": "區分 VersionError、升級失敗、儲存不可用等錯誤；新版資料不得降級成看似全新的資料。補上 versionchange／blocked 處理，以及資料庫已升級後可實際執行的程式回滾策略。"
+      },
+      {
+        "id": "R6",
+        "area": "正確性",
+        "section": "核心資料模型、狀態機、UI ↔ API Mapping",
+        "severity": "high",
+        "problem": "完成起卦的草稿結構與保存流程無法保證故障恢復：草稿只允許五爻，保存失敗卻要求保留完成草稿；建立紀錄與清除草稿分開執行，也可能在重新整理後重複建立同一次占卜。",
+        "evidence": "docs/spec.md:792 定義 CastDraft.lines 為 0 到 5 個；931 要求完成但保存失敗時草稿保留；1003 依序呼叫 readings.create() 與 draft.clear()，未規定同一交易。",
+        "suggestion": "草稿允許六爻並保存 phase、castId；以固定 castId 在同一交易中建立紀錄與清除草稿。補測第六爻後、紀錄寫入後及交易中斷時的重新開啟，確保不重擲、不重複。"
+      },
+      {
+        "id": "R7",
+        "area": "正確性",
+        "section": "State 管理與持久化、Edge / Abuse cases",
+        "severity": "high",
+        "problem": "跨分頁處理只說比對 updatedAt，沒有要求原子比對與寫入；兩分頁仍可能同時通過檢查。今日抽卦與每日 XP 去重也有同樣競爭問題。",
+        "evidence": "docs/spec.md:860、1156 以 updatedAt 判斷衝突；1959 採先查當天紀錄、沒有才抽卦；XP 資料表只有自動編號，沒有業務唯一鍵。",
+        "suggestion": "在同一 readwrite 交易內檢查並更新單調遞增 revision；今日抽卦採唯一日期新增，衝突時讀取勝出紀錄；XP 設定業務唯一鍵。測試必須同時啟動兩次操作，而非只傳入過期時間戳。"
+      },
+      {
+        "id": "R8",
+        "area": "正確性",
+        "section": "核心資料模型：合併規則",
+        "severity": "high",
+        "problem": "跨裝置合併使用本機自動編號的事件表，但沒有規定匯入時如何處理主鍵碰撞；不同事件可能都叫 id=1，導致覆寫或交易失敗。現有去重描述也不能涵蓋每日一次、每課一次等業務規則。",
+        "evidence": "docs/spec.md:779-782 對 examResults、reviewLogs、xpEvents 使用 ++id；834 只寫依「站或卡、時間、來源」判斷重複，未包含各表完整欄位與匯入主鍵策略。",
+        "suggestion": "為可交換事件保存穩定 UUID，或匯入時重新配置本機主鍵並另存交換識別。逐表定義去重鍵，XP 另依日期／來源／課程等規則去重；補測兩台裝置同號不同事件及同一檔案重複匯入。"
+      },
+      {
+        "id": "R9",
+        "area": "一致性",
+        "section": "核心資料模型：合併規則",
+        "severity": "medium",
+        "problem": "同為 in-progress 的課程沒有比較步驟的規則；新卡沒有 last_review 時也無法依現有規則比較。設定一律保留現有值，則合併 XP 後連續天數仍可能維持舊值。",
+        "evidence": "docs/spec.md:832 只比較 fsrs.last_review；833 只比較課程 status；837 保留現有 settings，其中包含 streakCurrent、streakBest、streakLastDate。",
+        "suggestion": "補上同狀態課程的 step／updatedAt／作答紀錄比較、未複習卡的比較及時間相同時的決勝規則；合併後重新計算可推導的解鎖、今日 XP 與連續天數，不直接合併快取設定。"
+      },
+      {
+        "id": "R10",
+        "area": "安全與隱私",
+        "section": "API 設計、Stage 3：打造占卜紀錄、事後回顧與備份",
+        "severity": "high",
+        "problem": "匯入只要求逐欄型別與範圍驗證，沒有定義跨欄位一致性。六爻、primary、result、moving 即使各自合法，也可能互相矛盾，讓匯入紀錄顯示錯卦或錯讀經文。",
+        "evidence": "docs/spec.md:791 同時保存 lines、primary、result、moving；1781 只要求型別與範圍驗證；ReviewCard 同時保存 due 與 fsrs.due，也有重複狀態。",
+        "suggestion": "以六爻重新計算占卜衍生欄位；逐類定義語意驗證，包括金句 kind／position、合法課程識別、FSRS 有限數值與日期、due 同步。驗證通過後才建立可套用的匯入計畫。"
+      },
+      {
+        "id": "R11",
+        "area": "可行性",
+        "section": "API 設計、核心資料模型",
+        "severity": "high",
+        "problem": "資料永久保存且匯出無上限，但匯入拒絕超過 10 MB 的檔案，使用者可能無法還原網站自己產生的完整備份。",
+        "evidence": "docs/spec.md:791、793 將紀錄與今日卦永久保存；888 匯出全部資料；889、908 將匯入上限定為 10 MB。僅 2,000 筆各含 2,000 個中文字的筆記，文字本身已約 12 MB。",
+        "suggestion": "讓匯出與匯入容量策略一致，例如支援分卷備份或明訂可還原的較大容量與資源限制；加入超過 10 MB 的自產備份往返測試。"
+      },
+      {
+        "id": "R12",
+        "area": "一致性",
+        "section": "UI ↔ API Mapping、Stage 1：實作占卜流程",
+        "severity": "medium",
+        "problem": "保存失敗的單筆下載承諾可匯入，但沒有定義檔案封套；完整匯入器又只接受含 app、format、schema、data 的備份格式。Stage 1 驗收還依賴 Stage 3 才建立的匯入器。",
+        "evidence": "docs/spec.md:1005 寫「以 Reading 產生單筆檔案」「可被匯入」；809-823 只定義完整備份格式；Stage 1 的 AC-09 要求下載檔可匯入。",
+        "suggestion": "單筆結果直接使用同一備份封套，readings 放一筆、其餘表為空；將格式與共用驗證器提前建立，讓 Stage 1 能獨立驗證相容性。"
+      },
+      {
+        "id": "R13",
+        "area": "安全與隱私",
+        "section": "非功能需求、Stage 0：建立本機保存層與工程骨架",
+        "severity": "high",
+        "problem": "只加入所列 CSP 無法同時做到無第三方請求、無 CSP 違規及保留字型；現有 HTML 仍載入 Google Fonts，Stage 0 沒有安排移除或自託管。",
+        "evidence": "docs/spec.md:758、760 要求 self-only CSP 與無第三方請求；Stage 0 對 index.html 只列 CSP meta。現有 index.html 包含 fonts.googleapis.com 樣式及 fonts.gstatic.com 預連線。",
+        "suggestion": "明確移除第三方字型連結與預連線，選擇系統字型或自託管字型；若自託管，補上字型體積及離線快取策略，再驗收 AC-27。"
+      },
+      {
+        "id": "R14",
+        "area": "正確性",
+        "section": "錯誤處理 / 回退策略 / 可觀測性",
+        "severity": "medium",
+        "problem": "規格把 WebGL 失敗改顯示平面卡圖列為既有能力，但現有元件只顯示錯誤文字，並未提供平面替代畫面。",
+        "evidence": "docs/spec.md:912 標記 WEBGL_UNAVAILABLE「既有」，回退為平面卡圖。src/components/holo/HoloCard.tsx:290-294 只渲染 holo-status 錯誤訊息。",
+        "suggestion": "把平面回退列為明確實作項目，指定使用仍會部署的 thumb.webp 或其他資產；補測 WebGL 建立失敗及貼圖載入失敗。"
+      },
+      {
+        "id": "R15",
+        "area": "可行性",
+        "section": "Stage 9：做成可加到主畫面的離線版本",
+        "severity": "high",
+        "problem": "執行時快取 lines.json 與課程 JSON 的規則，與規格指定的動態 import 載入方式不一致。這些 src 內 JSON 會成為建置模組，瀏覽器不會請求同名 JSON，快取規則會落空。",
+        "evidence": "docs/spec.md:1869 指定 import('./lines.json')，2299 卻指定對 lines.json 與課程 JSON 使用 StaleWhileRevalidate。[Vite PWA 文件](https://vite-pwa-org.netlify.app/guide/static-assets) 說明預快取依 dist 輸出的 globPatterns 配置。",
+        "suggestion": "選定一種模式：對動態 import 產出的 JS chunks 做版本化預快取，或將內容改成明確部署的 JSON URL 並以 fetch 載入。列出實際輸出 URL、離線保證與內容版本相容策略。"
+      },
+      {
+        "id": "R16",
+        "area": "可行性",
+        "section": "非功能需求、Stage 9：做成可加到主畫面的離線版本",
+        "severity": "high",
+        "problem": "只預快取縮圖，無法保證離線時新抽出的今日卦、占卜結果或未看過的圖像題正常顯示；200 個卡圖檔案的上限也不足以保留全部已看過卡牌的四層貼圖。",
+        "evidence": "docs/spec.md:763 承諾主要功能及已看過卡牌離線可用；2298-2299 不預快取完整卡圖且最多 200 檔。HoloCard 每張有插圖卡會載入 background、subject、fx、text 四層；image-to-name 需要背景與主體。",
+        "suggestion": "離線遇到缺圖時使用預快取縮圖／卦畫，圖像題則提供可驗證的離線題庫下載或清楚的不可用狀態；將已看過卡牌的快取保證改為明確保留範圍，測試未曾載入的隨機結果。"
+      },
+      {
+        "id": "R17",
+        "area": "一致性",
+        "section": "Stage 0：建立本機保存層與工程骨架、驗收條件",
+        "severity": "medium",
+        "problem": "宣稱各路徑直接開啟回 200，但只產生 69 個頂層與卡牌路徑，漏掉課程、溫故及紀錄詳情。考核也沒有明定路由值。",
+        "evidence": "docs/spec.md:1498 新增 /divine/:id、/academy/:station/:lesson、/academy/review；1508 與 AC-23 只涵蓋首頁、四個功能頁及 64 卦。現有 404.html 備援仍會回 404。",
+        "suggestion": "集中定義路由清單，為有限的課程、考核、溫故路徑產生頁面並納入檢查；本機 UUID 紀錄頁無法預先列舉，應明訂例外或改用已有靜態入口的 query／hash 導航。"
+      },
+      {
+        "id": "R18",
+        "area": "正確性",
+        "section": "核心資料模型、UI 狀態保存與重新開始",
+        "severity": "high",
+        "problem": "課程續學只保存 step 與總答對數，卻採隨機出題，無法恢復同一道題、原選項、已檢查狀態與首次作答結果。重新整理可能換題、重算分數或重複給 XP。",
+        "evidence": "docs/spec.md:796 的 LessonProgress 沒有題目 seed、題目序列或逐題作答；845 將選項放在離頁即消失的 useState；858 只依 step 接續。",
+        "suggestion": "保存課程 attemptId、固定 seed／題目序列、目前子題與逐題檢查結果；以 attemptId 加 questionKey 去重。考核也要明訂中斷後接續或作廢的政策。"
+      },
+      {
+        "id": "R19",
+        "area": "使用者體驗",
+        "section": "狀態模型與揭露策略、Stage 6：建構學堂路線、課程與考核",
+        "severity": "high",
+        "problem": "閱讀步驟被放進要求先選答案才能離開的課程狀態，照矩陣實作會停在第一個閱讀段落。",
+        "evidence": "docs/spec.md:263 對「步驟或題目」一律隱藏下一步，未選答案則停用檢查，離開條件是按檢查；2045 同時定義沒有答案的 read 步驟。",
+        "suggestion": "為 read、quiz、exam 分別定義可操作狀態；read 直接提供「繼續」，quiz 才使用選答與檢查。考核是否逐題揭露答案，也應與一般課程分開規定。"
+      },
+      {
+        "id": "R20",
+        "area": "易學內容",
+        "section": "學堂內容設計、API 設計",
+        "severity": "medium",
+        "problem": "課綱承諾的考核能力沒有完整對應到 11 種題型及單選式 API，實作者必須自行刪減或發明題型。",
+        "evidence": "docs/spec.md:680 要求點選爻位，683 要求配對卦，685 要求經傳歸類；691-703 沒有對應的點選／經傳歸類題型；882 的回應只有 options 與 answerIndex。",
+        "suggestion": "建立課綱到題型的對照表，補足必要題型，或明確改成可驗證的單選題。若保留點選與配對，使用辨識聯集定義題目與答案結構。"
+      },
+      {
+        "id": "R21",
+        "area": "開發計畫",
+        "section": "Stage 5：實作今日一卦與行事曆提醒、Stage 7：加入溫故、印譜、連續天數與卦殿學習地圖",
+        "severity": "high",
+        "problem": "宣告的前置條件不足以取得要修改的檔案與功能，不能照規格所說平行獨立交付。",
+        "evidence": "Stage 5:1938 只依賴 Stage 0，並允許與 Stage 2 至 4 平行，但 1956 要修改 Stage 3 才建立的 RecordList.tsx。Stage 7 只依賴 Stage 6，卻要修改 Stage 3 的 Me.tsx，並接入占卜與回顧事件。",
+        "suggestion": "補上真實依賴，或將跨功能接線拆成有明確負責階段的後續工作；列出各階段可用的公開介面及尚不存在時的處理，避免依檔案存在與否臨場決策。"
+      },
+      {
+        "id": "R22",
+        "area": "開發計畫",
+        "section": "Stage 7：加入溫故、印譜、連續天數與卦殿學習地圖",
+        "severity": "medium",
+        "problem": "印章與溫故卡到 Stage 7 才實作，但只指定事件發生時檢查，沒有追補 Stage 1 至 6 已完成的成果。",
+        "evidence": "docs/spec.md:2034 明確排除溫故與印譜；2134、2138 才開始監聽首次答對與達成事件。使用者先完成的第一課、考核或大衍占卜不會再觸發原事件。",
+        "suggestion": "提前保存可追補的事實資料，Stage 7 啟用時執行可重跑的成果核對；補測既有學習進度、已寫回顧及大衍紀錄的升級情境。"
+      },
+      {
+        "id": "R23",
+        "area": "一致性",
+        "section": "學堂內容設計、核心資料模型",
+        "severity": "medium",
+        "problem": "「全」印需要永久知道哪些卦曾答對圖像題，但模型沒有獨立保存這項事實；溫故卡可移除、紀錄又會截斷，不能可靠地當作成就依據。",
+        "evidence": "docs/spec.md:726 要求 64 卦看圖猜卦都答對過；ReviewCard 可移出，ReviewLog 只留最新 5,000 筆；LessonProgress 只有總 correct，沒有卦別與題型。",
+        "suggestion": "保存每卦、每面向的首次答對或掌握紀錄，納入備份與重設規則；另外指定能覆蓋全部 64 卦的練習入口，驗收正常操作確實可取得「全」印。"
+      },
+      {
+        "id": "R24",
+        "area": "一致性",
+        "section": "學堂內容設計、核心資料模型、通知與背景執行",
+        "severity": "medium",
+        "problem": "畫面要顯示總 XP，但唯一 XP 明細會在 400 天後刪除，且沒有永久總額或封存彙總，屆時總 XP 會倒退。",
+        "evidence": "docs/spec.md:503、534 要求總 XP；800、959 指定 XP 事件保留 400 天；設定鍵只保存連續天數，沒有終身 XP 彙總。",
+        "suggestion": "清理前將舊事件納入可備份、可合併的永久彙總，或明確把顯示指標改成近 400 天 XP；補測清理前後總額不變及備份還原。"
+      },
+      {
+        "id": "R25",
+        "area": "一致性",
+        "section": "學堂內容設計、驗收條件",
+        "severity": "medium",
+        "problem": "學習地圖取兩張卡中較低的記憶程度，卻要求剛答對的卦一律全亮；若另一面向已遺忘，兩條規則無法同時成立。只有一張卡、手動新增未作答卡的亮度也未定義。",
+        "evidence": "docs/spec.md:736 取兩面向較低值；AC-18 要求「剛答對的卦為 1」；Stage 7 只要求首次答對時建立卡。[ts-fsrs API](https://open-spaced-repetition.github.io/ts-fsrs/classes/FSRS.html) 的 retrievability 依個別卡片計算。",
+        "suggestion": "定義缺少面向、New 卡及雙面向不同程度時的聚合規則；首次答對時明確套用一次評分再保存。修改 AC-18，分別驗證單面向與雙面向情境。"
+      },
+      {
+        "id": "R26",
+        "area": "使用者體驗",
+        "section": "狀態模型與揭露策略、錯誤處理 / 回退策略 / 可觀測性",
+        "severity": "medium",
+        "problem": "只定義六爻完成後保存失敗的 blocked，漏掉問題草稿、逐爻及分蓍中途寫入失敗；這些情境尚無完整 Reading，不能使用既定的結果下載流程。",
+        "evidence": "docs/spec.md:256 的 blocked 必顯卦象結果與讀法；1000-1002 每爻／每變都寫入草稿；903-904 沒有規定這些寫入失敗後能否繼續及如何保存進度。",
+        "suggestion": "將儲存狀態與起卦階段分開，定義中途失敗時保留記憶體進度、重試、繼續及下載草稿的行為；不得顯示「已保存」或重新產生已見結果。"
+      },
+      {
+        "id": "R27",
+        "area": "測試與驗收",
+        "section": "驗收條件、測試案例",
+        "severity": "medium",
+        "problem": "4,096 組解讀測試只檢查主讀非空與內容存在，無法攔下卦序錯一位、陰陽換算顛倒、讀錯本卦／之卦或主輔順序錯誤。",
+        "evidence": "docs/spec.md:1089 的 TC-05 只要求「都有主讀，且對應的原文與白話存在」。現有 reading.test.ts 只有零、二、四爻變及六爻全變的部分斷言。",
+        "suggestion": "加入獨立預期值：明訂 6/8 為陰、7/9 為陽，6/9 為變爻；逐組檢查本卦、之卦、focus 的卦序／種類／爻位與主輔順序，並覆蓋一、三、五爻變及乾坤用九用六。"
+      }
+    ]
+  },
+  "agy": {
+    "summary": "這份規格整體結構完整、分層清晰，對大衍筮法「均勻餘數」機率修正、朱熹變爻讀法沿用與純靜態本機儲存的邊界定義相當紮實。但對照現有程式碼後，發現數處會直接導致實作失敗或驗收不過的關鍵問題：包括現有 index.html 載入 Google Fonts 會立即違反 Stage 0 的 CSP 與無第三方請求要求、HoloCard 既有實作不支援未抽牌時無 front 屬性及換牌同時翻面的動畫、解讀頁在 0/3/6 爻變時主讀為「卦辭」卻不在 386 條 lines.json 範圍內，以及 tsconfig.node.json 缺少 DOM 與 JSX 支援會使測試無法通過 typecheck。此外，學堂 8 站主題與 11 種題型（及「全」印章所需的看圖猜卦紀錄）無法對齊、FSRS 初次建卡狀態與 AC-17/AC-18 矛盾、備份合併規則在首次啟動預設值下會覆蓋連續天數，以及各 Stage 檔案清單漏列 main.tsx 與跨模組接線，皆建議於交給開發代理前修正。",
+    "issues": [
+      {
+        "id": "R1",
+        "area": "安全與隱私",
+        "section": "非功能需求 / Stage 0：建立本機保存層與工程骨架",
+        "severity": "high",
+        "problem": "規格要求在 index.html 加入嚴格的 Content-Security-Policy（style-src 'self' 'unsafe-inline'、default-src 'self'），並於 AC-27 要求「全站沒有第三方網路請求；主控台沒有 CSP 違規」；但現有 index.html 第 10–12 行載入了 Google Fonts（fonts.googleapis.com 與 fonts.gstatic.com）。若照 Stage 0 直接加入 CSP meta 而不移除 Google Fonts 連結，瀏覽器載入時會立即觸發 CSP 違規錯誤，且違反無第三方網路請求的驗收條件。",
+        "evidence": "docs/spec.md「非功能需求」：index.html 加 Content-Security-Policy meta：default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'；AC-27：全站沒有第三方網路請求；主控台沒有 CSP 違規。對照 index.html:10-12：<link href=\"https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap\" rel=\"stylesheet\">。",
+        "suggestion": "在 Stage 0 的具體步驟中明確要求移除 index.html 內的 Google Fonts <link>（改用系統宋體 fallback 或改為專案內自託管字型檔並於 CSP 補上 font-src 'self'），確保符合 AC-27。"
+      },
+      {
+        "id": "R2",
+        "area": "正確性",
+        "section": "384 爻白話內容規格 / 驗收條件 AC-05 / Stage 4：撰寫並接上 384 爻白話",
+        "severity": "high",
+        "problem": "規格要求 64 卦 × 64 種變爻組合（4,096 種）的解讀頁主讀項目都必須有「原文與白話、占得提醒」（AC-05、TC-05、Stage 4 測試要求）。然而對照 src/lib/reading.ts，當 0 爻變、3 爻變、或乾坤以外 6 爻全變時（共 1,406 種組合），interpret() 回傳的主讀 focus[0] 是 { kind: 'judgment', hexagram }（卦辭）而非爻辭；但 src/data/lines.json 僅定義 386 條爻辭與用九用六（1-0 至 64-5 及 1-use、2-use），不含 64 卦卦辭，且 src/data/content.ts 的 CardContent 只有 motto、meaning、summary、guidance，未定義 focus.kind === 'judgment' 時「白話」與「占得提醒」應取自哪個欄位。",
+        "evidence": "docs/spec.md「目標」：64 卦 × 所有變爻組合（4,096 種）都能產生解讀頁，不出現空白欄位；AC-05：64 卦 × 64 種變爻組合都能產生解讀，主讀項目都有對應原文與白話；Stage 4：解讀頁 64 × 64 組合的主讀都找得到白話。對照 src/lib/reading.ts:26-42 與 src/data/content.ts:6-16。",
+        "suggestion": "在規格「API 設計（buildReading）」與「Stage 4」明確定義：當 ReadingFocus.kind === 'judgment' 時，白話與提醒直接取自既有 src/data/content.ts（例如以 content[n].meaning 作為白話說明、content[n].motto 作為提醒），或於 lines.json / content.json 明確定義對應欄位，讓 LinePlain / ResultStep 與 TC-05 對齊。"
+      },
+      {
+        "id": "R3",
+        "area": "正確性",
+        "section": "核心流程設計：流程 B / Stage 5：實作今日一卦與行事曆提醒",
+        "severity": "high",
+        "problem": "Stage 5 指示今日頁「未抽時用既有 HoloCard 顯示統一牌背（back kind 'deck'），點擊翻開」且「翻開動畫沿用 HoloCard 的翻面」，但未將 src/components/holo/HoloCard.tsx 列入修改清單。實際核對 HoloCard.tsx 有三個阻礙：(1) Props.front 為必填的 number（1..64），未抽卦前尚無卦序可傳；(2) HoloCard 只支援 onDoubleClick，沒有 onClick 屬性，且 pointerdown 會執行 setPointerCapture；(3) HoloCard.tsx 第 193–204 與 217–234 行在 front 改變時會先將 frontU 的 fadeTarget 設為 0 並暫停 yaw 旋轉，待淡出後於 pendingSwap 直接把 motion.yaw 設為目標角度，因此「抽卦拿到新 front 同時將 flipped 由 true 改為 false」不會播放翻面動畫，而是卡住後直接淡入正面。",
+        "evidence": "docs/spec.md Stage 5：2. 今日頁：未抽時用既有 HoloCard 顯示統一牌背（back kind 'deck'），點擊翻開……3. 翻開動畫沿用 HoloCard 的翻面。對照 src/components/holo/HoloCard.tsx:9-19、193-204、217-234。",
+        "suggestion": "在 Stage 5（或 Stage 0）將 src/components/holo/HoloCard.tsx 列入修改清單：支援 front?: number | null（未定時正面不載入貼圖）、新增 onClick 回呼，並在從牌背（flipped=true）首次設定 front 並翻至正面（flipped=false）時直接載入正面貼圖並執行 yaw 旋轉，不觸發正面淡出鎖定。"
+      },
+      {
+        "id": "R4",
+        "area": "正確性",
+        "section": "Stage 0 至 Stage 10（測試與 TypeScript 設定）",
+        "severity": "high",
+        "problem": "規格要求每個階段執行 npm run typecheck（即 tsc --noEmit && tsc --noEmit -p tsconfig.node.json）皆須通過，且新增包含 DOM API（localStorage、window、File、Blob、navigator.storage、indexedDB）與 React 元件（.test.tsx，使用 @testing-library/react + happy-dom）的測試檔。但現有 tsconfig.json 只排除 src/**/*.test.ts（未排除 src/**/*.test.tsx），而 tsconfig.node.json 僅包含 src/**/*.test.ts 且 compilerOptions.lib 只有 [\"ES2023\"]、types 只有 [\"node\"]，既無 DOM 型別也無 jsx: \"react-jsx\"。一旦在測試中使用 localStorage、window 或建立 .test.tsx，npm run typecheck 就會報錯失敗。",
+        "evidence": "package.json:14：\"typecheck\": \"tsc --noEmit && tsc --noEmit -p tsconfig.node.json\"；tsconfig.json:20-21：\"include\": [\"src\"], \"exclude\": [\"src/**/*.test.ts\"]；tsconfig.node.json:4,15：\"lib\": [\"ES2023\"]、\"include\": [\"vite.config.ts\", \"src/**/*.test.ts\"]；docs/spec.md:378,1519,2371。",
+        "suggestion": "在 Stage 0 的需修改檔案清單加入 tsconfig.json 與 tsconfig.node.json（及 vitest.config.ts）：將 tsconfig.json 的 exclude 擴充為 [\"src/**/*.test.ts\", \"src/**/*.test.tsx\"]，並在 tsconfig.node.json 加入 \"DOM\"、\"DOM.Iterable\"、\"jsx\": \"react-jsx\" 及包含 \"src/**/*.test.tsx\"。"
+      },
+      {
+        "id": "R5",
+        "area": "一致性",
+        "section": "核心流程設計：流程 A / UI ↔ API Mapping / 核心資料模型（備份檔格式） / AC-09",
+        "severity": "high",
+        "problem": "單筆占卜結果下載（blocked 狀態）與備份匯入格式互相矛盾。UI ↔ API Mapping 與 AC-09 規定保存失敗時點「下載這次結果」會「以 Reading 產生單筆檔案（iching-reading-YYYYMMDD-HHmm.json），可被匯入」，且 Stage 1 寫「提供下載單筆 JSON」；但「核心資料模型：備份檔格式」與 Stage 3 的 preview 驗證要求匯入檔必須具備頂層 { app: 'iching', format: 1, schema: 1, exportedAt, data: { readings: [...], ... } } 結構，否則拒絕寫入並回傳 IMPORT_INVALID_FILE（AC-21）。若 Stage 1 直接輸出單筆 Reading 物件，Stage 3 的匯入器將無法匯入，導致 AC-09 失敗。",
+        "evidence": "docs/spec.md:1005：blocked 下載 | 以 Reading 產生單筆檔案 | 下載 iching-reading-YYYYMMDD-HHmm.json，可被匯入；AC-09（line 1061）：下載的檔案可被匯入；line 809-823（備份檔格式）；line 1781（Stage 3 preview 檢查 app/format/schema）。",
+        "suggestion": "統一規定 Stage 1 的「下載這次結果」必須輸出符合備份外殼格式的 JSON（即 { app: 'iching', format: 1, schema: 1, exportedAt, data: { readings: [reading] } }），且在 Stage 3 規定 backup.preview 允許 data 中省略為空的資料表陣列（缺省視為 []）。"
+      },
+      {
+        "id": "R6",
+        "area": "易學內容",
+        "section": "學堂內容設計 / 前後端模組 / Stage 6：建構學堂路線、課程與考核",
+        "severity": "high",
+        "problem": "學堂 8 站課程主題／考核題型、11 種出題器題型表與 15 枚印譜之間存在三處無法對齊的斷裂：(1) 8 站表格列出「點選指定爻位（第一站）」「象徵配對（第二站）」「經傳歸類（第六站）」「機率判斷（第八站）」，且 QuestionCard 寫「選擇、點選卦畫、配對」，但 11 種題型代號表（line 690-703）完全沒有這四種題型，且 generateQuestion 介面只回傳單選題結構 { key, prompt, options, answerIndex, explanation, hexagram? }；(2) 題型表中的 image-to-name（看圖猜卦）與「全」印章（64 卦的看圖猜卦都答對過）、溫故卡 image 面向，在 8 站課程與考核表中沒有任何一站使用；(3) 核心資料模型的 13 張資料表沒有任何欄位永久記錄「哪些卦已答對過 image-to-name」（ReviewCard 可在卡牌頁手動加入或移出、LessonProgress 不記個別卦、XpEvent 有每日 100 XP 上限且 400 天清理），導致「全（all64）」印章無法可靠判定。",
+        "evidence": "docs/spec.md:569（QuestionCard）、line 678-687（8 站表格）、line 690-703（11 種題型代號）、line 726（「全」印章：64 卦的看圖猜卦都答對過）、line 789-804（核心資料模型）、line 882（academy.generateQuestion）。",
+        "suggestion": "(1) 在 8 站表格中明確指定哪幾站的課程使用 image-to-name（例如第三站重卦或第六站大象），並允許溫故（ReviewSession）中答對看圖猜卦也計入；(2) 將第一、二、六、八站的考核題型與 11 種題型表對齊（若全部採 4 選 1 / 是非題，則修正 QuestionCard 與站點題型描述，並為第六站經傳歸類、第八站占法機率補上題型代號或題庫規則）；(3) 在 ReviewCard 增加 answeredInQuiz: boolean 欄位（或於 settings / 獨立表紀錄已答對看圖猜卦的卦序集合）以支撐「全」印章判定。"
+      },
+      {
+        "id": "R7",
+        "area": "可行性",
+        "section": "學堂內容設計（溫故與學習地圖） / 核心資料模型 / AC-17 / AC-18 / Stage 7",
+        "severity": "high",
+        "problem": "溫故（FSRS）規格與驗收條件存在四處實作衝突：(1) 核心資料模型（line 798）與狀態機（line 944）寫溫故卡初始狀態為 New（New › 作答 › Learning），但在 ts-fsrs 中 createEmptyCard(now) 的 due 等於 now 且 New 狀態的 retrievability 為 0，這會直接違反 AC-17（第一次答對看圖猜卦後，該卦 image 溫故卡下次到期時間晚於現在）與 AC-18（剛答對的卦不透明度為 1）；(2) line 736 規定「學習地圖亮度依該卦兩張卡（glyph 與 image）中較低的記憶程度決定」，當使用者在學堂只答對其中一種題型（如 AC-17 只產生 image 卡）時，若未產生的另一張卡視為 0 或未定義，該卦亮度不會變成 1，導致 AC-18 失敗；(3) ts-fsrs 的 request_retention=0.9 代表記憶保留率降到 0.9 時即到期（due <= now），但 line 736 卻規定「低於 0.75 為 0.55 並加『待溫』小點」，導致保留率在 0.75～0.9 的到期卡會計入「待溫 N 張」卻在卦殿上沒有待溫小點；(4) ts-fsrs v5 的 fsrs.get_retrievability(card, now) 第三參數 format 預設為 true，回傳的是百分比字串（如 \"95.00%\"）而非數值 0..1，直接比較大小會得到 false。",
+        "evidence": "docs/spec.md:733-736、line 798、line 944、line 1069-1070（AC-17、AC-18）、line 2133-2136（Stage 7）。",
+        "suggestion": "(1) 明確區分：由學堂首次答對建立溫故卡時，建立空卡後立即以該題作答結果呼叫一次 FSRS 排程（Good 或 3 秒內 Easy），使 due > now 且狀態進入 Learning/Review；由卡牌頁手動「加入溫故」時才保留為 New（due = now）；(2) mapOpacity 改為「取該卦已存在之溫故卡中較低的 retrievability（兩張都尚未建立時才為 0.35）」，且待溫小點條件改為與 due <= now 一致（或 R <= 0.9）；(3) Stage 7 明確提示呼叫 fsrs.get_retrievability(card, now, false) 取得 number。"
+      },
+      {
+        "id": "R8",
+        "area": "一致性",
+        "section": "核心資料模型（合併規則） / 功能清單（設定） / 通知與背景執行",
+        "severity": "high",
+        "problem": "備份匯入的 settings 合併規則為「保留現有值，只補現有沒有的鍵」（line 837），但功能清單（line 505）規定設定在「首次使用時寫入預設值」，且連續天數（streakCurrent、streakBest、streakLastDate）與每日目標（dailyGoal）都存在 settings 表（line 805）。當使用者換新手機打開網站時，網站啟動即寫入預設 settings（streakCurrent=0 等），此時再依標準流程「匯入 › 合併」（line 489、Gherkin line 1133），因為所有鍵都已存在，備份檔內的連續天數與每日目標會被完全忽略而維持 0。此外，settings 中的 persistAsked 與 lastCleanup 屬於單一瀏覽器環境狀態，若匯出並在另一台裝置「取代」匯入，會導致新裝置因 persistAsked=true 而不再呼叫 navigator.storage.persist()。",
+        "evidence": "docs/spec.md:505（設定：首次使用時寫入預設值）、line 805（設定鍵含 streakCurrent、streakBest、streakLastDate、persistAsked）、line 837（settings：保留現有值，只補現有沒有的鍵）、line 960（持久保存申請以 persistAsked 去重）。",
+        "suggestion": "(1) 將 persistAsked、lastCleanup、onboardingSeen 移出匯出清單（與 meta.installId 相同，視為裝置本機狀態）；(2) 修改 settings 合併規則：streakBest 取兩邊較大值，streakCurrent 與 streakLastDate 取 streakLastDate 較新者（或由合併後的 xpEvents 重新計算），其餘使用者偏好（dailyGoal、reminderTime、mapOverlay）若本機尚未修改過（或依 updatedAt）則採用備份值；(3) reviewCards 合併時若 fsrs.last_review 為 undefined（New 卡），改比對 addedAt。"
+      },
+      {
+        "id": "R9",
+        "area": "開發計畫",
+        "section": "Stage 0 至 Stage 8（檔案清單、路由懶載入與跨模組接線）",
+        "severity": "high",
+        "problem": "分階段開發計畫有多處檔案清單與依賴缺漏，會導致 agent 照做時漏接功能或破壞首屏體積限制：(1) Stage 0 在 src/main.tsx 建立「即將推出」占位路由，但 Stage 1（Divine.tsx）、Stage 3（Me.tsx、DivineRecord.tsx）、Stage 5（Today.tsx）、Stage 6（Academy.tsx、Lesson.tsx）、Stage 7（Review.tsx）的「需修改/新增的檔案清單」全都漏列 src/main.tsx，且未要求在 main.tsx 對新頁面使用 React.lazy()；特別是 Today.tsx 會匯入 HoloCard（含 Three.js，gzip 後約 170 KB），若未 lazy 載入，會直接讓卦殿首屏 JS 超過 AC-24 的 160 KB 上限；(2) Stage 0 的 check-size.mjs 只寫「計算 dist 中卦殿首屏 JS 的 gzip 大小」，未說明需解析 dist/index.html 的 <script> 與 <link rel=\"modulepreload\"> 而非加總 dist/assets/*.js（否則連 CardDetail 的 Three.js chunk 一起算會立即超標）；(3) Stage 5 宣稱「前置條件：Stage 0 完成。可與 Stage 2 至 4 平行」，卻要求修改 Stage 3 才會建立的 src/features/records/RecordList.tsx；(4) 完成占卜給 5 XP（line 714）、大衍占卜給「筮」印章、10 則事後回顧給「錄」印章（line 728-729），以及學堂作答建立溫故卡與顯示「溫故 N 張」，在 Stage 6 與 Stage 7 的需修改檔案清單中皆未包含 divination、records 與 Academy.tsx / grading.ts / LessonPlayer.tsx。",
+        "evidence": "docs/spec.md:1498, 1508-1510（Stage 0）、line 1603（Stage 1）、line 1774（Stage 3）、line 1938, 1956（Stage 5）、line 2036-2041（Stage 6）、line 2125-2130（Stage 7）。",
+        "suggestion": "(1) 在 Stage 1、3、5、6、7 的檔案清單補上 src/main.tsx，並於共通規則明訂除 Hall 外所有頁面路由在 main.tsx 一律使用 React.lazy()；(2) 在 Stage 0 明確規定 check-size.mjs 只計算 dist/index.html 直接引用的 entry script 與 modulepreload JS chunks；(3) 將 Stage 5 的前置條件改為 Stage 3（或把每日子分頁移到 Stage 5 與 Stage 3 皆完成後）；(4) 在 Stage 6/7 的檔案清單補上與 divination、records、academy（grading.ts、LessonPlayer.tsx、Academy.tsx）的接線檔案。"
+      },
+      {
+        "id": "R10",
+        "area": "一致性",
+        "section": "狀態矩陣（占卜頁） / 核心資料模型（CastDraft） / 狀態機（起卦草稿）",
+        "severity": "medium",
+        "problem": "占卜頁的狀態轉換與草稿資料結構有三個缺口：(1) 狀態矩陣中 empty 的主 CTA 為「開始（問題不足 2 字時停用）」，但離開條件是「問題達 2 字」；一旦輸入滿 2 字就自動進入 drafting（主 CTA 變為「開始起卦」），導致 empty 狀態的「開始」按鈕永遠不可能在啟用狀態下被點擊；(2) drafting 的離開條件是「按開始起卦」，但 validating（起卦中）的進入條件卻寫「已擲第一爻或已進入分蓍，未滿六爻」，導致按下「開始起卦」後、尚未擲第一爻（0/6）時處於無定義的狀態空窗；(3) CastDraft 規定「狀態欄位：由 lines.length 推得」，當 lines.length === 0 時，無法區分使用者是在步驟一（問題輸入中）還是已按開始起卦進入步驟二（0/6 待擲第一爻）；此外大衍「一鍵完成」在播放 6 秒動畫期間若按返回鍵（line 1160 要求草稿可接續），CastDraft（lines 僅 0..5 個）未定義此時應保存什麼狀態。",
+        "evidence": "docs/spec.md:250-253（狀態矩陣：占卜頁）、line 792（CastDraft 狀態由 lines.length 推得）、line 925-932（狀態機：起卦草稿）、line 1160（動畫中按返回鍵）。",
+        "suggestion": "(1) 將 empty 與 drafting 的按鈕統一為同一個「開始起卦」（不足 2 字時停用，滿 2 字展開類別與方法並啟用按鈕）；(2) 將 validating 的進入條件改為「已按開始起卦（0 至 5 爻）」，並在 CastDraft 新增 step: 'question' | 'casting' 欄位；(3) 大衍一鍵完成改為進入步驟二後由使用者按「開始分蓍」才產生六爻並播放動畫，動畫中離開時若尚未建立 Reading 則重開回步驟二重新播放或直接完成寫入。"
+      },
+      {
+        "id": "R11",
+        "area": "正確性",
+        "section": "Stage 4：撰寫並接上 384 爻白話 / Stage 8：建立收藏冊與金句",
+        "severity": "medium",
+        "problem": "現有 src/pages/CardDetail.tsx 的經文分頁（Classic 元件）存在兩個與新功能衝突的實作細節：(1) 第 225 行以 [...t.lines].reverse().map(l => ...) 由上而下渲染爻辭，且乾、坤兩卦的 t.lines 長度為 7（index 6 為用九、用六，reverse 後排在第一個），其餘 62 卦長度為 6；若 Stage 4 的 LinePlain（傳入 position）或 Stage 8 的 QuoteButton 直接使用 map 的索引 i，爻位會全部顛倒，且乾坤會錯位並漏處理 kind: 'useAll'（對應 lines.json 的 1-use / 2-use 與 quotes 的 1:useAll / 2:useAll）；(2) Stage 8 要求金句列表「點擊進卡牌頁經文分頁並捲到該句」（line 2221），但 CardDetail.tsx 目前固定以 useState<Tab>('meaning') 初始化，未讀取網址查詢參數或 hash 來切換到 text 分頁與捲動定位。",
+        "evidence": "src/pages/CardDetail.tsx:40, 224-232；docs/spec.md:745（1-use、2-use）、line 795（Quote id 與 kind: useAll）、line 1864（Stage 4 CardDetail.tsx）、line 2219-2221（Stage 8 金句點擊跳轉）。",
+        "suggestion": "在 Stage 4 與 Stage 8 明確指示：CardDetail.tsx 的 Classic 渲染時須保留原始爻索引（index 0..5 對應 position 0..5，index 6 對應 useAll / '1-use' / '2-use'），並在 CardDetail.tsx 支援讀取 URL search params（例如 ?tab=text&focus=line-2）以自動切換至經文分頁、設定 li[data-focus='true'] 並呼叫 scrollIntoView。"
+      },
+      {
+        "id": "R12",
+        "area": "可行性",
+        "section": "核心資料模型 / API 設計（readings.list） / Stage 3",
+        "severity": "medium",
+        "problem": "db.ts 將 readings 的索引宣告為 'id, createdAt, primary, starred, deletedAt'（line 772），其中 starred 為 boolean、deletedAt 在未刪除時為 null 或 undefined。依據 IndexedDB 標準，boolean、null、undefined 都不是合法的 IDBKeyRange 鍵值型別（IndexedDB 不會將 boolean 或 null 寫入索引，且呼叫 where('starred').equals(true) 或 where('deletedAt').equals(null) 會直接拋出 DataError）。此外，UI ↔ API Mapping（line 999）在開始起卦時呼叫 readings.list({ query: 問題, since: 24 小時前 }) 檢查重複提問，但 query 是子字串模糊搜尋，會把包含相同詞彙的不同問題誤判為「完全相同的問題」（AC-08），且 readings.list 的篩選直到 Stage 3 才實作，Stage 1 卻已要求通過 AC-08。",
+        "evidence": "docs/spec.md:772（db.version(1).stores）、line 791（Reading 欄位）、line 879（readings.list）、line 999（開始起卦呼叫 readings.list）、line 1060（AC-08）。",
+        "suggestion": "(1) 在核心資料模型說明 starred 與 deletedAt 不以 IDBKeyRange 直接查詢（readings.list 一律以 orderBy('createdAt').reverse() 搭配 Dexie .filter() 在記憶體中過濾 !r.deletedAt 與其他條件，或將索引移除只保留 'id, createdAt, primary'）；(2) 在 Stage 1 的 readings repo 新增專用函式 hasExactQuestionSince(question, sinceMs)（先 trim 後做完整字串相等比對並排除 deletedAt），不混用 Stage 3 的模糊搜尋 query。"
+      },
+      {
+        "id": "R13",
+        "area": "易學內容",
+        "section": "學堂內容設計（8 站主題與題型代號）",
+        "severity": "medium",
+        "problem": "學堂出題規則在易學細節上有兩處會造成錯誤題目：(1) daxiang-to-name 規定「看大象（遮去卦名）選卦名」（line 697），但核對 src/data/classic.json，第 1 卦乾卦的大象為「天行健，君子以自強不息。」，全句沒有「乾」字可遮；第 29 卦坎卦的大象為「水洊至，習坎。君子以常德行，習教事。」，若只遮去「坎」字會留下「習〇」而直接洩題；第 27 卦頤卦大象「慎言語，節飲食」則含有「節」卦卦名；(2) 第七站爻位的 position 題型（line 686、703）寫「某爻是否當位、是否居中、應爻是哪一爻」，但《周易》經傳中「初與四、二與五、三與上」為固定「對位（應位）」，須一陰一陽才稱「相應／有應」，同陰同陽則為「無應（敵應）」；且「當位」需明確規範採用「初三五陽位、二四上陰位」六爻通例（不採王弼「初上無陰陽定位」），否則出題與解說會產生易學爭議。",
+        "evidence": "docs/spec.md:686, 697, 703；對照 src/data/classic.json:9（乾卦大象）、1100（頤卦大象）、1157（坎卦大象）。",
+        "suggestion": "(1) daxiang-to-name 明確規定：乾卦將「天行健」遮為「〇〇〇」（或直接詢問「天行健，君子以自強不息」屬於哪一卦），坎卦將「習坎」整詞遮蔽，且只遮蔽大象前半句（君子／先王／大人／后之前）出現的本卦卦名；(2) position 題型拆清「對位（初四、二五、三上）」與「是否有應（對位且一陰一陽為有應，同性為無應）」，並寫明當位採「初、三、五為陽位，二、四、上為陰位」規則。"
+      },
+      {
+        "id": "R14",
+        "area": "一致性",
+        "section": "目標 / G3M / AC-23 / Stage 0（route-pages.mjs） / Stage 6",
+        "severity": "medium",
+        "problem": "規格「目標」（line 53）要求「64 張卡牌頁與各功能頁直接開啟時回應狀態碼為 200」，Stage 0 在 src/main.tsx 新增了 /today、/divine、/divine/:id、/academy、/academy/:station/:lesson、/academy/review、/me 等路由；但 route-pages.mjs 與 AC-23、TC-19 只為 /、/today、/divine、/academy、/me 與 /gua/1..64（共 69 個路徑）產生 index.html，漏掉了靜態路徑 /academy/review 與 24 堂課的 /academy/:station/:lesson，導致使用者在溫故頁或課程頁重新整理或直接開啟時，GitHub Pages 會回傳 HTTP 404（靠 404.html 載入）。此外，src/main.tsx 的路由表未定義每站「考核（Exam）」的路由路徑（例如共用 /academy/:station/:lesson 時 :lesson 傳 'exam' 或獨立路由）。",
+        "evidence": "docs/spec.md:53、line 350、line 1075（AC-23）、line 1103（TC-19：69 個路徑）、line 1498（src/main.tsx 路由）、line 1508（route-pages.mjs）。",
+        "suggestion": "(1) 在 route-pages.mjs 中補上 /academy/review（以及固定編號的 24 堂課與 8 場考核路徑，或於目標與 AC-23 明確界定預產生的靜態路徑範圍）；(2) 在 Stage 0 與 Stage 6 明確定義考核頁的路由格式（例如 /academy/:station/exam，共用 Lesson.tsx 或獨立頁面）。"
+      },
+      {
+        "id": "R15",
+        "area": "使用者體驗",
+        "section": "資訊架構表 / UI 設計（解讀步驟） / 學堂內容設計（溫故與 XP）",
+        "severity": "medium",
+        "problem": "使用者體驗與邊界情境有三處缺漏：(1) 占卜解讀頁的「問事指引」顯示了某卦的事業、感情、決策建議，但當 4、5、6 爻變時，朱熹讀法的主讀經文（focus[0]）屬於「之卦（result）」而非「本卦（primary）」，規格未定義此時問事指引應取本卦、之卦或兩者並列；且資訊架構表（line 239）寫問事指引顯示條件為「類別不是『不分類』」，導致選「不分類」的使用者連手動展開看問事指引的入口都沒有；(2) 溫故規定「至少 10 張算一輪，完成一輪給 10 XP」（line 712、2135），但畫面示意圖（line 655）與內文（line 1260）都展示了「溫故 6 張」的情境；當今日待溫卡數少於 10 張（例如只有 1～9 張）時，全部答完是否算完成一輪（給 XP 與計入「溫」印章），或是否補入未到期卡湊滿 10 張，規格未定義；(3) 錯誤處理表（line 912）稱 WEBGL_UNAVAILABLE 既有行為是「改用平面卡圖」，但現有 HoloCard.tsx 只顯示錯誤文字，且 Stage 0 已將 dist/cards/NN/face.webp 刪除，若未指定平面卡圖改用 thumb.webp 會在正式環境破圖。",
+        "evidence": "docs/spec.md:239（問事指引顯示條件）、line 530（解讀步驟）、line 655, 712, 2135（溫故張數與一輪定義）、line 912（WEBGL_UNAVAILABLE）、line 1509（刪除 face.webp）；對照 src/components/holo/HoloCard.tsx:99-102, 293。",
+        "suggestion": "(1) 規定問事指引在選擇「不分類」時預設收合但仍顯示標題可展開，並明確定義問事指引預設顯示本卦（或隨主讀卦象切換並提供本卦／之卦切換）；(2) 規定溫故當待溫卡數 < 10 張時，答完所有待溫卡即算完成一輪（或定義每日首次清空待溫佇列即給 10 XP，但每日仍以 3 次為限）；(3) 明確規定所有需要平面卡圖之處（解讀頁兩張卡圖、WebGL 失敗退回）一律使用 cardAsset(n, 'thumb')（thumb.webp），並在 HoloCard.tsx 補上 error 時顯示 <img src={cardAsset(front, 'thumb')} />。"
+      },
+      {
+        "id": "R16",
+        "area": "可行性",
+        "section": "Stage 0（route-pages.mjs） / Stage 9：做成可加到主畫面的離線版本",
+        "severity": "medium",
+        "problem": "Stage 0 的 route-pages.mjs 會在 dist/ 下產生 68 個額外的子路徑 index.html，而 Stage 9 引入 vite-plugin-pwa（generateSW）預先快取網站外殼。Workbox 預設 globPatterns 會掃描 dist/**/*.html，若 route-pages 在 vite-plugin-pwa 之前執行，會把 70 個內容幾乎相同的 HTML 全部寫入 precache manifest 造成快取膨脹；若在之後執行，離線直接開啟 /iching/divine 等路徑則依賴 Service Worker 的 navigateFallback 設定。規格未定義兩個 Vite 外掛的執行順序與 globIgnores / navigateFallback 設定。",
+        "evidence": "docs/spec.md:1508（Stage 0 route-pages.mjs）、line 2298-2300（Stage 9：預先快取 index.html、程式與樣式、64 張 thumb.webp……確認 route-pages 產生的各路徑 index.html 都能由 service worker 導向網站外殼）。",
+        "suggestion": "在 Stage 9 明確指定 vite-plugin-pwa 的 workbox 設定：將 globPatterns 設為 ['index.html', 'assets/**/*.{js,css}', 'cards/**/thumb.webp', 'cards/back.webp', 'icons/*.png', 'favicon.svg']（排除 route-pages 產生的子目錄 index.html），並設定 navigateFallback: '/iching/index.html' 與 navigateFallbackAllowlist: [/^\\/iching\\//]，讓離線導覽統一由單一外殼處理。"
+      },
+      {
+        "id": "R17",
+        "area": "正確性",
+        "section": "384 爻白話內容規格 / Stage 4（lines.test.ts）",
+        "severity": "low",
+        "problem": "Stage 4 要求 lines.test.ts「每段『』引文依 content.test.ts 的嚴格規則（斷句位置一致）能在原文找到」。但檢查現有 src/data/content.test.ts 第 8 行，normalize 函式為 s.replace(/[\\s「」『』*]/g, '')，漏掉了反斜線 \\；而在 易經_周易_原文.md 第 161 行（需卦九二小象）原文為「雖小有言，以吉終也\\*。」，normalize 後會殘留反斜線變成「以吉終也\\|」。撰寫 384 爻白話時若完整引用需卦九二小象含句號（或與後文相連），測試會因殘留的 \\ 而誤判引文不存在。",
+        "evidence": "src/data/content.test.ts:8：const normalize = (s: string) => s.replace(/[\\s「」『』*]/g, '').replace(/[，。、；：？！]+/g, '|')；易經_周易_原文.md:161：《象》曰：需于沙，衍在中也，雖小有言，以吉終也\\*。；docs/spec.md:747, 1870。",
+        "suggestion": "在 Stage 4 指示 lines.test.ts（並可同步修正 content.test.ts）將 normalize 的字元集改為 /[\\s「」『』\\\\*]/g，且引文比對可限定在該卦對應的經傳段落內，避免跨卦誤配。"
+      }
+    ]
+  }
+}
