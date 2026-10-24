@@ -9,6 +9,9 @@
 // 新增資料表時，同步更新 EXPORTED_TABLES、備份格式、匯入驗證與合併規則。
 
 import { Dexie, type DexieOptions, type EntityTable } from 'dexie'
+import type { LineValue } from '../lib/castLines.ts'
+
+export type { LineValue }
 
 export const DB_NAME = 'iching'
 export const SCHEMA_VERSION = 1
@@ -20,9 +23,6 @@ export type Category = 'career' | 'relations' | 'decision' | 'general'
 export type Method = 'coins' | 'yarrow-hand' | 'yarrow-quick' | 'manual'
 export type DraftMethod = 'coins' | 'yarrow' | 'manual'
 export type YarrowMode = 'hand' | 'quick'
-/** 爻值：6 老陰、7 少陽、8 少陰、9 老陽 */
-export type LineValue = 6 | 7 | 8 | 9
-
 export interface Reading {
   /** 等於起卦草稿的 castId（UUID） */
   id: string

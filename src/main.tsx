@@ -14,7 +14,7 @@ const PAGES: Record<PageId, ComponentType> = {
   hall: Hall,
   card: lazy(() => import('./pages/CardDetail.tsx').then(m => ({ default: m.CardDetail }))),
   today: placeholder,
-  divine: placeholder,
+  divine: lazy(() => import('./pages/Divine.tsx').then(m => ({ default: m.Divine }))),
   academy: placeholder,
   me: placeholder,
   lesson: placeholder,

@@ -54,21 +54,35 @@ function pruneUnusedFaces(): Plugin {
   }
 }
 
-// 記錄卦殿首屏會載入的 chunk：從 entry 遞迴走訪靜態匯入（動態匯入不算），供 scripts/build/check-size.mjs 檢查
+// 記錄卦殿首屏會載入的 chunk：從 entry 遞迴走訪靜態匯入（動態匯入不算），供 scripts/build/check-size.mjs 檢查。
+// 另記錄有體積上限的延遲載入頁面（占卜頁）：該頁 chunk 加上它的靜態匯入，扣掉首屏已載入的部分
+const BUDGET_PAGES = { divine: 'src/pages/Divine.tsx' }
+
 function firstScreenReport(): Plugin {
   return {
     name: 'iching-first-screen',
     apply: 'build',
     generateBundle(_options, bundle) {
-      const chunks = new Map<string, string[]>()
-      const visit = (fileName: string) => {
-        const chunk = bundle[fileName]
-        if (!chunk || chunk.type !== 'chunk' || chunks.has(fileName)) return
-        chunks.set(fileName, chunk.moduleIds)
-        for (const dep of chunk.imports) visit(dep)
+      const collect = (start: string, into: Map<string, string[]>, skip = new Set<string>()) => {
+        const visit = (fileName: string) => {
+          const chunk = bundle[fileName]
+          if (!chunk || chunk.type !== 'chunk' || into.has(fileName) || skip.has(fileName)) return
+          into.set(fileName, chunk.moduleIds)
+          for (const dep of chunk.imports) visit(dep)
+        }
+        visit(start)
+        return into
       }
-      for (const item of Object.values(bundle)) if (item.type === 'chunk' && item.isEntry) visit(item.fileName)
-      const report = { chunks: [...chunks].map(([fileName, moduleIds]) => ({ fileName, moduleIds })) }
+      const first = new Map<string, string[]>()
+      for (const item of Object.values(bundle)) if (item.type === 'chunk' && item.isEntry) collect(item.fileName, first)
+      const pages: Record<string, { fileName: string; moduleIds: string[] }[]> = {}
+      for (const [page, source] of Object.entries(BUDGET_PAGES)) {
+        const chunk = Object.values(bundle).find(c => c.type === 'chunk' && c.facadeModuleId?.endsWith(source))
+        if (!chunk) continue
+        const files = collect(chunk.fileName, new Map(), new Set(first.keys()))
+        pages[page] = [...files].map(([fileName, moduleIds]) => ({ fileName, moduleIds }))
+      }
+      const report = { chunks: [...first].map(([fileName, moduleIds]) => ({ fileName, moduleIds })), pages }
       this.emitFile({ type: 'asset', fileName: 'first-screen.json', source: JSON.stringify(report, null, 1) })
     },
   }

@@ -12,7 +12,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { page: 'hall', to: '/', label: '卦殿', enabled: true },
   { page: 'today', to: '/today', label: '今日', enabled: false },
-  { page: 'divine', to: '/divine', label: '占卜', enabled: false },
+  { page: 'divine', to: '/divine', label: '占卜', enabled: true },
   { page: 'academy', to: '/academy', label: '學堂', enabled: false },
   { page: 'me', to: '/me', label: '我的', enabled: false },
 ]

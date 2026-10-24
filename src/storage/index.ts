@@ -7,3 +7,6 @@ export { currentStorageMode, getStorage, provideStorage, requireDb, subscribeSto
 export { clearErrors, logError, readErrors, storageStatus, type ErrorEntry, type StorageStatus } from './diagnostics.ts'
 export * as settings from './repos/settings.ts'
 export * as meta from './repos/meta.ts'
+export * as draft from './repos/draft.ts'
+export * as readings from './repos/readings.ts'
+export { useDb, useLiveQuery, useStorageMode } from './react.ts'

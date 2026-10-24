@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-24（Stage 0 完成）
+**最後更新**：2026-10-24（Stage 1 完成）
 
 **位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （`main`，程式最新 `e9e7045`，之後只有文件提交）；網站 https://openclaw-metis.github.io/iching/
 
-**下一步**：Stage 0 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 1（占卜流程）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
+**下一步**：Stage 0、1 已完成（分支 `claude/keen-mayer-v9g6tt`），依 `docs/spec.md` 的分階段計畫進行 Stage 2（親手分蓍）；規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
 ### 需求狀態
 - [x] 六十四卦資料：原文解析成 `src/data/classic.json`，結構由六爻推算（`hexagrams.ts`：上下卦、錯綜互、京房八宮、先天序、消息卦），序卦雜卦在 `xugua.ts`
@@ -28,7 +28,8 @@
 - [x] 移除「回到卦殿」（`eea7702`）與互卦按鈕（`e9e7045`）已推送
 - [x] 第二階段規格 `docs/spec.md`：技術規格、白話規格、12 個階段的 Codex 與 Claude Code 指令；經 Codex 與 agy 兩輪檢視修訂（`docs/spec-review.md`，原始意見 `docs/review/spec-round1.json`、`spec-round2.json`）
 - [x] Stage 0：本機保存層（16 張資料表）、`routes.ts` 與 102 個路徑頁、首屏體積檢查、只在正式建置注入的 CSP、平面卡圖、測試設定、`AGENTS.md` 與 `CLAUDE.md`
-- [ ] Stage 1 至 3：占卜（三錢、手動、大衍一鍵完成與親手分蓍）、占卜紀錄與事後回顧、匯出匯入
+- [x] Stage 1：占卜流程（三錢、手動、大衍一鍵完成）、草稿接續、重複提問提醒、保存失敗下載單筆結果、備份格式與 readings 驗證；導覽打開「占卜」
+- [ ] Stage 2 至 3：親手分蓍、占卜紀錄與事後回顧、匯出匯入
 - [ ] Stage 4：450 條白話（384 爻、用九用六、64 條卦辭），沿用三方撰稿流程
 - [ ] Stage 5 至 8：今日一卦與行事曆提醒、學堂（8 站 24 課、14 種題型、看圖猜卦練習）、溫故與印譜與學習地圖、收藏冊
 - [ ] Stage 9 至 11：離線版、整合與邊界測試、文件與交付
@@ -53,6 +54,7 @@
 - 本機實測（互卦與移除回到卦殿）：屯取中進剝、既濟取中進未濟，乾只有兩顆按鈕；湊近時卡牌不超出畫布；375px 三顆按鈕並排、無橫向捲動；主控台無錯誤。
 - 規格 `docs/spec.md`（2026-10-24 20:21）：程式碼區塊配對、24 份階段指令各含 9 個必要欄位、Claude Code 版不依賴 Codex 版、無破折號、3 張 SVG 可解析、白話版以 spec-organizer 的 `check_plain_language.py` 檢查 PASS；本次沒有改程式，未重跑 `npm test`。
 - Stage 0（2026-10-24）：`npm test` 59 項、`npm run typecheck`、`npm run build`、`npm run check:size`（126.1 KB）全過；preview 以 Playwright 在 375 與 1280 寬實測 11 個路徑（含 404）皆 200、標題正確、只有「卦殿」導覽、無橫向捲動、無 CSP 違規；停用 WebGL 時卡牌頁顯示 5:7 平面卡圖，翻面改顯示錯卦圖並換頁；另一分頁把資料庫升到 v20 時顯示「網站已在另一個分頁更新」，重新整理後顯示「網站已更新，請重新整理頁面」且資料庫維持 v20；開發模式無 CSP、熱更新不整頁重載、`?seed=demo` 寫入示範資料。
+- Stage 1（2026-10-24）：`npm test` 96 項（三錢與大衍各 200,000 爻、yarrowChange 邊界與窮舉、buildReading 4,096 組獨立規則比對、completeCast 冪等、rev 衝突、草稿佇列、備份驗證）；check:size 首屏 127.1 KB、占卜頁 104.4 KB（上限 120）；Playwright 375／1280 實測三錢、手動、大衍一鍵，第 3 爻重新整理後接續、1 秒內已存入紀錄、筆記自動保存、重複提問提醒、多一字不觸發、放棄確認、草稿寫入失敗提示、保存失敗進入 blocked 並下載單筆檔（通過驗證器）、重試保存成功、無橫向捲動。
 - 未驗證：手機陀螺儀實機、iOS Safari、低階手機效能。
 
 ### 關鍵技術決策（當前有效）

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
+import { FocusText } from '../components/FocusText.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
 import artDirection from '../data/art-direction.json'
@@ -8,7 +9,7 @@ import { textOf } from '../data/classic.ts'
 import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
 import { xugua, zagua } from '../data/xugua.ts'
-import { interpret, type ReadingFocus } from '../lib/reading.ts'
+import { interpret } from '../lib/reading.ts'
 
 type Tab = 'meaning' | 'text' | 'structure' | 'lab' | 'source'
 const TABS: { id: Tab; label: string }[] = [
@@ -319,18 +320,6 @@ function Lab({ hex }: { hex: Hexagram }) {
       </div>
     </>
   )
-}
-
-function FocusText({ focus, main }: { focus: ReadingFocus; main: boolean }) {
-  const t = textOf(focus.hexagram.number)
-  const tag = main ? '主' : '輔'
-  if (focus.kind === 'judgment') return <p className="classic">〔{tag}〕{focus.hexagram.name}卦辭：{t.judgment}</p>
-  if (focus.kind === 'useAll') {
-    const use = t.lines[6]
-    return <p className="classic">〔{tag}〕{use.label}：{use.text}</p>
-  }
-  const line = t.lines[focus.position]
-  return <p className="classic">〔{tag}〕{focus.hexagram.name}{line.label}：{line.text}</p>
 }
 
 function Sources({ hex }: { hex: Hexagram }) {
