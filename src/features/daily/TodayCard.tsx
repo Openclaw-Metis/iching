@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from '../../app/toast.ts'
+import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { HoloCard } from '../../components/holo/HoloCard.tsx'
 import { NoteEditor } from '../../components/NoteEditor.tsx'
 import { textOf } from '../../data/classic.ts'
@@ -31,6 +32,8 @@ export function TodayCard({ date, row }: Props) {
 
   // 當天紀錄在別處被刪除時回到背面
   useEffect(() => { if (!row) setRevealed(false) }, [row])
+
+  useEffect(() => { if (n !== null) void touchCardCache(n) }, [n])
 
   useEffect(() => {
     if (!revealed || n === null) return

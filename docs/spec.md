@@ -805,7 +805,7 @@ iching/
 | 可靠性 | 每擲一爻立即寫入草稿；紀錄在解讀顯示的同時寫入；草稿寫入依序排隊，每次寫入最新的完整草稿 | 整合測試 |
 | 可靠性 | 第一次保存紀錄後申請持久保存（`navigator.storage.persist()`）；30 天沒有匯出時在「我的」提醒備份 | 手動驗收 |
 | 可靠性 | 資料表版本只升不降；任何回滾都以支援最新資料表版本的修正版往前部署，不部署舊程式 | 程式審查 |
-| 安全性 | 正式建置的 `index.html` 加 Content-Security-Policy meta：`default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'`。只在 `vite build` 時以 `transformIndexHtml` 注入，開發模式不注入（Vite 的 React 熱更新會插入內嵌腳本）；PWA 註冊用外部檔案（`injectRegister: 'script'`），不用內嵌腳本 | 正式建置的瀏覽器主控台無違規 |
+| 安全性 | 正式建置的 `index.html` 加 Content-Security-Policy meta：`default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'`。只在 `vite build` 時以 `transformIndexHtml` 注入，開發模式不注入（Vite 的 React 熱更新會插入內嵌腳本）；PWA 註冊打包在程式裡（`injectRegister: false`，由 `virtual:pwa-register` 註冊），不用內嵌腳本 | 正式建置的瀏覽器主控台無違規 |
 | 安全性 | 使用者輸入只以文字呈現，不使用 `dangerouslySetInnerHTML`；匯入檔逐欄驗證並丟棄 `__proto__`、`constructor` 等鍵 | 單元測試 |
 | 隱私 | 不載入任何第三方腳本與分析工具；除網站本身的檔案與 Google Fonts 字型（Noto Serif TC）外不發出網路請求；隱私說明寫明字型由 Google 提供，請求不含使用者資料 | 網路面板檢查 |
 | 無障礙 | 文字對比至少 4.5:1；擲爻、作答、翻開今日卦可用鍵盤完成；結果以 `aria-live` 宣告；觸控目標至少 44 × 44 px；尊重 `prefers-reduced-motion` | 手動檢查 |
@@ -2486,7 +2486,7 @@ collection.test.ts：切換收藏兩次回到未收藏；金句 id 解析正確�
 直接貼給 Codex。
 
 [背景]
-規格 docs/spec.md「非功能需求」的離線與安全性、「通知與背景執行」的新版本檢查與卡圖快取整理；網站部署在 /iching/，service worker 範圍與 manifest 的 start_url、scope 都要帶這個前綴。白話與課程內容以動態 import 載入，建置後是 JS chunk，不是 JSON 請求。
+規格 docs/spec.md「非功能需求」的離線與安全性、「通知與背景執行」的新版本檢查與卡圖快取整理；網站部署在 /iching/，service worker 範圍與 manifest 的 start_url、scope 都要帶這個前綴。課程內容以動態 import 載入，建置後是 JS chunk；白話是建置成雜湊檔的 lines.json，以 fetch 載入，要列入預先快取。
 
 [任務範圍]
 做：vite-plugin-pwa（generateSW）設定、manifest（名稱易經卦殿、深色主題色、圖示）、預先快取網站外殼、全部程式 chunk、64 張縮圖與 64 張看圖猜卦圖、卡圖四層與字型的執行時快取、以卦為單位的卡圖快取整理、UpdateToast、設定頁「加到主畫面」說明。
@@ -2496,8 +2496,8 @@ collection.test.ts：切換收藏兩次回到未收藏；金句 id 解析正確�
 package.json（新增 vite-plugin-pwa@2）、vite.config.ts、scripts/build/icons.mjs（由品牌圖示產生 192 與 512 px 圖示，使用既有的 sharp）、public/icons/*、src/app/UpdateToast.tsx、src/app/cardCache.ts、src/app/cardCache.test.ts、src/main.tsx、src/pages/CardDetail.tsx、src/pages/Today.tsx、src/features/divination/ResultStep.tsx、src/pages/Me.tsx（設定分頁加說明）、README.md
 
 [具體步驟]
-1. vite-plugin-pwa 使用 generateSW，registerType 為 prompt，injectRegister 為 'script'（外部檔案註冊，配合 CSP 不用內嵌腳本）；有新版本時顯示 UpdateToast，按「重新整理」才更新。
-2. 預先快取的 globPatterns 只含 index.html、assets/**/*.{js,css}（包含白話與課程的 chunk）、cards/*/thumb.webp、cards/*/quiz.webp、cards/back.webp、icons/*、favicon.svg；不含 route-pages 產生的各路徑 HTML 與完整卡圖。navigateFallback 為 /iching/index.html，navigateFallbackAllowlist 為 [/^\/iching\//]。route-pages 在 service worker 產生之後執行也不影響預先快取清單。
+1. vite-plugin-pwa 使用 generateSW，registerType 為 prompt，injectRegister 為 false：由 UpdateToast 以 virtual:pwa-register/react 註冊（打包在程式裡，配合 CSP 不用內嵌腳本，首屏顯示後才載入）；有新版本時顯示 UpdateToast，按「重新整理」才更新。
+2. 預先快取的 globPatterns 只含 index.html、assets/**/*.{js,css,json}（包含課程的 chunk 與白話的 lines.json）、cards/*/thumb.webp、cards/*/quiz.webp、cards/back.webp、icons/*、favicon.svg；不含 route-pages 產生的各路徑 HTML 與完整卡圖。navigateFallback 為 /iching/index.html，navigateFallbackAllowlist 為 [/^\/iching\//]。route-pages 在 service worker 產生之後執行也不影響預先快取清單。
 3. 執行時快取：卡圖四層（/iching/cards/NN/ 的 background、subject、fx、text）用 CacheFirst，快取名稱 card-layers，不設 maxEntries；fonts.googleapis.com 用 StaleWhileRevalidate；fonts.gstatic.com 用 CacheFirst（cacheableResponse 接受 0 與 200，保留一年）。不設 JSON 的執行時快取。
 4. src/app/cardCache.ts：touch(n) 把卦序移到 localStorage 'iching:card-lru' 最前面；超過 30 個時，以 caches.open('card-layers') 刪除最舊那一卦的四層。卡牌頁、今日頁、占卜解讀開啟卡牌時呼叫。離線時任一層缺少，HoloCard 已有的平面卡圖回退會改用 thumb.webp。
 5. 設定分頁說明 iOS 與 Android 加到主畫面的步驟，並說明加到主畫面後 Safari 不會因 7 天未使用清除資料。
@@ -2534,7 +2534,7 @@ package.json（新增 vite-plugin-pwa@2）、vite.config.ts、scripts/build/icon
 
 [具體步驟]
 1. 先列出待辦清單。
-2. 設定 PWA：generateSW、registerType prompt、injectRegister 'script'；globPatterns 只含網站外殼、全部 JS 與 CSS chunk、64 張 thumb.webp、64 張 quiz.webp、牌背、圖示；navigateFallback 與 allowlist 帶 /iching/ 前綴；卡圖四層與 Google Fonts 用執行時快取，不設 JSON 規則。
+2. 設定 PWA：generateSW、registerType prompt、injectRegister false（由 UpdateToast 以 virtual:pwa-register 註冊）；globPatterns 只含網站外殼、全部 JS 與 CSS chunk、白話的 lines.json、64 張 thumb.webp、64 張 quiz.webp、牌背、圖示；navigateFallback 與 allowlist 帶 /iching/ 前綴；卡圖四層與 Google Fonts 用執行時快取，不設 JSON 規則。
 3. 寫 src/app/cardCache.ts（以卦為單位保留最近 30 張，四層一起刪除）與測試，接到卡牌頁、今日頁、占卜解讀。
 4. 寫圖示產生腳本、UpdateToast、設定頁「加到主畫面」說明、README 的回滾方式。
 5. 用 npm run preview 實測：devtools 的 Application 面板確認 manifest、service worker 與預先快取清單（不含各路徑 HTML）；切成離線後操作，看過的卡為全息、沒看過的為平面卡圖；正式建置的主控台沒有 CSP 違規；改一行文字重新建置確認更新提示。

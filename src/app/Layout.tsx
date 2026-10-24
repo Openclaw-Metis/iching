@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useRouteError } from 'react-router'
 import { afterFirstPaint } from './idle.ts'
 import { NAV_ITEMS } from './nav.ts'
@@ -41,9 +41,19 @@ function useStartupTasks() {
   useEffect(() => afterFirstPaint(() => { void import('./startup.ts').then(m => m.runStartupTasks()) }), [])
 }
 
+// 離線版的註冊與新版本提示：只在正式建置，首屏顯示後才載入
+const UpdateToast = lazy(() => import('./UpdateToast.tsx'))
+
+function useAfterFirstPaint(): boolean {
+  const [ready, setReady] = useState(false)
+  useEffect(() => afterFirstPaint(() => setReady(true)), [])
+  return ready
+}
+
 export function Layout() {
   useDocumentTitle()
   useStartupTasks()
+  const idle = useAfterFirstPaint()
   return (
     <>
       <Header />
@@ -54,6 +64,7 @@ export function Layout() {
         </Suspense>
       </main>
       <Toaster />
+      {idle && import.meta.env.PROD && <Suspense fallback={null}><UpdateToast /></Suspense>}
       <ScrollRestoration />
     </>
   )

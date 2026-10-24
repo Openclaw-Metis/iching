@@ -11,6 +11,7 @@ import { content } from '../data/content.ts'
 import { cuo, hexagram, hu, lineLabel, zong, type Hexagram } from '../data/hexagrams.ts'
 import { lineKey, parseTextFocus, type TextFocus } from '../data/lines.ts'
 import { xugua, zagua } from '../data/xugua.ts'
+import { touch as touchCardCache } from '../app/cardCache.ts'
 import { FavoriteButton, QuoteButton } from '../features/collection/index.ts'
 import { ReviewToggle } from '../features/review/index.ts'
 import { interpret } from '../lib/reading.ts'
@@ -50,6 +51,9 @@ function Detail({ n }: { n: number }) {
   const timer = useRef<number | undefined>(undefined)
   const keepCaption = useRef(false)
   const c = cuo(hex), z = zong(hex), x = hu(hex)
+
+  // 這一卦的卡圖四層移到離線快取的最前面；背面的錯卦也會載入四層，一起記著才會在超過 30 卦時被清掉
+  useEffect(() => { void touchCardCache(c.number).then(() => touchCardCache(n)) }, [n, c.number])
 
   // 換卦時回到正面、清空說明；只有倒轉、翻面或看互卦換來的卦保留那句說明
   useEffect(() => {

@@ -31,6 +31,14 @@ npm run preview      # 比照正式站（/iching/ 前綴、CSP）
 - **各路徑 HTML**：建置後 `scripts/build/route-pages.mjs` 依 `routes.ts` 替每條路徑寫一份 `<路徑>.html`，帶入該頁標題與描述。GitHub Pages 對不帶副檔名的網址會直接回應同名 `.html`（200），若寫成 `<路徑>/index.html` 會先 301 轉到結尾斜線，所以只有同時是目錄的 `/academy` 另寫 `academy/index.html`。不在路徑表裡的網址落到 `404.html`，由前端顯示「找不到這一頁」。
 - **CSP**：只在正式建置時注入 `index.html`（開發模式的 React 熱更新會插入內嵌腳本）；除網站本身與 Google Fonts 外不允許其他來源。
 - **部署包瘦身**：已有插圖的卡用分層貼圖顯示，整張的 `face.webp` 不放進 `dist`。
+- **離線版**：`vite-plugin-pwa`（generateSW）產生 `sw.js` 與 `manifest.webmanifest`。預先快取 `index.html`、全部程式與白話（`assets/**/*.{js,css,json}`）、64 張縮圖、64 張看圖卡與圖示；卡圖四層（`card-layers`）與 Google Fonts 在用到時才快取，`src/app/cardCache.ts` 只保留最近 30 卦的四層。註冊與新版本提示在 `src/app/UpdateToast.tsx`，有新版本時由使用者按「重新整理」才更新。圖示由 `node scripts/build/icons.mjs` 從 `public/favicon.svg` 產生。
+
+### 離線版出問題時的回滾
+
+service worker 一旦裝上，即使撤回程式，使用者的瀏覽器仍會用舊的快取。要撤掉它：
+
+1. 在 `vite.config.ts` 的 `VitePWA({ ... })` 加上 `selfDestroying: true`，推送部署。這一版的 service worker 會在使用者下次開啟時解除註冊並清掉快取。
+2. 確認大部分使用者都已開過一次之後，修正設定，移除 `selfDestroying` 再部署。
 
 ## 資料
 

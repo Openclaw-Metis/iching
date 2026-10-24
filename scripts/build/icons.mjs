@@ -1,0 +1,26 @@
+// 由品牌圖示 public/favicon.svg 產生加到主畫面用的圖示（PWA manifest 與 iOS apple-touch-icon）。
+//   node scripts/build/icons.mjs
+// maskable 版本四周留安全區（Android 會裁成圓形或圓角方形），背景與圖示底色相同。
+import { mkdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import sharp from 'sharp'
+
+const root = fileURLToPath(new URL('../../', import.meta.url))
+const svg = readFileSync(join(root, 'public/favicon.svg'))
+const out = join(root, 'public/icons')
+const INK = '#121419'
+mkdirSync(out, { recursive: true })
+
+const render = size => sharp(svg, { density: Math.ceil((72 * size) / 64) }).resize(size, size).png()
+
+await render(192).toFile(join(out, 'icon-192.png'))
+await render(512).toFile(join(out, 'icon-512.png'))
+await render(180).flatten({ background: INK }).toFile(join(out, 'apple-touch-icon.png'))
+// 圖示縮到 80%，置中放在同色底上
+const inner = await render(410).toBuffer()
+await sharp({ create: { width: 512, height: 512, channels: 4, background: INK } })
+  .composite([{ input: inner, left: 51, top: 51 }])
+  .png()
+  .toFile(join(out, 'icon-maskable-512.png'))
+console.log('icons 完成')

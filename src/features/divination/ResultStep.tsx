@@ -1,8 +1,9 @@
 // 解讀步驟：左欄本卦與之卦兩張卡圖（5:7），卦畫以朱紅標出變爻；右欄是保存狀態、讀法說明、主讀經文與白話，
 // 下方是輔讀與問事指引。保存失敗（blocked）時解讀照常顯示，主操作改為下載這次結果。
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { FocusText, focusTitle } from '../../components/FocusText.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
 import { LinePlain } from '../../components/LinePlain.tsx'
@@ -68,6 +69,10 @@ export interface ReadingViewProps {
 /** 解讀主體：卡圖、變爻、讀法、主讀輔讀與問事指引；占卜解讀與紀錄詳情共用 */
 export function ReadingView({ reading, header, footer }: ReadingViewProps) {
   const { primary, result, moving, reading: r } = buildReading(reading.lines)
+  // 之後點進卡牌頁看全息卡的機會大，先把這兩卦排到離線快取的前面
+  useEffect(() => {
+    void touchCardCache(result.number).then(() => touchCardCache(primary.number))
+  }, [primary.number, result.number])
   const [main, ...rest] = r.focus
   return (
     <section className="divine-step result-step" aria-live="polite">

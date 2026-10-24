@@ -2,6 +2,7 @@ import { copyFileSync, readFileSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import { writeRoutePages } from './scripts/build/route-pages.mjs'
 
 // GitHub Pages 不支援單頁應用的路由：不在路徑表裡的網址（打錯的、舊的）會落到 404.html，
@@ -88,9 +89,60 @@ function firstScreenReport(): Plugin {
   }
 }
 
+// 離線版（規格 Stage 9）：預先快取網站外殼、全部程式與白話、64 張縮圖與看圖卡；卡圖四層與字型在用到時才快取。
+// 註冊由 UpdateToast 以 virtual:pwa-register 進行（打包在程式裡，不用內嵌腳本，CSP 照常）；有新版本時由使用者按重新整理才更新。
+// 各路徑的 HTML（route-pages）不預先快取：離線時的導覽一律回 index.html，由前端路由接手。
+const pwa = () => VitePWA({
+  registerType: 'prompt',
+  injectRegister: false,
+  manifest: {
+    name: '易經卦殿',
+    short_name: '易經卦殿',
+    description: '易經六十四卦卦牌：占卜、每日一卦、學堂與收藏，資料只存在這台裝置。',
+    lang: 'zh-Hant',
+    start_url: '/iching/',
+    scope: '/iching/',
+    display: 'standalone',
+    background_color: '#0c0d10',
+    theme_color: '#0c0d10',
+    icons: [
+      { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  },
+  workbox: {
+    // manifest 的圖示由外掛自動加入預先快取，這裡不重複列
+    globPatterns: ['index.html', 'assets/**/*.{js,css,json}', 'cards/*/thumb.webp', 'cards/*/quiz.webp', 'cards/back.webp', 'icons/apple-touch-icon.png', 'favicon.svg'],
+    // 卡牌頁的 chunk 含 three，約 0.6 MB
+    maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+    navigateFallback: '/iching/index.html',
+    navigateFallbackAllowlist: [/^\/iching\//],
+    cleanupOutdatedCaches: true,
+    runtimeCaching: [
+      {
+        // 卡圖四層：最近看過的 30 卦由 src/app/cardCache.ts 整理，這裡不設上限
+        urlPattern: /\/iching\/cards\/\d{2}\/(background|subject|fx|text)\.webp$/,
+        handler: 'CacheFirst',
+        options: { cacheName: 'card-layers' },
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+        handler: 'StaleWhileRevalidate',
+        options: { cacheName: 'google-fonts-css' },
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+        handler: 'CacheFirst',
+        options: { cacheName: 'google-fonts', cacheableResponse: { statuses: [0, 200] }, expiration: { maxAgeSeconds: 365 * 24 * 60 * 60 } },
+      },
+    ],
+  },
+})
+
 export default defineConfig(({ command, isPreview }) => ({
   // 正式版部署在 https://openclaw-metis.github.io/iching/；本機開發維持根路徑，vite preview 比照正式版
   base: command === 'build' || isPreview ? '/iching/' : '/',
-  plugins: [react(), contentSecurityPolicy(), firstScreenReport(), staticPages(), pruneUnusedFaces()],
+  plugins: [react(), contentSecurityPolicy(), firstScreenReport(), staticPages(), pruneUnusedFaces(), pwa()],
   server: { port: 5181 },
 }))

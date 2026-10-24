@@ -743,3 +743,10 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .quote-list a { flex: 1; display: grid; gap: 4px; color: var(--text); }
 .quote-list .classic { font-size: 16px; }
 .quote-source { color: var(--muted); font-size: 13px; }
+
+/* ---------- 離線版 ---------- */
+.update-toast { position: fixed; left: 50%; bottom: 16px; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; width: min(460px, calc(100vw - 32px)); padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--ink-1); color: var(--ivory); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); transform: translateX(-50%); }
+.install-body { padding: 0 14px 12px; }
+.install-body h4 { margin: 12px 0 4px; color: var(--gold); font-size: 14px; font-weight: 500; letter-spacing: .1em; }
+.install-body ol { margin: 0; padding-left: 22px; }
+.install-body p { margin: 6px 0; }

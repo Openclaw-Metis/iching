@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { DiagnosticsPanel } from '../app/DiagnosticsPanel.tsx'
+import { InstallHelp } from '../app/InstallHelp.tsx'
 import { ResetAcademyButton, SealBook } from '../features/academy/index.ts'
 import { BackupPanel, BackupReminder, ClearDataButton } from '../features/backup/index.ts'
 import { CollectionTab } from '../features/collection/index.ts'
@@ -56,6 +57,7 @@ export function Me() {
         {tab === 'settings' && (
           <>
             <BackupPanel />
+            <section className="settings-section"><InstallHelp /></section>
             <ResetAcademyButton />
             <ClearDataButton />
             <section className="settings-section">
