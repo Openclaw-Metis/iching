@@ -83,7 +83,6 @@ function Detail({ n }: { n: number }) {
 
   return (
     <>
-      <Link className="back-link" to="/">← 回到卦殿</Link>
       <div className="detail">
         <section className="detail-stage">
           <HoloCard

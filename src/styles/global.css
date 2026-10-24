@@ -162,7 +162,7 @@ main { padding: 0 clamp(16px, 4vw, 40px) 64px; }
 }
 
 /* ---------- 卦牌詳細頁 ---------- */
-.detail { display: grid; grid-template-columns: minmax(300px, 520px) minmax(0, 1fr); gap: clamp(20px, 3vw, 48px); max-width: 1240px; margin: 20px auto 0; }
+.detail { display: grid; grid-template-columns: minmax(300px, 520px) minmax(0, 1fr); gap: clamp(20px, 3vw, 48px); max-width: 1240px; margin: 28px auto 0; }
 .detail-stage { position: sticky; top: 72px; align-self: start; }
 .holo-stage { position: relative; height: min(76vh, 760px); min-height: 380px; touch-action: none; cursor: grab; }
 .holo-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -190,7 +190,6 @@ main { padding: 0 clamp(16px, 4vw, 40px) 64px; }
 .detail-head h1 { margin: 0; color: var(--ivory); font-size: clamp(30px, 4vw, 42px); line-height: 1.2; letter-spacing: .14em; font-weight: 700; }
 .detail-head .meta { color: var(--muted); font-size: 14px; letter-spacing: .08em; }
 .detail-head .meta b { color: var(--gold); font-weight: 400; }
-.back-link { display: inline-block; margin: 18px 0 0; color: var(--muted); font-size: 14px; letter-spacing: .1em; }
 
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 16px 0 6px; border-bottom: 1px solid var(--line); }
 .tabs button {
