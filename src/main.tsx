@@ -45,7 +45,7 @@ const router = createBrowserRouter([
       { path: 'gua/:number', element: <CardDetail /> },
     ],
   },
-])
+], { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

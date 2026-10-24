@@ -13,6 +13,12 @@ npm run build
 
 需要 Node 24 以上。
 
+## 部署
+
+網站部署在 GitHub Pages：https://openclaw-metis.github.io/iching/
+
+推送到 `main` 時，`.github/workflows/deploy.yml` 會跑測試、建置並部署。正式版的路徑前綴是 `/iching/`（`vite.config.ts` 的 `base`），本機開發仍用根路徑；`npm run preview` 會比照正式版。Pages 不支援單頁應用的路由，建置時會把 `index.html` 複製成 `404.html`，直接打開 `/iching/gua/3` 這類網址也能載入。
+
 ## 資料
 
 - `易經_周易_原文.md`：經傳原文，底本為王弼《周易注》。`npm run data:classic` 解析成 `src/data/classic.json`。
