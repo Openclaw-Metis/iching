@@ -23,10 +23,12 @@ function Header() {
               <NavLink key={item.page} to={item.to} end={item.to === '/'}>{item.label}</NavLink>
             ))}
           </nav>
-          <button type="button" className="menu-toggle" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>選單</button>
+          <button type="button" className="icon-button menu-toggle" aria-label="選單" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
         </div>
       </header>
-      <Drawer open={menuOpen} title="易經卦殿" onClose={() => setMenuOpen(false)}>
+      <Drawer open={menuOpen} title={<><img className="mobile-menu-mark" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={44} height={44} /><span className="sr-only">主選單</span></>} iconOnlyClose onClose={() => setMenuOpen(false)}>
         <nav className="mobile-nav" aria-label="手機主選單">
           {NAV_ITEMS.filter(item => item.enabled).map(item => (
             <NavLink key={item.page} to={item.to} end={item.to === '/'} onClick={() => setMenuOpen(false)}>{item.label}</NavLink>

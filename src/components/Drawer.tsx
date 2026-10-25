@@ -5,12 +5,13 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 interface Props {
   open: boolean
-  title: string
+  title: ReactNode
+  iconOnlyClose?: boolean
   onClose: () => void
   children: ReactNode
 }
 
-export function Drawer({ open, title, onClose, children }: Props) {
+export function Drawer({ open, title, iconOnlyClose = false, onClose, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -37,7 +38,9 @@ export function Drawer({ open, title, onClose, children }: Props) {
       <div className="drawer-body">
         <header className="drawer-head">
           <h2 id={titleId}>{title}</h2>
-          <button type="button" className="btn" onClick={onClose}>關閉</button>
+          <button type="button" className={iconOnlyClose ? 'icon-button' : 'btn'} aria-label="關閉" onClick={onClose}>
+            {iconOnlyClose ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg> : '關閉'}
+          </button>
         </header>
         {children}
       </div>

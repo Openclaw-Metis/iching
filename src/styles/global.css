@@ -48,7 +48,11 @@ img { max-width: 100%; }
 .site-nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); font-size: 14px; }
 .site-nav a:hover, .site-nav a.active { color: var(--ivory); }
 .site-nav a.active { font-weight: 700; }
-.menu-toggle { display: none; min-height: 44px; border: 0; padding: 0 8px; background: transparent; color: var(--ivory); cursor: pointer; }
+.icon-button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 10px; border: 0; border-radius: 4px; background: transparent; color: var(--ivory); cursor: pointer; }
+.icon-button:hover { background: var(--ink-2); }
+.icon-button svg { display: block; width: 24px; height: 24px; }
+.menu-toggle { display: none; }
+.mobile-menu-mark { display: block; width: 44px; height: 44px; }
 .mobile-nav { display: grid; margin: 20px 0; }
 .mobile-nav a { display: flex; align-items: center; min-height: 60px; padding: 8px 4px; color: var(--muted); font: 24px var(--serif); }
 .mobile-nav a.active { color: var(--ivory); }
