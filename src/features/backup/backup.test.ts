@@ -1,7 +1,7 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { isAppError } from '../../lib/errors.ts'
-import { openStorage, provideStorage, requireDb, type CastDraft, type Reading, type ReviewCard, type XpEvent } from '../../storage/index.ts'
+import { daily, openStorage, provideStorage, readings, requireDb, type CastDraft, type Reading, type ReviewCard, type XpEvent } from '../../storage/index.ts'
 import { applyImport } from './apply.ts'
 import { exportAll, type ExportFile } from './exportAll.ts'
 import { partialBackup } from './format.ts'
@@ -137,6 +137,29 @@ describe('匯出與匯入', () => {
     expect(await db.castDraft.get('current')).toMatchObject({ castId: 'c1' })
     expect(await db.attempts.count()).toBe(0)
     expect(await db.settings.get('lastBackupAt')).toBeDefined()
+  })
+
+  it.each([[1, 1], [12, 2], [2, 12]])('取代後拒絕舊分頁的筆記與心得寫入（本機 rev %i、備份 rev %i）', async (localRev, backupRev) => {
+    const db = await requireDb()
+    const r = reading({ rev: localRev, note: '原筆記' })
+    const d = { date: '2026-10-24', hexagram: 1, drawnAt: '2026-10-24T00:00:00.000Z', updatedAt: '2026-10-24T00:00:00.000Z', note: '原心得', rev: localRev }
+    await db.readings.add(r)
+    await db.dailyDraws.add(d)
+    const file = { ...partialBackup(r), scope: 'full', data: {
+      readings: [{ ...r, note: '還原筆記', rev: backupRev }],
+      dailyDraws: [{ ...d, note: '還原心得', rev: backupRev }],
+    } }
+    await applyImport(await previewImport([json('restore.json', file)]), 'replace')
+    const restored = (await db.readings.get(r.id))!
+    const restoredDaily = (await db.dailyDraws.get(d.date))!
+    expect(restored.rev).toBeGreaterThan(Math.max(localRev, backupRev))
+    expect(restoredDaily.rev).toBeGreaterThan(Math.max(localRev, backupRev))
+    await expect(readings.update(r.id, { note: '舊分頁筆記' }, localRev)).rejects.toSatisfy(e => isAppError(e, 'WRITE_CONFLICT'))
+    await expect(daily.saveNote(d.date, '舊分頁心得', localRev)).rejects.toSatisfy(e => isAppError(e, 'WRITE_CONFLICT'))
+    expect((await db.readings.get(r.id))?.note).toBe('還原筆記')
+    expect((await db.dailyDraws.get(d.date))?.note).toBe('還原心得')
+    await readings.update(r.id, { note: '重新編輯' }, restored.rev)
+    await daily.saveNote(d.date, '重新編輯', restoredDaily.rev)
   })
 
   it('部分備份（單筆結果）只能合併，不能取代（AC-09、TC-25）', async () => {

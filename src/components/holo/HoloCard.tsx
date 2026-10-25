@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import * as THREE from 'three'
 import { cardAsset, deckBack, hasArt } from '../../data/cards.ts'
 import { EDGE, FACE, VERT } from './shaders.ts'
+import { createTexturePool } from './texturePool.ts'
 
 /** 卡背可以是另一張卦牌（例如錯卦），或統一的牌背 */
 export type BackFace = { kind: 'card'; number: number } | { kind: 'deck' }
@@ -32,40 +33,28 @@ const DIVE_Z = 0.7
 type FaceUniforms = Record<string, THREE.IUniform>
 
 const loader = new THREE.TextureLoader()
-const cache = new Map<string, Promise<THREE.Texture>>()
-function texture(url: string): Promise<THREE.Texture> {
-  let hit = cache.get(url)
-  if (!hit) {
-    hit = loader.loadAsync(url).then(tex => {
-      tex.colorSpace = THREE.NoColorSpace // 直接以 sRGB 數值合成，與原圖顏色一致
-      tex.anisotropy = 8
-      return tex
-    })
-    hit.catch(() => cache.delete(url))
-    cache.set(url, hit)
-  }
-  return hit
-}
-
-const BLANK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1)
-BLANK.needsUpdate = true
 
 const SAMPLERS = ['tBackground', 'tSubject', 'tFx', 'tText', 'tFace'] as const
 type FaceTextures = { flat: boolean } & Partial<Record<(typeof SAMPLERS)[number], THREE.Texture>>
 
-async function faceTextures(face: BackFace): Promise<FaceTextures> {
-  if (face.kind === 'deck') return { flat: true, tFace: await texture(deckBack) }
-  const n = face.number
-  if (!hasArt(n)) return { flat: true, tFace: await texture(cardAsset(n, 'face')) }
-  const [tBackground, tSubject, tFx, tText] = await Promise.all(
-    (['background', 'subject', 'fx', 'text'] as const).map(layer => texture(cardAsset(n, layer))),
-  )
-  return { flat: false, tBackground, tSubject, tFx, tText }
+type TexturePool = ReturnType<typeof createTexturePool<THREE.Texture>>
+
+function faceTextures(face: BackFace, pool: TexturePool) {
+  const flat = face.kind === 'deck' || !hasArt(face.number)
+  const urls = face.kind === 'deck' ? [deckBack]
+    : flat ? [cardAsset(face.number, 'face')]
+      : (['background', 'subject', 'fx', 'text'] as const).map(layer => cardAsset(face.number, layer))
+  const leases = urls.map(url => pool.acquire(url))
+  const release = () => { for (const lease of leases) lease.release() }
+  const ready = Promise.all(leases.map(l => l.ready)).then(([a, b, c, d]): FaceTextures => (
+    flat ? { flat, tFace: a } : { flat, tBackground: a, tSubject: b, tFx: c, tText: d }
+  )).catch(error => { release(); throw error })
+  return { ready, release }
 }
 
-function applyFace(u: FaceUniforms, t: FaceTextures) {
+function applyFace(u: FaceUniforms, t: FaceTextures, blank: THREE.Texture) {
   u.uFlat.value = t.flat ? 1 : 0
-  for (const name of SAMPLERS) u[name].value = t[name] ?? BLANK
+  for (const name of SAMPLERS) u[name].value = t[name] ?? blank
   // 平面卡沒有景深可言，鐳射也收斂一些
   u.uFoil.value = t.flat ? 0.32 : 0.42
 }
@@ -118,6 +107,13 @@ function createEngine(stage: HTMLElement, initialFlipped: boolean, events: Engin
   renderer.setClearColor(0x000000, 0)
   stage.appendChild(renderer.domElement)
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1)
+  blank.needsUpdate = true
+  const textures = createTexturePool(url => loader.loadAsync(url).then(tex => {
+    tex.colorSpace = THREE.NoColorSpace // 直接以 sRGB 數值合成，與原圖顏色一致
+    tex.anisotropy = 8
+    return tex
+  }))
 
   const shared = {
     uCam: { value: new THREE.Vector3(0, 0, 10) },
@@ -127,7 +123,7 @@ function createEngine(stage: HTMLElement, initialFlipped: boolean, events: Engin
   const makeFace = (): FaceUniforms => ({
     ...shared,
     uFoil: { value: 0.42 }, uFlat: { value: 1 }, uFade: { value: 0 },
-    tBackground: { value: BLANK }, tSubject: { value: BLANK }, tFx: { value: BLANK }, tText: { value: BLANK }, tFace: { value: BLANK },
+    tBackground: { value: blank }, tSubject: { value: blank }, tFx: { value: blank }, tText: { value: blank }, tFace: { value: blank },
   })
   const frontU = makeFace(), backU = makeFace()
   const material = (u: FaceUniforms, frag: string) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: frag })
@@ -238,14 +234,24 @@ function createEngine(stage: HTMLElement, initialFlipped: boolean, events: Engin
   // 正面換牌的瞬間把翻面、平面旋轉與湊近一起歸位，倒轉、翻面或看互卦後換上的新牌才會是正面朝上
   function faceLoader(u: FaceUniforms, settlePose: boolean) {
     let token = 0
-    return (face: BackFace, seq?: number) => {
+    let active: ReturnType<typeof faceTextures> | null = null
+    let pending: ReturnType<typeof faceTextures> | null = null
+    const load = (face: BackFace, seq?: number) => {
+      if (disposed) return
       const mine = ++token
+      pendingSwap.delete(u)
+      pending?.release()
+      const request = faceTextures(face, textures)
+      pending = request
       if (seq !== undefined) frontPending = seq
       fadeTarget.set(u, 0)
-      faceTextures(face).then(t => {
-        if (mine !== token) return
+      request.ready.then(t => {
+        if (disposed || mine !== token) { request.release(); return }
         pendingSwap.set(u, () => {
-          applyFace(u, t)
+          applyFace(u, t, blank)
+          active?.release()
+          active = request
+          pending = null
           if (settlePose) {
             motion.yaw = (state.flipped ? Math.PI : 0) + motion.tYaw
             motion.roll = state.rolled ? Math.PI : 0
@@ -253,26 +259,47 @@ function createEngine(stage: HTMLElement, initialFlipped: boolean, events: Engin
           }
           fadeTarget.set(u, 1)
         })
-      }).catch(err => onError('卡牌貼圖載入失敗：' + (err as Error).message))
+      }).catch(err => {
+        request.release()
+        if (pending === request) pending = null
+        if (!disposed && mine === token) onError('卡牌貼圖載入失敗：' + (err as Error).message)
+      })
+    }
+    return {
+      load,
+      dispose() {
+        token++
+        pendingSwap.delete(u)
+        pending?.release()
+        active?.release()
+        pending = active = null
+      },
     }
   }
+  const frontLoader = faceLoader(frontU, true), backLoader = faceLoader(backU, false)
 
   // 驗證用：可重現地設定角度
-  ;(window as unknown as { __holo: unknown }).__holo = {
+  const debug = {
     setTilt(yawDeg: number, pitchDeg: number) {
       motion.tYaw = THREE.MathUtils.degToRad(yawDeg); motion.tPitch = THREE.MathUtils.degToRad(pitchDeg)
     },
     get ready() { return (state.flipped ? backU : frontU).uFade.value > 0.9 },
   }
+  const debugWindow = window as unknown as { __holo?: typeof debug }
+  debugWindow.__holo = debug
 
   return {
-    setFront: faceLoader(frontU, true),
-    setBack: faceLoader(backU, false),
+    setFront: frontLoader.load,
+    setBack: backLoader.load,
     state,
     dispose() {
       if (disposed) return
       disposed = true
       cancelAnimationFrame(raf)
+      frontLoader.dispose()
+      backLoader.dispose()
+      blank.dispose()
+      if (debugWindow.__holo === debug) delete debugWindow.__holo
       observer.disconnect()
       stage.removeEventListener('pointermove', onMove)
       stage.removeEventListener('pointerdown', onDown)

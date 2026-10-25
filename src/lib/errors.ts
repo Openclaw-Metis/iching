@@ -9,6 +9,7 @@ export const ERROR_MESSAGES = {
   STORAGE_QUOTA: '裝置空間不足，這次結果沒有存進紀錄。可以先下載保存。',
   DRAFT_SAVE_FAILED: '進度暫時無法保存，關閉頁面會遺失。',
   WRITE_CONFLICT: '這筆紀錄在另一個分頁被改過，已載入最新內容。',
+  EXAM_EXPIRED: '這場考核已跨日，請重新開始考核。',
   IMPORT_INVALID_FILE: '這個檔案不是易經卦殿的備份檔。',
   IMPORT_TOO_LARGE: '檔案太大（每個檔案上限 50 MB）。',
   IMPORT_INCOMPLETE_SET: '還缺檔案，請把同一次匯出的所有檔案一起選取。',

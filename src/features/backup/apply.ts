@@ -21,13 +21,21 @@ export async function applyImport(preview: ImportPreview, mode: ImportMode): Pro
 
   await db.transaction('rw', tables, async () => {
     if (mode === 'replace') {
+      // 取代後的 rev 必須使其他分頁尚未保存的編輯失效，也不能倒退到舊備份的版本。
+      const readingRevs = new Map((await db.readings.toArray()).map(r => [r.id, r.rev]))
+      const dailyRevs = new Map((await db.dailyDraws.toArray()).map(r => [r.date, r.rev]))
       for (const table of EXPORTED_TABLES) {
         if (table === 'settings') await db.settings.bulkDelete([...EXPORTED_SETTING_KEYS])
         else await db.table(table).clear()
       }
       await db.attempts.clear()
       for (const table of EXPORTED_TABLES) {
-        const rows = preview.rows[table]
+        const rows = preview.rows[table].map(row => {
+          if (table !== 'readings' && table !== 'dailyDraws') return row
+          const r = row as { id?: string; date?: string; rev: number }
+          const localRev = table === 'readings' ? readingRevs.get(r.id!) : dailyRevs.get(r.date!)
+          return { ...r, rev: Math.max(localRev ?? 0, r.rev) + 1 }
+        })
         if (rows.length) await db.table(table).bulkAdd(rows)
         written += rows.length
       }

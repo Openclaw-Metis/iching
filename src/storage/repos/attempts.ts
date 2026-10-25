@@ -3,6 +3,7 @@
 // 開始、選答、檢查、前進都在 readwrite 交易內完成，兩個分頁同時開同一課也只會有一筆進行中的作答。
 
 import { AppError, isQuotaError } from '../../lib/errors.ts'
+import { localDateKey } from '../../lib/dates.ts'
 import { requireDb } from '../connection.ts'
 import type { AnswerRecord, Attempt, QuestionSnapshot } from '../db.ts'
 
@@ -55,16 +56,28 @@ export async function get(id: string): Promise<Attempt | undefined> {
   return db.attempts.get(id)
 }
 
-async function modify(id: string, change: (a: Attempt) => Partial<Attempt>, now: Date): Promise<Attempt> {
+async function modify(id: string, change: ((a: Attempt) => Partial<Attempt>) | null, now: Date): Promise<Attempt> {
   const db = await requireDb()
-  return db.transaction('rw', db.attempts, async () => {
+  const result = await db.transaction('rw', db.attempts, async () => {
     const current = await db.attempts.get(id)
-    if (!current || current.status !== 'active') throw new AppError('WRITE_CONFLICT')
+    if (!current) throw new AppError('WRITE_CONFLICT')
+    if (current.kind === 'exam' && current.date !== localDateKey(now)) {
+      if (current.status === 'active') await db.attempts.update(id, { status: 'void', updatedAt: now.toISOString() })
+      return null
+    }
+    if (current.status !== 'active') throw new AppError('WRITE_CONFLICT')
+    if (!change) return current
     const next = { ...current, ...change(current), updatedAt: now.toISOString() }
     await db.attempts.put(next)
     return next
   }).catch(rethrow)
+  // 交易提交後才回報過期，否則拋錯會回滾剛寫入的 void。
+  if (!result) throw new AppError('EXAM_EXPIRED')
+  return result
 }
+
+/** 送出前同樣檢查日期，不能只在進入考核時檢查。 */
+export const requireActive = (id: string, now = new Date()) => modify(id, null, now)
 
 /** 寫入一題的作答；已檢查過的題目不能再改 */
 export function saveAnswer(id: string, index: number, record: AnswerRecord, now = new Date()): Promise<Attempt> {

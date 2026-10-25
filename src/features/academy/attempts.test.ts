@@ -1,5 +1,6 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { isAppError } from '../../lib/errors.ts'
 import { attempts as attemptsRepo, openStorage, provideStorage, requireDb, xp } from '../../storage/index.ts'
 import { advance, answer, completeLesson, select, startAttempt, submitExam } from './attempts.ts'
 import { answerPractice, practiceQuestions } from './practice.ts'
@@ -42,6 +43,25 @@ describe('作答進度（AC-30、TC-23）', () => {
     const next = await startAttempt('exam', '1', at(25, 0))
     expect(next.id).not.toBe(first.id)
     expect((await attemptsRepo.get(first.id))?.status).toBe('void')
+  })
+
+  it.each(['select', 'answer', 'advance', 'submit'] as const)('考核留在頁面跨日後 %s 會作廢且不發獎勵', async action => {
+    const a = await startAttempt('exam', '1', at(24, 23))
+    for (const [i, q] of a.questions.entries()) await answer(a.id, i, q.answerIndex, 2000, at(24, 23))
+    const actions = {
+      select: () => select(a.id, 0, 0, at(25, 0)),
+      answer: () => answer(a.id, 0, 0, 2000, at(25, 0)),
+      advance: () => advance(a.id, 1, at(25, 0)),
+      submit: () => submitExam(a.id, at(25, 0)),
+    }
+    await expect(actions[action]()).rejects.toSatisfy(e => isAppError(e, 'EXAM_EXPIRED'))
+    expect((await attemptsRepo.get(a.id))?.status).toBe('void')
+    const db = await requireDb()
+    expect(await db.examResults.count()).toBe(0)
+    expect(await db.xpEvents.count()).toBe(0)
+    expect(await db.mastery.count()).toBe(0)
+    const fresh = await startAttempt('exam', '1', at(25, 0))
+    expect(fresh.id).not.toBe(a.id)
   })
 
   it('完成之後不再接續，重新進入是新的作答', async () => {

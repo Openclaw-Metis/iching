@@ -47,7 +47,7 @@ export async function rewardCorrect(key: string, q: QuestionSnapshot, elapsedMs:
   return { ...result, reviewAdded }
 }
 
-/** 課程：選了還沒檢查也先存起來，回來時看到同樣的選擇 */
+/** 課程與考核：選了還沒前進也先存起來，回來時看到同樣的選擇 */
 export function select(attemptId: string, index: number, choice: number, now = new Date()): Promise<Attempt> {
   return attempts.saveAnswer(attemptId, index, { choice, checked: false, correct: false, elapsedMs: 0 }, now)
 }
@@ -112,7 +112,7 @@ export interface ExamOutcome {
 }
 
 export async function submitExam(attemptId: string, now = new Date()): Promise<ExamOutcome> {
-  const a = await attempts.get(attemptId)
+  const a = await attempts.requireActive(attemptId, now)
   if (!a || a.kind !== 'exam' || a.status !== 'active') throw new RangeError('找不到進行中的考核')
   if (a.answers.some(x => x === null)) throw new RangeError('還有題目沒有作答')
   const stationId = Number(a.target)

@@ -22,10 +22,10 @@ import { isSealShown } from './seals.ts'
 import { SealStamp } from './SealStamp.tsx'
 import { QuestionCard } from './QuestionCard.tsx'
 
-type Failure = { message: string; retry: () => void } | null
+type Failure = { message: string; retry: () => void; retryLabel?: string } | null
 
 /** 寫入失敗時保留畫面，提供重試 */
-function useGuard() {
+function useGuard(onExpired?: () => void) {
   const [failure, setFailure] = useState<Failure>(null)
   const [busy, setBusy] = useState(false)
   const run = async (action: () => Promise<void>, code = 'ACADEMY_SAVE_FAILED') => {
@@ -35,6 +35,10 @@ function useGuard() {
       await action()
     } catch (e) {
       logError(isAppError(e) ? e.code : code, String((e as Error)?.message ?? e))
+      if (isAppError(e, 'EXAM_EXPIRED') && onExpired) {
+        setFailure({ message: ERROR_MESSAGES.EXAM_EXPIRED, retryLabel: '重新開始考核', retry: () => { setFailure(null); onExpired() } })
+        return
+      }
       const message = isAppError(e, 'STORAGE_QUOTA') ? ERROR_MESSAGES.STORAGE_QUOTA
         : isAppError(e, 'WRITE_CONFLICT') ? '這次作答在另一個分頁有了變動，請重新整理後再繼續。'
           : '作答進度沒有存起來，已作答的內容還在畫面上。'
@@ -46,7 +50,7 @@ function useGuard() {
   const banner = failure && (
     <div className="inline-warning" role="alert">
       <p>{failure.message}</p>
-      <button type="button" className="btn" onClick={failure.retry}>重試</button>
+      <button type="button" className="btn" onClick={failure.retry}>{failure.retryLabel ?? '重試'}</button>
     </div>
   )
   return { run, busy, banner }
@@ -269,7 +273,10 @@ export function ExamPlayer({ stationId }: { stationId: number }) {
   const [phase, setPhase] = useState<ExamPhase>({ name: 'loading' })
   const [selected, setSelected] = useState<number | null>(null)
   const shownAt = useRef(performance.now())
-  const { run, busy, banner } = useGuard()
+  const { run, busy, banner } = useGuard(() => {
+    setPhase({ name: 'empty' })
+    setSelected(null)
+  })
 
   useEffect(() => {
     let alive = true
@@ -331,6 +338,13 @@ export function ExamPlayer({ stationId }: { stationId: number }) {
   const choice = selected ?? attempt.answers[index]?.choice ?? null
   const last = index === attempt.questions.length - 1
 
+  const choose = (choice: number) => {
+    setSelected(choice)
+    void run(async () => {
+      await answer(attempt.id, index, choice, Math.round(performance.now() - shownAt.current))
+    })
+  }
+
   const save = () => run(async () => {
     if (choice === null) return
     const r = await answer(attempt.id, index, choice, Math.round(performance.now() - shownAt.current))
@@ -345,7 +359,7 @@ export function ExamPlayer({ stationId }: { stationId: number }) {
       {head}
       <div className="player-count-row"><span>第 {index + 1} 題／共 {attempt.questions.length} 題</span></div>
       <Progress value={index + 1} total={attempt.questions.length} label={`第 ${index + 1} 題，共 ${attempt.questions.length} 題`} />
-      <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={false} disabled={busy} onChoose={setSelected} />
+      <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={false} disabled={busy} onChoose={choose} />
       {banner}
       <div className="step-actions player-actions">
         <button type="button" className="btn btn-primary" disabled={busy || choice === null} onClick={() => void save()}>{last ? '送出' : '下一題'}</button>
