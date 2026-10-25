@@ -5,28 +5,43 @@ import { NAV_ITEMS } from './nav.ts'
 import { titleFor } from './routes.ts'
 import { StorageBanner } from './StorageBanner.tsx'
 import { Toaster } from './Toaster.tsx'
+import { Drawer } from '../components/Drawer.tsx'
 
 function Header() {
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
-    <header className="site-header">
-      <NavLink to="/" className="brand" aria-label="易經卦殿首頁">
-        <svg viewBox="0 0 60 60" aria-hidden="true">
-          <g fill="var(--gold)">
-            <rect x="6" y="8" width="48" height="6" rx="1" />
-            <rect x="6" y="20" width="21" height="6" rx="1" /><rect x="33" y="20" width="21" height="6" rx="1" />
-            <rect x="6" y="32" width="48" height="6" rx="1" />
-            <rect x="6" y="44" width="21" height="6" rx="1" /><rect x="33" y="44" width="21" height="6" rx="1" />
-          </g>
-        </svg>
-        <strong>易經卦殿</strong>
-        <small>六十四卦卦牌</small>
-      </NavLink>
-      <nav className="site-nav" aria-label="主選單">
-        {NAV_ITEMS.filter(item => item.enabled).map(item => (
-          <NavLink key={item.page} to={item.to} end={item.to === '/'}>{item.label}</NavLink>
-        ))}
-      </nav>
-    </header>
+    <>
+      <a className="skip-link" href="#main-content">跳至主要內容</a>
+      <header className="site-header">
+        <div className="header-inner">
+          <NavLink to="/" className="brand" aria-label="易經卦殿首頁">
+            <svg viewBox="0 0 60 60" aria-hidden="true">
+              <g fill="var(--gold)">
+                <rect x="6" y="8" width="48" height="6" rx="1" />
+                <rect x="6" y="20" width="21" height="6" rx="1" /><rect x="33" y="20" width="21" height="6" rx="1" />
+                <rect x="6" y="32" width="48" height="6" rx="1" />
+                <rect x="6" y="44" width="21" height="6" rx="1" /><rect x="33" y="44" width="21" height="6" rx="1" />
+              </g>
+            </svg>
+            <strong>易經卦殿</strong>
+            <small>六十四卦卦牌</small>
+          </NavLink>
+          <nav className="site-nav desktop-nav" aria-label="主選單">
+            {NAV_ITEMS.filter(item => item.enabled).map(item => (
+              <NavLink key={item.page} to={item.to} end={item.to === '/'}>{item.label}</NavLink>
+            ))}
+          </nav>
+          <button type="button" className="menu-toggle" aria-haspopup="dialog" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>選單</button>
+        </div>
+      </header>
+      <Drawer open={menuOpen} title="易經卦殿" onClose={() => setMenuOpen(false)}>
+        <nav className="mobile-nav" aria-label="手機主選單">
+          {NAV_ITEMS.filter(item => item.enabled).map(item => (
+            <NavLink key={item.page} to={item.to} end={item.to === '/'} onClick={() => setMenuOpen(false)}>{item.label}</NavLink>
+          ))}
+        </nav>
+      </Drawer>
+    </>
   )
 }
 
@@ -58,7 +73,7 @@ export function Layout() {
     <>
       <Header />
       <StorageBanner />
-      <main>
+      <main id="main-content" className="app-main" tabIndex={-1}>
         <Suspense fallback={<p className="note" style={{ textAlign: 'center', marginTop: 48 }}>載入中…</p>}>
           <Outlet />
         </Suspense>
@@ -76,7 +91,7 @@ export function RouteError() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main-content" className="app-main" tabIndex={-1}>
         <section className="placeholder" role="alert">
           <h1>頁面載入失敗</h1>
           <p>請確認網路後重新整理。{error?.message ? <small className="note">（{error.message}）</small> : null}</p>

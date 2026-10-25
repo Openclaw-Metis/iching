@@ -4,6 +4,7 @@ import { FLAGS } from '../app/flags.ts'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { textOf } from '../data/classic.ts'
+import { cardAsset } from '../data/cards.ts'
 import { cuo, hexagram, hexagrams, hu, zong, type Hexagram, type PalaceGeneration } from '../data/hexagrams.ts'
 import { trigrams } from '../data/trigrams.ts'
 
@@ -62,7 +63,7 @@ function useLearningMap(on: boolean): { map: MapView; failed: boolean } {
 export function Hall() {
   const [view, setView] = useState<View>('kingwen')
   const [query, setQuery] = useState('')
-  const [focus, setFocus] = useState<Hexagram | null>(null)
+  const [focus, setFocus] = useState<Hexagram | null>(hexagram(1))
   const [mapOn, setMapOn] = useState(loadMapOn)
   const { map, failed } = useLearningMap(mapOn)
   const toggleMap = () => {
@@ -86,24 +87,26 @@ export function Hall() {
   }, [focus])
 
   const thumb = (h: Hexagram) => (
-    <CardThumb key={h.number} hex={h} relation={relations.get(h.number)} dim={matches ? !matches.has(h.number) : false} map={map?.cells.get(h.number)} onFocus={setFocus} />
+    <CardThumb key={h.number} hex={h} relation={relations.get(h.number)} dim={matches ? !matches.has(h.number) : false} map={map?.cells.get(h.number)} onFocus={h => { if (h) setFocus(h) }} />
   )
+  const scope = view === 'months' ? MONTH_ORDER : hexagrams.map(h => h.number)
+  const count = matches ? scope.filter(n => matches.has(n)).length : scope.length
 
   return (
-    <>
-      <section className="hall-intro">
-        <h1>六十四卦殿</h1>
-        {/* 四段說明疊在同一格，高度取最長的一段，切換排列時下方按鈕不會跳動 */}
-        <div className="view-notes" aria-live="polite">
-          {VIEWS.map(v => <p key={v.id} className={v.id === view ? undefined : 'off'} aria-hidden={v.id !== view}>{v.note}</p>)}
+    <div className="hall" data-view={view}>
+      <header className="hall-intro">
+        <div>
+          <h1>六十四卦殿</h1>
+          <p>看卦象，讀經文，觀爻變。</p>
         </div>
-      </section>
+        <Link className="btn btn-primary" to="/divine">開始占卜<span aria-hidden="true">↗</span></Link>
+      </header>
 
       <div className="hall-controls">
         <div className="segmented" role="group" aria-label="排列方式">
           {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
         </div>
-        <input className="search" type="search" placeholder="搜尋卦名或卦序" value={query} onChange={e => setQuery(e.target.value)} aria-label="搜尋卦名或卦序" />
+        <label className="hall-search"><span className="sr-only">搜尋卦名或卦序</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></svg><input className="search" type="search" placeholder="搜尋卦名或卦序" value={query} onChange={e => setQuery(e.target.value)} /></label>
         {FLAGS.review && <button type="button" className="btn map-toggle" aria-pressed={mapOn} onClick={toggleMap}>學習地圖</button>}
       </div>
       {mapOn && (
@@ -113,52 +116,63 @@ export function Hall() {
               : <>待溫 {map.dueCount} 張・越亮表示記得越牢，淡墨灰階是還沒學過的卦。{map.dueCount > 0 && <Link to="/academy/review">去溫故</Link>}</>}
         </p>
       )}
-      <div className="legend" aria-hidden="true"><span className="l-cuo">錯卦：陰陽全變</span><span className="l-zong">綜卦：上下顛倒</span><span className="l-hu">互卦：取中間四爻</span></div>
-
-      {view === 'kingwen' && <div className="hall-grid">{hexagrams.map(thumb)}</div>}
-
-      {view === 'matrix' && (
-        <div className="matrix-wrap">
-          <div className="matrix">
-            <div className="axis axis-corner">上卦 ↓<br />下卦 →</div>
-            {trigrams.map(t => <Axis key={t.id} name={t.name} image={t.image} color={t.color} />)}
-            {trigrams.map(up => [
-              <Axis key={up.id} name={up.name} image={up.image} color={up.color} />,
-              ...trigrams.map(low => thumb(hexagrams.find(h => h.upper === up && h.lower === low)!)),
-            ])}
+      <div className="hall-body">
+        <Spotlight focus={focus} />
+        <section className="hall-collection" aria-label="卦牌圖錄">
+          <div className="collection-heading">
+            <h2>{VIEWS.find(v => v.id === view)!.label}</h2>
+            <p role="status">{matches ? `找到 ${count} 卦` : `${count} 卦`}</p>
           </div>
-        </div>
-      )}
-
-      {view === 'palace' && (
-        <div className="matrix-wrap">
-          <div className="matrix">
-            <div className="axis axis-corner">宮 ↓<br />世 →</div>
-            {GENERATIONS.map(g => <div key={g} className="axis"><b>{g}</b></div>)}
-            {PALACE_ORDER.map(p => {
-              const t = trigrams.find(tr => tr.name === p)!
-              return [
-                <Axis key={p} name={`${p}宮`} image={t.element} color={t.color} />,
-                ...GENERATIONS.map(g => thumb(hexagrams.find(h => h.palace.trigram === t && h.palace.generation === g)!)),
-              ]
-            })}
+          <div className="view-notes" aria-live="polite">
+            {VIEWS.map(v => <p key={v.id} className={v.id === view ? undefined : 'off'} aria-hidden={v.id !== view}>{v.note}</p>)}
           </div>
-        </div>
-      )}
+          <div className="legend" aria-hidden="true"><span className="l-cuo">錯卦：陰陽全變</span><span className="l-zong">綜卦：上下顛倒</span><span className="l-hu">互卦：取中間四爻</span></div>
 
-      {view === 'months' && (
-        <div className="months">
-          {MONTH_ORDER.map((n, i) => (
-            <div key={n}>
-              {thumb(hexagram(n))}
-              <div className="month-label"><b>{MONTH_NAMES[i]}</b>・{BRANCHES[i]}　陽爻 {hexagram(n).lines.filter(Boolean).length}</div>
+          {view === 'kingwen' && <div className="hall-grid">{hexagrams.map(thumb)}</div>}
+
+          {view === 'matrix' && (
+            <div className="matrix-wrap">
+              <div className="matrix">
+                <div className="axis axis-corner">上卦 ↓<br />下卦 →</div>
+                {trigrams.map(t => <Axis key={t.id} name={t.name} image={t.image} color={t.color} />)}
+                {trigrams.map(up => [
+                  <Axis key={up.id} name={up.name} image={up.image} color={up.color} />,
+                  ...trigrams.map(low => thumb(hexagrams.find(h => h.upper === up && h.lower === low)!)),
+                ])}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      <Spotlight focus={focus} />
-    </>
+          {view === 'palace' && (
+            <div className="matrix-wrap">
+              <div className="matrix">
+                <div className="axis axis-corner">宮 ↓<br />世 →</div>
+                {GENERATIONS.map(g => <div key={g} className="axis"><b>{g}</b></div>)}
+                {PALACE_ORDER.map(p => {
+                  const t = trigrams.find(tr => tr.name === p)!
+                  return [
+                    <Axis key={p} name={`${p}宮`} image={t.element} color={t.color} />,
+                    ...GENERATIONS.map(g => thumb(hexagrams.find(h => h.palace.trigram === t && h.palace.generation === g)!)),
+                  ]
+                })}
+              </div>
+            </div>
+          )}
+
+          {view === 'months' && (
+            <div className="months">
+              {MONTH_ORDER.map((n, i) => (
+                <div key={n}>
+                  {thumb(hexagram(n))}
+                  <div className="month-label"><b>{MONTH_NAMES[i]}</b>・{BRANCHES[i]}　陽爻 {hexagram(n).lines.filter(Boolean).length}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </section>
+      </div>
+    </div>
   )
 }
 
@@ -184,12 +198,19 @@ function Spotlight({ focus }: { focus: Hexagram | null }) {
   const c = cuo(focus), z = zong(focus), x = hu(focus)
   return (
     <aside className="spotlight" aria-live="polite">
-      <HexagramGlyph lines={focus.lines} />
-      <div>
-        <h2>{focus.name}<small>{focus.fullName}・第{focus.number}卦</small></h2>
-        <p>{textOf(focus.number).judgment}</p>
+      <Link className="preview-art" to={`/gua/${focus.number}`} aria-label={`閱讀${focus.name}卦的完整牌義與經文`}>
+        <img src={cardAsset(focus.number, 'thumb')} alt="" width={400} height={560} />
+      </Link>
+      <div className="preview-body">
+        <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・{focus.fullName}</p></div><HexagramGlyph lines={focus.lines} /></div>
+        <p className="preview-classic">{textOf(focus.number).judgment}</p>
+        <div className="rels">
+          <Link to={`/gua/${c.number}`}><span>錯卦</span><b>{c.name}</b></Link>
+          <Link to={`/gua/${z.number}`}><span>綜卦</span><b>{z === focus ? '自身' : z.name}</b></Link>
+          <Link to={`/gua/${x.number}`}><span>互卦</span><b>{x.name}</b></Link>
+        </div>
+        <Link className="preview-open" to={`/gua/${focus.number}`}>閱讀牌義與經文<span aria-hidden="true">↗</span></Link>
       </div>
-      <div className="rels">錯 {c.name}<br />綜 {z === focus ? '（自身）' : z.name}<br />互 {x.name}</div>
     </aside>
   )
 }

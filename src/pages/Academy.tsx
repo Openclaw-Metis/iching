@@ -35,13 +35,15 @@ export function Academy() {
   return (
     <div className="academy">
       <header className="page-head"><h1>學堂</h1></header>
-      <RankBadge highest={highestPassed(state.exams)} total={summary.total} streak={summary.streak} best={summary.best} />
-      <section className="academy-today">
-        <DailyGoalRing today={summary.today} goal={summary.goal} />
-        <div className="academy-next">
-          {nextHref ? <Link className="btn btn-primary" to={nextHref}>{nextLabel}</Link> : <p>八站都已完成，可以從路線重溫任何一課。</p>}
-        </div>
-      </section>
+      <div className="academy-overview">
+        <RankBadge highest={highestPassed(state.exams)} total={summary.total} streak={summary.streak} best={summary.best} />
+        <section className="academy-today">
+          <DailyGoalRing today={summary.today} goal={summary.goal} />
+          <div className="academy-next">
+            {nextHref ? <Link className="btn btn-primary" to={nextHref}>{nextLabel}</Link> : <p>八站都已完成，可以從路線重溫任何一課。</p>}
+          </div>
+        </section>
+      </div>
       {FLAGS.review && (
         <section className="review-entry">
           <h2>溫故</h2>

@@ -1,4 +1,4 @@
-// 今日目標圓環：今天的 XP 對每日目標（20、30、50）。齒輪打開抽屜改目標；
+// 今日目標圓環：今天的 XP 對每日目標（20、30、50）。調整按鈕打開抽屜改目標；
 // 改目標不影響過去的打卡，但目標調低後若今天已達標，立刻補上打卡。
 
 import { useState } from 'react'
@@ -34,7 +34,7 @@ export function DailyGoalRing({ today, goal }: { today: number; goal: number }) 
         <b>{today}</b><span>／{goal} XP</span>
         <small>{reached ? '今日目標已達成' : '今日目標'}</small>
       </div>
-      <button type="button" className="btn goal-gear" aria-label="設定每日目標" onClick={() => setOpen(true)}>⚙</button>
+      <button type="button" className="btn goal-gear" aria-label="設定每日目標" onClick={() => setOpen(true)}>調整</button>
       <Drawer open={open} title="每日目標" onClose={() => setOpen(false)}>
         <p className="note">每天得到這麼多 XP 就算達標。改目標不影響過去的紀錄。</p>
         <div className="segmented goal-options" role="group" aria-label="每日目標">

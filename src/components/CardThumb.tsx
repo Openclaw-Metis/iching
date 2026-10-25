@@ -15,7 +15,7 @@ interface Props {
   onFocus?: (hex: Hexagram | null) => void
 }
 
-// 展廳縮圖：以 CSS 傾斜與一道掃光模擬全息卡，WebGL 只留給詳細頁的單張大卡
+// 圖錄保留卦牌比例，名稱另以文字呈現，縮圖較小時仍能讀取。
 export function CardThumb({ hex, relation = [], dim = false, map, onFocus }: Props) {
   const tilt = (e: PointerEvent<HTMLAnchorElement>) => {
     if (e.pointerType !== 'mouse') return
@@ -47,9 +47,15 @@ export function CardThumb({ hex, relation = [], dim = false, map, onFocus }: Pro
       onFocus={() => onFocus?.(hex)}
       onBlur={() => onFocus?.(null)}
     >
-      <img src={cardAsset(hex.number, 'thumb')} alt="" loading="lazy" decoding="async" width={400} height={560} />
-      {!hasArt(hex.number) && <span className="pending">插圖繪製中</span>}
-      {map?.due && <span className="due-dot" aria-hidden="true" />}
+      <span className="thumb-media">
+        <img src={cardAsset(hex.number, 'thumb')} alt="" loading="lazy" decoding="async" width={400} height={560} />
+        {!hasArt(hex.number) && <span className="pending">插圖繪製中</span>}
+        {map?.due && <span className="due-dot" aria-hidden="true" />}
+      </span>
+      <span className="thumb-caption" aria-hidden="true">
+        <b>{hex.name}</b><span>第{hex.number}卦</span>
+        <small>{hex.upper.name}上・{hex.lower.name}下</small>
+      </span>
     </Link>
   )
 }

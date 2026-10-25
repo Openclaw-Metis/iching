@@ -94,3 +94,11 @@
 - 102 條路徑回 200 且標題正確；首屏 JS gzip 130.5 KB，占卜頁 113.2 KB。
 
 本次沒有發布或部署；上述結果來自本機建置。Safari、Firefox 與實機安裝等原有待驗證項目仍保留。
+
+## 2026-10-25 圖錄式 UI
+
+- 設計方向、抽樣與截圖檢討：`docs/ui-design.md`。保留既有 64 張卦牌，沒有新套件或樣本資料。
+- 40 檔 276 項測試、typecheck、build、check:size 通過。首屏 gzip 131.5 KB，占卜頁 113.2 KB。
+- Taste Skill lint：8 個修改檔 0 FAIL、0 WARN；瀏覽器 inspect：1440／768／390px 最終 0 FAIL、0 WARN，首屏和整頁截圖已逐張檢視。
+- Chrome preview：1280／375px 六頁無頁面橫向溢出、無 JavaScript 執行錯誤；搜尋依排列計數、鍵盤預覽與關係連結、手機選單 Esc 和焦點返回、經文白話、今日固定與心得保存、三錢六爻解讀、學堂目標及課程、使用說明和備份下載通過。
+- 本機 102 條路徑直接回 200 且標題正確。使用者已授權由 main 發布本次 UI，結果以對應提交的 GitHub Actions 為準；Safari、Firefox 與實機測試仍待執行。

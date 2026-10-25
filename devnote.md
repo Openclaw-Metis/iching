@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-25（四項穩定性修正與發布流程）
+**最後更新**：2026-10-25（圖錄式 UI 完成與發布流程）
 
-**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （本次修正以 `e4bd72b` 為基準，依使用者授權由 `main` 提交並推送）；網站 https://openclaw-metis.github.io/iching/
+**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （四項穩定性修正已由 `main` 發布為 `28d637a`；本次 UI 以該提交為基準）；網站 https://openclaw-metis.github.io/iching/
 
-**本機修正**：詳細檢視確認的四項問題已修好並驗收：取代備份後的舊分頁寫入衝突、全息卡貼圖釋放、考核選答即時保存、考核停留跨日作廢。使用者已授權 commit、push 與部署，發布走 `main` 的 GitHub Pages 工作流程，部署結果以 GitHub Actions 為準；驗證見下方 HISTORY 的同日穩定性修正紀錄。
+**目前狀態**：四項穩定性修正已提交 `28d637a` 並推送，GitHub Actions run `40180143090` 部署成功，正式站資源與 102 條路徑已驗證。之後依使用者的 Taste Skill 要求完成圖錄式 UI：持續選卦預覽、可讀卦牌標籤、手機兩欄與選單、共用控制元件、今日翻牌入口、八卦學堂站點。使用者已授權將此 UI 由 main 提交、推送並部署；發布結果以這次提交對應的 GitHub Actions 為準。設計與驗收見 `docs/ui-design.md`。
 
 **下一步**：Stage 0 至 11 已完成並部署（使用者同意後把分支快轉合併到 `main`），正式站通過 AC-23 與 AC-27。剩下要在實機做的：正式站 Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 在 Google 日曆與 Apple 行事曆匯入、Firefox 匯入、陀螺儀與低階手機；等使用者決定的事（授權、抽牌占卜）在 `docs/known-issues.md`。白話已在本機補跑三方撰稿與交叉複審（2026-10-25）。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
@@ -52,7 +52,7 @@
 - 人物背後的金色圓光已改成敦煌式頭光，沒有移除；使用者若仍覺得偏西方，可整批去掉。
 - `易經_周易_原文.md` 的標點校勘出自第三方整理本（使用者要求移除來源標註），公開散布的著作權風險由使用者斟酌。
 - 倉庫約 312 MiB，大半是 `art/raw` 原圖；是否改成只提交網站貼圖未決。
-- 卦殿首屏 JS gzip 130.1 KB（上限 160 KB）、占卜頁 113.1 KB（上限 120 KB），`npm run check:size` 在 CI 把關；卡牌頁的 `HoloCard` chunk 約 568 KB（three），建置有超過 500 kB 的警告。
+- 卦殿首屏 JS gzip 131.5 KB（上限 160 KB）、占卜頁 113.2 KB（上限 120 KB），`npm run check:size` 在 CI 把關；卡牌頁的 `HoloCard` chunk 約 568 KB（three），建置有超過 500 kB 的警告。
 - 各路徑 HTML 以 `<路徑>.html` 產生（Pages 對無副檔名網址直接回同名 .html），正式站 102 條已確認直接回 200。
 - 規格中由 Claude 自行採用、使用者還沒表態的預設：每日一卦每人當天固定、大衍筮法提供親手分蓍與一鍵完成、不做 AI 解卦、保留 Google Fonts（網站唯一的外部請求）。
 - 睽卦（38）重生後兩女並坐、沒有明確背對，可接受但不完全貼合畫面設計。
@@ -60,6 +60,7 @@
 - 牌義的「不斷定現況、不保證結果」是依 Codex 複審逐條修的，沒有被點到的卦可能還留有「自然就會」「就能」這類語氣，尚未全面掃過。
 
 ### 驗證狀態
+- 圖錄式 UI：40 檔 276 項測試、typecheck、build、check:size 全過；Taste Skill 1440／768／390px 為 0 FAIL、0 WARN；Chrome 1280／375px 六頁互動、保存及備份下載通過，102 條路徑正確。詳見 `docs/ui-design.md`。
 - `npm test`：40 個測試檔、276 項通過（2026-10-25 穩定性修正後，新增 14 項回歸測試）；型別、建置、體積與瀏覽器結果見 HISTORY。
 - `npm run typecheck`、`npm run build`：通過（建置仍有單一 chunk 超過 500 KB 的既有警告）。
 - 64 張卡 holo prepare 無警告；人物卡與 13 張重繪卡逐張目視檢查過。
@@ -531,3 +532,19 @@
 - 發布範圍為四項修正及相應的規格、14 項新增回歸測試與驗收文件，共 14 個檔案；不改資料庫與備份格式。
 - 發布前原專案 40 檔、276 項測試、typecheck、build、check:size 與本機 102 條路徑檢查已通過；瀏覽器驗收見前一節。
 - 由 main 提交並推送，觸發 .github/workflows/deploy.yml；完成條件是該提交的 build 與 deploy 成功，正式站路徑與程式資源檢查通過。最終部署狀態可在倉庫的 Actions 與 github-pages environment 查看。
+
+## [2026-10-25] 圖錄式 UI
+
+- 依 Taste Skill app screen 流程，True-black flat，seed 379881689；保留既有 64 張卦牌與宋體，將卦象、經文和錯綜互關係作為介面主體。詳見 docs/ui-design.md。
+- 卦殿預覽保留最後聚焦卦，增加縮圖文字與實際搜尋數量；手機兩欄，矩陣在容器內捲動。
+- 手機選單使用原生 dialog，加入跳至主要內容。統一按鈕、分頁、輸入與設定表面；今日增加翻牌按鈕，學堂八站顯示真實卦畫。
+- 276 項測試、型別、正式建置、體積與 102 路徑檢查通過；Chrome 1280／375px 六頁實測無頁面橫向溢出與 JavaScript 執行錯誤；Taste Skill 最終 0 FAIL、0 WARN。首屏 131.5 KB，占卜頁 113.2 KB。
+- 本次未提交、未發布；資料、資料庫版本、備份格式、功能開關與公開路徑未改。Safari、Firefox 與實機驗證仍待完成。
+
+
+## [2026-10-25] 發布圖錄式 UI
+
+- 使用者明確要求執行 commit、push 與部署。
+- 發布這次 UI 與設計、規格、驗收文件，共 12 個檔案；沒有改動資料、資料庫、備份格式、公開路徑或功能開關。
+- 原專案 40 檔 276 項測試、型別、正式建置與體積檢查已通過；Chrome 1280／375px 六頁操作、保存與備份下載及 102 條路徑已驗證。
+- main 推送觸發 .github/workflows/deploy.yml；完成條件是本次提交的 build 與 deploy 成功，且正式站路徑與資源檢查通過。先前的本機未發布記錄是開發當時的狀態。
