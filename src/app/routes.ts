@@ -41,7 +41,7 @@ export const routes: RouteEntry[] = [
   { path: '/today', page: 'today', title: titled('今日一卦'), description: '每天翻一張卦牌，當天固定不變，可以寫下一句今日心得。' },
   { path: '/divine', page: 'divine', title: titled('占卜'), description: '寫下想問的事，用三錢法或大衍筮法起卦，依朱熹讀法找到該讀的經文。' },
   { path: '/academy', page: 'academy', title: titled('學堂'), description: `八站修行路線，從陰陽與八卦學到占法${FLAGS.review ? '，學過的卦會安排溫故複習' : ''}。` },
-  { path: '/me', page: 'me', title: titled('我的'), description: `占卜紀錄、${FLAGS.collection ? '收藏、' : ''}印譜與備份，資料只存在這台裝置。` },
+  { path: '/me', page: 'me', title: titled('書卜'), description: `占卜紀錄、${FLAGS.collection ? '收藏、' : ''}印譜與備份，資料只存在這台裝置。` },
   ...hexagrams.map((h): RouteEntry => ({
     path: `/gua/${h.number}`,
     page: 'card',

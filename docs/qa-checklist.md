@@ -15,7 +15,7 @@
 | AC-07 | `src/storage/repos/readings.test.ts`（重跑不建第二筆）、`DivineFlow.test.tsx`（存入紀錄） | 六爻完成後 1 秒內出現「已存入紀錄」 |
 | AC-08 | `readings.test.ts`（`hasExactQuestionSince`）、`DivineFlow.test.tsx`（提醒對話框） | |
 | AC-09 | `DivineFlow.test.tsx`（完成時保存失敗）、`src/features/backup/backup.test.ts`、`ImportPreviewDialog.test.tsx`（部分備份停用取代） | 攔截 IndexedDB 寫入後下載單筆檔並匯入 |
-| AC-10 | `src/features/records/records.test.ts` | 我的頁刪除後按復原；10 秒後清除 |
+| AC-10 | `src/features/records/records.test.ts` | 書卜頁刪除後按復原；10 秒後清除 |
 | AC-11 | `src/features/daily/daily.test.ts`（含 Gherkin「今日卦當天固定」） | 兩個分頁同時翻開、模擬隔天回到牌背 |
 | AC-12 | `src/features/daily/ics.test.ts`（含 TC-11） | 以 Mozilla ical.js 解析並展開每天的事件；**尚未**在 Google 日曆與 Apple 行事曆實際匯入 |
 | AC-13 | `src/data/lines.test.ts` | |
@@ -44,11 +44,11 @@
 
 | 項目 | 方法 | 2026-10-24 結果 |
 |---|---|---|
-| 375 與 1280 寬沒有橫向捲動 | 卦殿、卡牌頁、今日、占卜、學堂、課程、考核、溫故、我的、404 逐頁量 `scrollWidth - innerWidth` | 兩種寬度 10 頁都是 0 |
+| 375 與 1280 寬沒有橫向捲動 | 卦殿、卡牌頁、今日、占卜、學堂、課程、考核、溫故、書卜、404 逐頁量 `scrollWidth - innerWidth` | 兩種寬度 10 頁都是 0 |
 | 主要操作不用捲動就能按到（AC-26） | 同上，量主操作按鈕是否在視窗內；課程頁作答時「檢查」在視窗內 | 全部在視窗內；375 寬課程題目與看圖題的「檢查」都不用捲動 |
 | 鍵盤操作 | Tab 到今日卦牌按 Enter 翻開；課程用 Enter 前進、方向鍵選答案、Enter 檢查；親手分蓍左右鍵與 Enter | 都可完成 |
 | 減少動態效果 | `prefers-reduced-motion: reduce` 下逐頁開啟、翻今日卦 | 正常，沒有長動畫 |
-| 離線（AC-25） | preview 註冊 service worker 後關閉網路，開卦殿、今日、占卜、學堂、我的；完成三錢法占卜；看圖猜卦作答 | 全部可用；看過的卡牌仍是全息卡，沒看過的改平面卡圖；白話離線可讀 |
+| 離線（AC-25） | preview 註冊 service worker 後關閉網路，開卦殿、今日、占卜、學堂、書卜；完成三錢法占卜；看圖猜卦作答 | 全部可用；看過的卡牌仍是全息卡，沒看過的改平面卡圖；白話離線可讀 |
 | 正式建置的 CSP（AC-27） | 主控台是否有 CSP 違規 | 沒有 |
 | 第三方請求（AC-27） | 記錄所有非本站的請求網域 | 只有 fonts.googleapis.com 與 fonts.gstatic.com |
 | 停用 WebGL | `--disable-webgl` 開卡牌頁與今日頁 | 顯示 5:7 平面卡圖並註明；今日卦可翻開 |
@@ -69,8 +69,8 @@
 | 部署 | GitHub Actions「部署到 GitHub Pages」run 9 | 測試、建置、首屏體積檢查、部署都成功 |
 | AC-23 路徑 | Firecrawl 從外部逐一抓取 `routes.ts` 的 102 個正式網址，比對狀態碼、最終網址（有沒有轉址）與標題 | 102 條都直接回 200、沒有轉址、標題正確；不在路徑表的網址回 404 並顯示「找不到這一頁」 |
 | 正式站與本機建置相同 | 以部署時相同的 `VITE_SITE_ORIGIN` 在本機建置，比對正式站 `sw.js` 預先快取清單的修訂碼與檔名 | `index.html` 修訂碼相同（`4755da97…`），32 個帶雜湊的程式與樣式檔、`manifest.webmanifest` 全部相同 |
-| AC-27 CSP 與第三方請求 | 在上述相同的建置上以 Playwright 逐頁開啟卦殿、乾與屯卡牌頁、今日、占卜、學堂、第一課、第一站考核、溫故、我的，監聽 `securitypolicyviolation` 與所有請求 | 每頁都有 CSP 標籤、沒有違規、沒有主控台錯誤；非本站請求只有 fonts.googleapis.com 與 fonts.gstatic.com（Firecrawl 的瀏覽器抓取時會移除 CSP 標籤，所以改以修訂碼確認正式站 HTML 與本機相同） |
-| 主要流程抽查 | 相同的建置，375 與 1280 寬：三錢法占卜存入紀錄、翻開今日卦、開第一課、我的頁看到紀錄、匯出後在全新的瀏覽器空間合併匯入 | 都完成，沒有橫向捲動與主控台錯誤 |
+| AC-27 CSP 與第三方請求 | 在上述相同的建置上以 Playwright 逐頁開啟卦殿、乾與屯卡牌頁、今日、占卜、學堂、第一課、第一站考核、溫故、書卜，監聽 `securitypolicyviolation` 與所有請求 | 每頁都有 CSP 標籤、沒有違規、沒有主控台錯誤；非本站請求只有 fonts.googleapis.com 與 fonts.gstatic.com（Firecrawl 的瀏覽器抓取時會移除 CSP 標籤，所以改以修訂碼確認正式站 HTML 與本機相同） |
+| 主要流程抽查 | 相同的建置，375 與 1280 寬：三錢法占卜存入紀錄、翻開今日卦、開第一課、書卜頁看到紀錄、匯出後在全新的瀏覽器空間合併匯入 | 都完成，沒有橫向捲動與主控台錯誤 |
 
 ## 部署後要做的事
 

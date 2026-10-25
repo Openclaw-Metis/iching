@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-25（手機選單圖示化，發布流程）
+**最後更新**：2026-10-25（品牌透明背景與書卜更名，發布流程）
 
-**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （品牌與操作精簡已由 `main` 發布為 `c718d65`；本次手機選單以該提交為基準）；網站 https://openclaw-metis.github.io/iching/
+**位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （手機選單圖示版 `f4ff1ae` 已由 `main` 發布）；網站 https://openclaw-metis.github.io/iching/
 
-**目前狀態**：`c718d65` 已上線，GitHub Actions run `40199110802` 成功，正式站 102 路徑、32 個程式樣式、4 張安裝圖示、favicon 與 168 筆離線快取已確認。本次手機選單按鈕改三橫線、選單內關閉改交叉圖示，可見標題換成既有大有品牌圖示，保留無障礙名稱與原生 dialog 操作。276 項測試、型別、建置、體積與桌手機檢查已通過；使用者已授權 commit、push 與部署，結果以本次提交的 GitHub Actions 為準。
+**目前狀態**：`f4ff1ae` 已上線，GitHub Actions run `40200392323` 成功。本次移除大有品牌 SVG 的固定黑底，安裝用 PNG 改由產生腳本補底；全站「我的」入口與頁面標題改名「書卜」，操作說明與文件同步，`/me`、資料與偏好鍵名保留。276 項測試、型別、正式建置、體積與 320／375／600／1280px 瀏覽器檢查通過，102 路徑皆回 200 且標題正確；品牌透明區及 4 張安裝圖示的不透明底與 maskable 安全區已檢查。使用者已授權 commit、push 與部署，結果以本次提交的 GitHub Actions 為準。
 
 **下一步**：Stage 0 至 11 已完成並部署（使用者同意後把分支快轉合併到 `main`），正式站通過 AC-23 與 AC-27。剩下要在實機做的：正式站 Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 在 Google 日曆與 Apple 行事曆匯入、Firefox 匯入、陀螺儀與低階手機；等使用者決定的事（授權、抽牌占卜）在 `docs/known-issues.md`。白話已在本機補跑三方撰稿與交叉複審（2026-10-25）。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
@@ -596,3 +596,13 @@
 - 320／375／600／1280px 檢查通過：圖示開關、品牌載入、Esc、焦點返回、背景內容不取得鍵盤焦點、導覽後關閉；學堂每日目標抽屜保留原本標題與文字關閉，桌機維持五個導覽連結。沒有橫向溢出或 JavaScript 執行錯誤。
 - 40 檔 276 項測試、typecheck、build、check:size 與 Taste Skill lint 通過；首屏 gzip 131.7 KB，占卜頁 113.2 KB。
 - 使用者已授權改好後 commit、push 與部署；發布 7 個程式與文件檔案，沿用 main 的 GitHub Pages 流程，完成條件為對應提交的測試、建置、部署與正式站檢查通過。
+
+
+### 2026-10-25 品牌透明背景與書卜更名
+
+- 依使用者要求，`favicon.svg` 移除固定背景，頁首、手機選單與 favicon 共用透明方印；`icons.mjs` 為 192／512／180px 與 maskable PNG 補上墨黑底，保持主畫面安裝表現。
+- 導覽、紀錄列表與詳情標題、路徑 meta、備份提示、使用指南、離線說明及現行文件統一使用「書卜」，保留 `/me` 及資料結構。
+- 驗證：40 個測試檔 276 項通過；typecheck、build、check:size 通過（卦殿 131.7 KB／160 KB，占卜 113.2 KB／120 KB）。既有 HoloCard 超過 500 KB 的建置提示仍在。
+- Chrome preview：320／375／600／1280px 檢查選單透明角落像素、書卜入口與標題、Esc 返回焦點、設定分頁重載保留、紀錄深連結及無橫向溢出，無 JavaScript 錯誤；102 路徑回 200 且標題正確。
+- SVG 透明區 alpha 為 0，六爻仍為離上乾下；4 張安裝圖示 alpha 均為 255，maskable 有色區半徑 198.8px，小於安全圓 204.8px。
+- 發布：使用者本次明確授權 commit、push 與部署，以此提交的 GitHub Actions 與部署後正式站檢查為準。

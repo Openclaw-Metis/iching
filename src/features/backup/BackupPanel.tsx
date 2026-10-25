@@ -12,7 +12,7 @@ import { downloadFile } from './format.ts'
 import { ImportPreviewDialog } from './ImportPreviewDialog.tsx'
 import { previewImport, type ImportPreview } from './preview.ts'
 
-/** 匯出並下載，記下最後備份時間；「我的」頁的備份提醒也用這個 */
+/** 匯出並下載，記下最後備份時間；「書卜」頁的備份提醒也用這個 */
 export async function exportAndDownload() {
   const { files, counts } = await exportAll()
   for (const [i, f] of files.entries()) {

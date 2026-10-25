@@ -1,4 +1,4 @@
-// 我的頁「收藏」：卡牌牆（縮圖維持 5:7，依加入時間）與金句列表（點擊回到卡牌頁的那一句）。
+// 書卜頁「收藏」：卡牌牆（縮圖維持 5:7，依加入時間）與金句列表（點擊回到卡牌頁的那一句）。
 
 import { Link } from 'react-router'
 import { CardThumb } from '../../components/CardThumb.tsx'

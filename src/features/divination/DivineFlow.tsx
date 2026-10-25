@@ -313,7 +313,7 @@ export function DivineFlow() {
     try {
       const { downloadFile, partialBackup, readingFileName } = await loadBackup()
       downloadFile(JSON.stringify(partialBackup(view.reading), null, 2), readingFileName(new Date()))
-      toast('已下載這次結果，之後可以在「我的 › 設定與備份」匯入。')
+      toast('已下載這次結果，之後可以在「書卜 › 設定與備份」匯入。')
     } catch {
       toast('無法下載，請確認網路後再試一次。')
     }

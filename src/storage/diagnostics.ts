@@ -1,5 +1,5 @@
 // 診斷資訊：網站不蒐集使用數據，錯誤只記在這台裝置的 localStorage（最多 50 筆，循環覆蓋），
-// 使用者回報問題時可以從「我的 › 設定與備份 › 診斷資訊」複製出來。
+// 使用者回報問題時可以從「書卜 › 設定與備份 › 診斷資訊」複製出來。
 
 import type { ErrorCode } from '../lib/errors.ts'
 import type { StorageHandle, StorageMode } from './open.ts'

@@ -5,7 +5,7 @@ export function InstallHelp() {
     <details className="accordion install-help">
       <summary>加到主畫面與離線使用</summary>
       <div className="install-body">
-        <p>加到主畫面後，卦殿、今日、占卜、學堂與我的頁沒有網路也能開啟；最近看過的 30 張卡牌離線時仍是全息卡，其他卡牌改顯示平面卡圖。</p>
+        <p>加到主畫面後，卦殿、今日、占卜、學堂與書卜頁沒有網路也能開啟；最近看過的 30 張卡牌離線時仍是全息卡，其他卡牌改顯示平面卡圖。</p>
         <h4>iPhone、iPad（Safari）</h4>
         <ol>
           <li>用 Safari 開啟本站，按下方的分享按鈕。</li>

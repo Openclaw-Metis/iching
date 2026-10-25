@@ -41,7 +41,7 @@ export function Me() {
   if (record) {
     return (
       <div className="me">
-        <header className="page-head"><h1>我的</h1></header>
+        <header className="page-head"><h1>書卜</h1></header>
         <RecordDetail id={record} />
       </div>
     )
@@ -49,7 +49,7 @@ export function Me() {
 
   return (
     <div className="me">
-      <header className="page-head"><h1>我的</h1></header>
+      <header className="page-head"><h1>書卜</h1></header>
       <BackupReminder />
       <div className="tabs me-tabs" role="tablist">
         {TABS.map(t => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}

@@ -515,7 +515,7 @@ main { padding: 0 var(--page-gutter) 64px; }
   .yarrow-result { justify-self: stretch; }
 }
 
-/* ---------- 我的 ---------- */
+/* ---------- 書卜 ---------- */
 .me { max-width: 1100px; margin: 0 auto; }
 .me-tabs { max-width: 720px; margin: 16px auto 6px; }
 .me > .panel { max-width: 720px; margin: 0 auto; }
