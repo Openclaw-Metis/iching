@@ -15,16 +15,8 @@ function Header() {
       <header className="site-header">
         <div className="header-inner">
           <NavLink to="/" className="brand" aria-label="易經卦殿首頁">
-            <svg viewBox="0 0 60 60" aria-hidden="true">
-              <g fill="var(--gold)">
-                <rect x="6" y="8" width="48" height="6" rx="1" />
-                <rect x="6" y="20" width="21" height="6" rx="1" /><rect x="33" y="20" width="21" height="6" rx="1" />
-                <rect x="6" y="32" width="48" height="6" rx="1" />
-                <rect x="6" y="44" width="21" height="6" rx="1" /><rect x="33" y="44" width="21" height="6" rx="1" />
-              </g>
-            </svg>
+            <img className="brand-mark" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={36} height={36} />
             <strong>易經卦殿</strong>
-            <small>六十四卦卦牌</small>
           </NavLink>
           <nav className="site-nav desktop-nav" aria-label="主選單">
             {NAV_ITEMS.filter(item => item.enabled).map(item => (

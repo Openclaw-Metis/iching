@@ -15,6 +15,7 @@ import { ERROR_MESSAGES, isAppError } from '../../lib/errors.ts'
 import { track } from '../../lib/events.ts'
 import { daily, logError, type DailyDraw } from '../../storage/index.ts'
 import { awardDaily } from './daily.ts'
+import { HetuLuoshu } from './HetuLuoshu.tsx'
 
 interface Props {
   date: string
@@ -102,14 +103,7 @@ export function TodayCard({ date, row }: Props) {
         </p>
       </section>
 
-      {!revealed && (
-        <section className="today-invitation">
-          <h2>今日一卦</h2>
-          <p>點一下牌背，翻開今天的卦。</p>
-          <button type="button" className="btn btn-primary" disabled={drawing || Boolean(row)} onClick={() => void open()}>{drawing || row ? '翻開中' : '翻開今日卦'}</button>
-          <p className="note">每天固定一張牌，可以寫下今日心得。</p>
-        </section>
-      )}
+      {!revealed && <HetuLuoshu />}
       {revealed && hex && (
         <section className="today-text" aria-live="polite">
           <header>

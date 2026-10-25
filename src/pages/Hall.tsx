@@ -205,9 +205,9 @@ function Spotlight({ focus }: { focus: Hexagram | null }) {
         <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・{focus.fullName}</p></div><HexagramGlyph lines={focus.lines} /></div>
         <p className="preview-classic">{textOf(focus.number).judgment}</p>
         <div className="rels">
-          <Link to={`/gua/${c.number}`}><span>錯卦</span><b>{c.name}</b></Link>
-          <Link to={`/gua/${z.number}`}><span>綜卦</span><b>{z === focus ? '自身' : z.name}</b></Link>
-          <Link to={`/gua/${x.number}`}><span>互卦</span><b>{x.name}</b></Link>
+          <Link to={`/gua/${c.number}`} data-relation="cuo" aria-label={`錯卦：${c.fullName}`}><span>錯卦</span><b>{c.name}</b><HexagramGlyph lines={c.lines} /></Link>
+          <Link to={`/gua/${z.number}`} data-relation="zong" aria-label={`綜卦：${z.fullName}${z === focus ? '（自身）' : ''}`}><span>綜卦</span><b>{z === focus ? '自身' : z.name}</b><HexagramGlyph lines={z.lines} /></Link>
+          <Link to={`/gua/${x.number}`} data-relation="hu" aria-label={`互卦：${x.fullName}`}><span>互卦</span><b>{x.name}</b><HexagramGlyph lines={x.lines} /></Link>
         </div>
         <Link className="preview-open" to={`/gua/${focus.number}`}>閱讀牌義與經文<span aria-hidden="true">↗</span></Link>
       </div>

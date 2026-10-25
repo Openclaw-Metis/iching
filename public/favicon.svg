@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#121419"/>
-  <g fill="#c9a96b">
-    <rect x="14" y="12" width="36" height="6" rx="1"/>
-    <rect x="14" y="24" width="15" height="6" rx="1"/><rect x="35" y="24" width="15" height="6" rx="1"/>
-    <rect x="14" y="36" width="36" height="6" rx="1"/>
-    <rect x="14" y="48" width="15" height="6" rx="1"/><rect x="35" y="48" width="15" height="6" rx="1"/>
+  <rect width="64" height="64" fill="#10100f"/>
+  <path d="M17 6H47L58 17V47L47 58H17L6 47V17Z" fill="none" stroke="#c8ab73" stroke-width="2" stroke-linejoin="round"/>
+  <g fill="#c8ab73">
+    <g data-line="yang"><rect x="16" y="15" width="32" height="4" rx=".5"/></g>
+    <g data-line="yin"><rect x="16" y="21" width="13" height="4" rx=".5"/><rect x="35" y="21" width="13" height="4" rx=".5"/></g>
+    <g data-line="yang"><rect x="16" y="27" width="32" height="4" rx=".5"/></g>
+    <g data-line="yang"><rect x="16" y="33" width="32" height="4" rx=".5"/></g>
+    <g data-line="yang"><rect x="16" y="39" width="32" height="4" rx=".5"/></g>
+    <g data-line="yang"><rect x="16" y="45" width="32" height="4" rx=".5"/></g>
   </g>
 </svg>

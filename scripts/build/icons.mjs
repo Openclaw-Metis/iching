@@ -9,7 +9,7 @@ import sharp from 'sharp'
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const svg = readFileSync(join(root, 'public/favicon.svg'))
 const out = join(root, 'public/icons')
-const INK = '#121419'
+const INK = '#10100f'
 mkdirSync(out, { recursive: true })
 
 const render = size => sharp(svg, { density: Math.ceil((72 * size) / 64) }).resize(size, size).png()
@@ -17,7 +17,7 @@ const render = size => sharp(svg, { density: Math.ceil((72 * size) / 64) }).resi
 await render(192).toFile(join(out, 'icon-192.png'))
 await render(512).toFile(join(out, 'icon-512.png'))
 await render(180).flatten({ background: INK }).toFile(join(out, 'apple-touch-icon.png'))
-// 圖示縮到 80%，置中放在同色底上
+// 方印縮到 80%，連同描邊留在中央半徑 40% 的安全圓內，圓形裁切也保留六爻。
 const inner = await render(410).toBuffer()
 await sharp({ create: { width: 512, height: 512, channels: 4, background: INK } })
   .composite([{ input: inner, left: 51, top: 51 }])
