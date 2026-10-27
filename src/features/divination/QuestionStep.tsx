@@ -1,13 +1,12 @@
 // 問題步驟：先只有一個輸入框，寫到 2 字以上才展開類別與起卦方式，主 CTA「開始起卦」在最下面。
-// 寬螢幕右側是還沒成形的六個爻位與蒙卦辭（問卦要誠、不再三瀆問），手機不顯示。
+// 寬螢幕右側是還沒成形的六個爻位與〈筮儀〉的命筮之辭，手機不顯示。
 
 import { useId, useState } from 'react'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
 import { Scripture } from '../../components/Scripture.tsx'
-import { textOf } from '../../data/classic.ts'
 import type { CastDraft, Category, DraftMethod } from '../../storage/index.ts'
 import type { DraftSaveState } from './draftQueue.ts'
-import { CATEGORY_LABELS, CATEGORY_ORDER, DRAFT_METHOD_LABELS, METHOD_HELP } from './labels.ts'
+import { CATEGORY_LABELS, CATEGORY_ORDER, DRAFT_METHOD_LABELS, METHOD_HELP, SHIYI_INVOCATION } from './labels.ts'
 
 export const QUESTION_MIN = 2
 export const QUESTION_MAX = 200
@@ -101,7 +100,7 @@ export function QuestionStep({ draft, saveState, onChange, onStart }: Props) {
       </div>
       <aside className="question-aside">
         <LineBuilder lines={[]} />
-        <Scripture className="question-classic" text={textOf(4).judgment} perColumn={9} head="蒙卦辭" />
+        <Scripture className="question-classic" text={SHIYI_INVOCATION} perColumn={10} head="筮儀" />
       </aside>
     </section>
   )

@@ -368,7 +368,8 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .step-summary .forge-line { grid-template-columns: minmax(0, 1fr); }
 
 .divine-step { margin: 8px 0 0; }
-.question-step { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: 56px; align-items: start; }
+.question-step { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 56px; align-items: start; }
+.question-form { max-width: 600px; }
 .question-label { display: block; margin-bottom: 16px; color: var(--ivory); font: 22px/1.6 var(--serif); }
 .question-input { width: 100%; min-height: 140px; padding: 20px; border: 1px solid var(--line-strong); border-radius: var(--radius); resize: vertical; background: var(--ink-1); color: var(--ivory); font: 18px/1.7 var(--serif); }
 .question-input::placeholder { color: var(--faint); }
@@ -392,7 +393,7 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .method-help dd { margin: 0 0 8px; }
 .yarrow-mode { margin-top: 10px; }
 .question-step .step-actions .btn-primary { min-width: 200px; }
-/* 右側：尚未成形的六個爻位與蒙卦辭 */
+/* 右側：尚未成形的六個爻位與〈筮儀〉命辭；欄寬只取內容所需，問題欄佔其餘 */
 .question-aside { display: flex; justify-content: center; align-items: flex-start; gap: 36px; padding: 52px 0 0 40px; border-left: 1px solid var(--line); }
 .question-aside .forge { --forge-w: 168px; --bar-h: 15px; --forge-gap: 18px; margin-top: 12px; }
 .question-classic { --sc-size: 22px; }
@@ -764,6 +765,10 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
   .hall-grid { --cols: 4; }
   .preview-body { padding: 18px 16px; }
   .preview-classic { --sc-size: 19px; }
+}
+@media (max-width: 1200px) {
+  /* 爻位與命辭並排放不下時改成上下排，右欄維持一欄寬 */
+  .question-aside { flex-direction: column; align-items: center; gap: 28px; }
 }
 @media (max-width: 1100px) {
   .academy-overview { grid-template-columns: 1fr 1.5fr; }

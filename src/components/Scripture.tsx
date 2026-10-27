@@ -8,7 +8,7 @@ interface Props {
   text: string
   /** 每欄字數；句讀併入上一欄時該欄會多一兩字 */
   perColumn: number
-  /** 第一欄的卷題（出處，如「蒙卦辭」），朱色小字 */
+  /** 第一欄的卷題（出處，如「筮儀」），朱色小字 */
   head?: string
   className?: string
 }

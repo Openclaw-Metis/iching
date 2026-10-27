@@ -31,3 +31,6 @@ export const METHOD_HELP: Record<DraftMethod, string> = {
 export const MANUAL_RULE = '本站換算：正面 3、背面 2，三枚相加。0 枚正面為 6（老陰，會變）、1 枚為 7（少陽）、2 枚為 8（少陰）、3 枚為 9（老陽，會變）。'
 
 export const LINE_NAMES = { 6: '老陰', 7: '少陽', 8: '少陰', 9: '老陽' } as const
+
+/** 問題步驟旁直排的命筮之辭，出自朱熹《周易本義》卷末〈筮儀〉；用字依使用者指定的版本 */
+export const SHIYI_INVOCATION = '假爾泰筮有常，假爾泰筮有常，某官姓名，今以某事云云，未知可否？爰質疑于神于靈，吉凶得失，悔吝憂虞，惟爾有神，尚明告之。'
