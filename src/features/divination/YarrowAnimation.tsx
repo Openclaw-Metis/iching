@@ -31,7 +31,7 @@ export function YarrowAnimation({ lines, onDone }: Props) {
   return (
     <section className="divine-step cast-step yarrow-anim">
       <div className="cast-figure">
-        <LineBuilder lines={linesDone} />
+        <LineBuilder lines={linesDone} live />
       </div>
       <div className="cast-panel">
         <p className="cast-progress" aria-live="polite">分蓍中：第 {Math.max(1, shown)} 步／共 18 步</p>

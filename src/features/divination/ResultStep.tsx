@@ -5,11 +5,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { FLAGS } from '../../app/flags.ts'
-import { FocusText, focusTitle } from '../../components/FocusText.tsx'
+import { FocusText, focusText, focusTitle } from '../../components/FocusText.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
 import { LinePlain } from '../../components/LinePlain.tsx'
 import { NoteEditor } from '../../components/NoteEditor.tsx'
+import { rise } from '../../components/rise.ts'
 import { SaveStatusPill, type SaveStatus } from '../../components/SaveStatusPill.tsx'
+import { Scripture } from '../../components/Scripture.tsx'
 import { cardAsset } from '../../data/cards.ts'
 import type { Hexagram } from '../../data/hexagrams.ts'
 import { keyOf } from '../../data/lines.ts'
@@ -46,8 +48,22 @@ function Card({ hex, label }: { hex: Hexagram; label: string }) {
 const quoteOf = (f: ReadingFocus): QuoteRef =>
   f.kind === 'line' ? { hexagram: f.hexagram.number, kind: 'line', position: f.position } : { hexagram: f.hexagram.number, kind: f.kind }
 
-/** 主讀與輔讀：原文一律顯示，下方依 focus.kind 接上對應的白話與占得提醒 */
+/** 主讀與輔讀：原文一律顯示，旁邊或下方依 focus.kind 接上對應的白話與占得提醒。主讀的原文直排 */
 function FocusBlock({ focus, main }: { focus: ReadingFocus; main: boolean }) {
+  if (main) {
+    return (
+      <div className="focus-block main">
+        <div className="focus-scripture">
+          <Scripture text={focusText(focus)} perColumn={9} head={focusTitle(focus)} />
+          {FLAGS.collection && <QuoteButton quote={quoteOf(focus)} />}
+        </div>
+        <div className="focus-notes">
+          <p className="note">主讀：{focusTitle(focus)}</p>
+          <LinePlain entryKey={keyOf(focus)} label={focusTitle(focus)} />
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={main ? 'focus-block main' : 'focus-block'}>
       <div className="focus-head">
@@ -77,7 +93,7 @@ export function ReadingView({ reading, header, footer }: ReadingViewProps) {
   const [main, ...rest] = r.focus
   return (
     <section className="divine-step result-step" aria-live="polite">
-      <div className="result-cards">
+      <div className="result-cards rise" style={rise(0)}>
         <div className="card-pair">
           <Card hex={primary} label="本卦" />
           {moving.length > 0 && <span className="pair-arrow" aria-hidden="true">→</span>}
@@ -95,7 +111,7 @@ export function ReadingView({ reading, header, footer }: ReadingViewProps) {
         </p>
       </div>
 
-      <div className="result-text">
+      <div className="result-text rise" style={rise(1)}>
         {header}
         <h2>該讀哪一段</h2>
         <p>{r.rule}</p>

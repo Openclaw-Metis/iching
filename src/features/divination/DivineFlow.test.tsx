@@ -95,7 +95,8 @@ describe('重複提問提醒（AC-08、Gherkin）', () => {
     })
     mount()
     await ask('  要不要搬家？ ')
-    await screen.findByText(/初筮告，再三瀆，瀆則不告/)
+    // 問題步驟旁也有蒙卦辭，以提醒的問句確認對話框出現
+    await screen.findByText(/仍要再問一次嗎/)
     // happy-dom 的 <dialog> 不在無障礙樹裡，改以文字找按鈕
     fireEvent.click(screen.getByText('仍要起卦'))
     await screen.findByText(/擲第 1 爻/)

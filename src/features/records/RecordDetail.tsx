@@ -93,7 +93,7 @@ export function RecordDetail({ id }: { id: string }) {
         </h2>
       )}
       <button type="button" className="btn star-toggle" aria-pressed={reading.starred === 1} onClick={() => void act({ starred: reading.starred ? 0 : 1 }).catch(() => {})}>
-        {reading.starred ? '★ 已加星號' : '☆ 加星號'}
+        {reading.starred ? '已加星號' : '加星號'}
       </button>
       {message && <p className="inline-warning" role="alert">{message}</p>}
     </div>

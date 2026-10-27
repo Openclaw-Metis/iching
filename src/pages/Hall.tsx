@@ -3,10 +3,15 @@ import { Link } from 'react-router'
 import { FLAGS } from '../app/flags.ts'
 import { CardThumb, type Relation } from '../components/CardThumb.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
+import { LineForge } from '../components/LineForge.tsx'
+import { rise } from '../components/rise.ts'
+import { Scripture } from '../components/Scripture.tsx'
 import { textOf } from '../data/classic.ts'
 import { cardAsset } from '../data/cards.ts'
 import { cuo, hexagram, hexagrams, hu, zong, type Hexagram, type PalaceGeneration } from '../data/hexagrams.ts'
 import { trigrams } from '../data/trigrams.ts'
+import { balancedPerColumn } from '../lib/columns.ts'
+import { cycleLine, drawnCount, EMPTY_DRAWN, matchesDrawn, type Drawn } from '../lib/drawn.ts'
 
 type View = 'kingwen' | 'matrix' | 'palace' | 'months'
 const VIEWS: { id: View; label: string; note: string }[] = [
@@ -23,6 +28,8 @@ const MONTH_ORDER = [24, 19, 11, 34, 43, 1, 44, 33, 12, 20, 23, 2]
 const MONTH_NAMES = ['十一月', '十二月', '正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月']
 const BRANCHES = '子丑寅卯辰巳午未申酉戌亥'
 const MAP_KEY = 'iching:map-overlay'
+const ORDINAL = ['初', '二', '三', '四', '五', '上']
+const LINE_STATE = { 1: '陽爻', 0: '陰爻', none: '未定' } as const
 
 type MapCells = Map<number, { opacity: number; due: boolean }>
 type MapView = { cells: MapCells; dueCount: number } | null
@@ -64,6 +71,8 @@ export function Hall() {
   const [view, setView] = useState<View>('kingwen')
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<Hexagram | null>(hexagram(1))
+  const [drawn, setDrawn] = useState<Drawn>(EMPTY_DRAWN)
+  const [drawOpen, setDrawOpen] = useState(false)
   const [mapOn, setMapOn] = useState(loadMapOn)
   const { map, failed } = useLearningMap(mapOn)
   const toggleMap = () => {
@@ -72,11 +81,21 @@ export function Hall() {
     try { localStorage.setItem(MAP_KEY, next ? '1' : '0') } catch { /* 偏好記不住而已 */ }
   }
 
+  // 搜尋與畫卦同時生效；不符合的卦變淡而不移除，上下卦與八宮的格位才不會跑掉
+  const drawnLines = drawnCount(drawn)
   const matches = useMemo(() => {
     const q = query.trim()
-    if (!q) return null
-    return new Set(hexagrams.filter(h => h.fullName.includes(q) || String(h.number) === q).map(h => h.number))
-  }, [query])
+    if (!q && !drawnLines) return null
+    return new Set(hexagrams.filter(h => (!q || h.fullName.includes(q) || String(h.number) === q) && matchesDrawn(h.lines, drawn)).map(h => h.number))
+  }, [query, drawn, drawnLines])
+  const forgeLines = useMemo(() => drawn.map(bit => ({ bit })), [drawn])
+  const drawnHex = drawnLines === 6 ? hexagrams.find(h => matchesDrawn(h.lines, drawn))! : null
+
+  const cycle = (i: number) => {
+    const next = drawn.map((v, k) => (k === i ? cycleLine(v) : v))
+    setDrawn(next)
+    if (drawnCount(next) === 6) setFocus(hexagrams.find(h => matchesDrawn(h.lines, next))!)
+  }
 
   const relations = useMemo(() => {
     const map = new Map<number, Relation[]>()
@@ -95,14 +114,38 @@ export function Hall() {
   return (
     <div className="hall" data-view={view}>
       <header className="hall-intro">
-        <div>
+        <div className="hall-title rise" style={rise(0)}>
           <h1>六十四卦殿</h1>
           <p>看卦象，讀經文，觀爻變。</p>
+          <div className="hall-actions">
+            <Link className="btn btn-primary" to="/divine">開始占卜<span aria-hidden="true">↗</span></Link>
+            <button type="button" className="btn draw-toggle" aria-expanded={drawOpen} aria-controls="draw" onClick={() => setDrawOpen(o => !o)}>
+              畫卦{drawnLines > 0 && <small>{drawnLines}／6</small>}
+            </button>
+          </div>
         </div>
-        <Link className="btn btn-primary" to="/divine">開始占卜<span aria-hidden="true">↗</span></Link>
+        <section id="draw" className="draw rise" style={rise(1)} data-open={drawOpen || undefined} aria-labelledby="draw-title">
+          <div className="draw-text">
+            <h2 id="draw-title">畫卦尋牌</h2>
+            <p className="note">由下而上點爻：點一下為陽，再點為陰，三點回到未定。</p>
+            <p className="draw-status" role="status">
+              {drawnHex
+                ? <>畫成<Link to={`/gua/${drawnHex.number}`}>{drawnHex.fullName}<span aria-hidden="true">↗</span></Link></>
+                : drawnLines ? <>已畫 {drawnLines} 爻，符合 <b>{count}</b> 卦</> : '尚未畫爻，圖錄顯示全部。'}
+            </p>
+            {drawnLines > 0 && <button type="button" className="link-button" onClick={() => setDrawn(EMPTY_DRAWN)}>清除畫卦</button>}
+          </div>
+          <LineForge
+            className="draw-forge"
+            lines={forgeLines}
+            label="畫卦：六個爻位，由初爻到上爻"
+            onLine={cycle}
+            lineLabel={i => `${ORDINAL[i]}爻：${LINE_STATE[drawn[i] ?? 'none']}`}
+          />
+        </section>
       </header>
 
-      <div className="hall-controls">
+      <div className="hall-controls rise" style={rise(2)}>
         <div className="segmented" role="group" aria-label="排列方式">
           {VIEWS.map(v => <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>{v.label}</button>)}
         </div>
@@ -116,12 +159,12 @@ export function Hall() {
               : <>待溫 {map.dueCount} 張・越亮表示記得越牢，淡墨灰階是還沒學過的卦。{map.dueCount > 0 && <Link to="/academy/review">去溫故</Link>}</>}
         </p>
       )}
-      <div className="hall-body">
+      <div className="hall-body rise" style={rise(3)}>
         <Spotlight focus={focus} />
         <section className="hall-collection" aria-label="卦牌圖錄">
           <div className="collection-heading">
             <h2>{VIEWS.find(v => v.id === view)!.label}</h2>
-            <p role="status">{matches ? `找到 ${count} 卦` : `${count} 卦`}</p>
+            <p role="status">{matches ? `符合 ${count} 卦` : `${count} 卦`}</p>
           </div>
           <div className="view-notes" aria-live="polite">
             {VIEWS.map(v => <p key={v.id} className={v.id === view ? undefined : 'off'} aria-hidden={v.id !== view}>{v.note}</p>)}
@@ -196,14 +239,15 @@ function Spotlight({ focus }: { focus: Hexagram | null }) {
     )
   }
   const c = cuo(focus), z = zong(focus), x = hu(focus)
+  const judgment = textOf(focus.number).judgment
   return (
     <aside className="spotlight" aria-live="polite">
       <Link className="preview-art" to={`/gua/${focus.number}`} aria-label={`閱讀${focus.name}卦的完整牌義與經文`}>
         <img src={cardAsset(focus.number, 'thumb')} alt="" width={400} height={560} />
       </Link>
       <div className="preview-body">
-        <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・{focus.fullName}</p></div><HexagramGlyph lines={focus.lines} /></div>
-        <p className="preview-classic">{textOf(focus.number).judgment}</p>
+        <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・{focus.fullName}</p></div><HexagramGlyph key={focus.number} className="glyph grow" lines={focus.lines} /></div>
+        <Scripture key={focus.number} className="preview-classic" text={judgment} perColumn={balancedPerColumn(judgment, 3, 4, 10)} />
         <div className="rels">
           <Link to={`/gua/${c.number}`} data-relation="cuo" aria-label={`錯卦：${c.fullName}`}><span>錯卦</span><b>{c.name}</b><HexagramGlyph lines={c.lines} /></Link>
           <Link to={`/gua/${z.number}`} data-relation="zong" aria-label={`綜卦：${z.fullName}${z === focus ? '（自身）' : ''}`}><span>綜卦</span><b>{z === focus ? '自身' : z.name}</b><HexagramGlyph lines={z.lines} /></Link>

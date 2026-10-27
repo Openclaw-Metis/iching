@@ -8,6 +8,8 @@ import { toast } from '../../app/toast.ts'
 import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { HoloCard } from '../../components/holo/HoloCard.tsx'
 import { NoteEditor } from '../../components/NoteEditor.tsx'
+import { rise } from '../../components/rise.ts'
+import { Scripture } from '../../components/Scripture.tsx'
 import { textOf } from '../../data/classic.ts'
 import type { CardContent } from '../../data/content.ts'
 import { hexagram } from '../../data/hexagrams.ts'
@@ -88,7 +90,7 @@ export function TodayCard({ date, row }: Props) {
 
   return (
     <div className="today">
-      <section className="today-stage">
+      <section className="today-stage rise" style={rise(1)}>
         <HoloCard
           front={n}
           back={{ kind: 'deck' }}
@@ -105,23 +107,26 @@ export function TodayCard({ date, row }: Props) {
 
       {!revealed && <HetuLuoshu />}
       {revealed && hex && (
-        <section className="today-text" aria-live="polite">
+        <section className="today-text rise" style={rise(2)} aria-live="polite">
           <header>
             <h2>{hex.name}</h2>
             <Link to={`/gua/${hex.number}`}>看完整牌義與經文</Link>
           </header>
-          {text === null && <p className="note">牌義載入中</p>}
-          {text === 'failed' && <p className="note" role="alert">{ERROR_MESSAGES.CONTENT_LOAD_FAILED}</p>}
-          {text && text !== 'failed' && (
-            <>
-              <p className="advice">{text.motto}</p>
-              <p>{text.meaning}</p>
-              <h3>今日提醒</h3>
-              <p>{text.guidance.decision}</p>
-            </>
-          )}
-          <h3>大象</h3>
-          <p className="classic">{textOf(hex.number).daxiang}</p>
+          <div className="today-read">
+            <Scripture className="today-daxiang" text={textOf(hex.number).daxiang} perColumn={9} head="大象" />
+            <div>
+              {text === null && <p className="note">牌義載入中</p>}
+              {text === 'failed' && <p className="note" role="alert">{ERROR_MESSAGES.CONTENT_LOAD_FAILED}</p>}
+              {text && text !== 'failed' && (
+                <>
+                  <p className="advice">{text.motto}</p>
+                  <p>{text.meaning}</p>
+                  <h3>今日提醒</h3>
+                  <p>{text.guidance.decision}</p>
+                </>
+              )}
+            </div>
+          </div>
           {row && (
             <NoteEditor
               label="今日心得"

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { DiagnosticsPanel } from '../app/DiagnosticsPanel.tsx'
 import { FLAGS } from '../app/flags.ts'
 import { InstallHelp } from '../app/InstallHelp.tsx'
+import { rise } from '../components/rise.ts'
 import { UserGuide } from '../app/UserGuide.tsx'
 import { ResetAcademyButton, SealBook } from '../features/academy/index.ts'
 import { BackupPanel, BackupReminder, ClearDataButton } from '../features/backup/index.ts'
@@ -49,12 +50,12 @@ export function Me() {
 
   return (
     <div className="me">
-      <header className="page-head"><h1>書卜</h1></header>
+      <header className="page-head rise" style={rise(0)}><h1>書卜</h1><p className="note">每一次占卜與今日卦的紀錄都留在這台裝置上。</p></header>
       <BackupReminder />
-      <div className="tabs me-tabs" role="tablist">
+      <div className="tabs me-tabs rise" style={rise(1)} role="tablist">
         {TABS.map(t => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
       </div>
-      <div className="panel" role="tabpanel">
+      <div className="panel rise" style={rise(2)} role="tabpanel">
         {tab === 'records' && <RecordList onRestoreBackup={() => setTab('settings')} />}
         {tab === 'collection' && <CollectionTab />}
         {tab === 'seals' && <SealBook />}

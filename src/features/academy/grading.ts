@@ -9,6 +9,8 @@ import { PASS_SCORE } from './curriculum.ts'
 export type LessonStatus = 'locked' | 'available' | 'in-progress' | 'completed'
 export type ExamStatus = 'locked' | 'available' | 'passed'
 
+export const LESSON_LABEL: Record<LessonStatus, string> = { locked: '未開放', available: '可學', 'in-progress': '學習中', completed: '完成' }
+
 export const passedStations = (exams: Pick<ExamResult, 'stationId' | 'passed'>[]) => new Set(exams.filter(e => e.passed).map(e => e.stationId))
 
 export function highestPassed(exams: Pick<ExamResult, 'stationId' | 'passed'>[]): number {

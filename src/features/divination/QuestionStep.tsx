@@ -1,6 +1,10 @@
 // 問題步驟：先只有一個輸入框，寫到 2 字以上才展開類別與起卦方式，主 CTA「開始起卦」在最下面。
+// 寬螢幕右側是還沒成形的六個爻位與蒙卦辭（問卦要誠、不再三瀆問），手機不顯示。
 
 import { useId, useState } from 'react'
+import { LineBuilder } from '../../components/LineBuilder.tsx'
+import { Scripture } from '../../components/Scripture.tsx'
+import { textOf } from '../../data/classic.ts'
 import type { CastDraft, Category, DraftMethod } from '../../storage/index.ts'
 import type { DraftSaveState } from './draftQueue.ts'
 import { CATEGORY_LABELS, CATEGORY_ORDER, DRAFT_METHOD_LABELS, METHOD_HELP } from './labels.ts'
@@ -27,72 +31,78 @@ export function QuestionStep({ draft, saveState, onChange, onStart }: Props) {
 
   return (
     <section className="divine-step question-step" aria-labelledby={`${id}-q`}>
-      <label id={`${id}-q`} htmlFor={`${id}-input`} className="question-label">心中想著一件事，用一句話寫下來</label>
-      <textarea
-        id={`${id}-input`}
-        className="question-input"
-        value={draft.question}
-        maxLength={QUESTION_MAX}
-        rows={3}
-        placeholder="例如：要不要接下新的專案？"
-        onChange={e => onChange({ question: e.target.value })}
-      />
-      <div className="field-meta">
-        <span>{[...draft.question].length >= QUESTION_MAX ? '問題最多 200 字。' : saveState === 'failed' ? '進度暫時無法保存，關閉頁面會遺失。' : saveState === 'saved' && draft.question ? '已自動保存' : ''}</span>
-        <span>{count}／{QUESTION_MAX}</span>
-      </div>
+      <div className="question-form">
+        <label id={`${id}-q`} htmlFor={`${id}-input`} className="question-label">心中想著一件事，用一句話寫下來</label>
+        <textarea
+          id={`${id}-input`}
+          className="question-input"
+          value={draft.question}
+          maxLength={QUESTION_MAX}
+          rows={3}
+          placeholder="例如：要不要接下新的專案？"
+          onChange={e => onChange({ question: e.target.value })}
+        />
+        <div className="field-meta">
+          <span>{[...draft.question].length >= QUESTION_MAX ? '問題最多 200 字。' : saveState === 'failed' ? '進度暫時無法保存，關閉頁面會遺失。' : saveState === 'saved' && draft.question ? '已自動保存' : ''}</span>
+          <span>{count}／{QUESTION_MAX}</span>
+        </div>
 
-      {ready && (
-        <>
-          <fieldset className="choice-group">
-            <legend>這件事比較屬於哪方面</legend>
-            <div className="segmented-radio">
-              {CATEGORY_ORDER.map(c => (
-                <label key={c}>
-                  <input type="radio" name={`${id}-category`} value={c} checked={draft.category === c} onChange={() => onChange({ category: c as Category })} />
-                  <span>{CATEGORY_LABELS[c]}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="choice-group">
-            <legend>
-              起卦方式
-              <button type="button" className="link-button" aria-expanded={help} onClick={() => setHelp(h => !h)}>這是什麼</button>
-            </legend>
-            <div className="method-cards">
-              {METHODS.map(m => (
-                <label key={m} className="method-card">
-                  <input type="radio" name={`${id}-method`} value={m} checked={draft.method === m} onChange={() => onChange({ method: m })} />
-                  <span><b>{DRAFT_METHOD_LABELS[m]}</b><small>{METHOD_NOTES[m]}</small></span>
-                </label>
-              ))}
-            </div>
-            {help && (
-              <dl className="method-help">
-                {METHODS.map(m => [<dt key={`${m}-t`}>{DRAFT_METHOD_LABELS[m]}</dt>, <dd key={`${m}-d`}>{METHOD_HELP[m]}</dd>])}
-              </dl>
-            )}
-            {draft.method === 'yarrow' && (
-              <div className="segmented-radio yarrow-mode" role="radiogroup" aria-label="大衍筮法的方式">
-                <label>
-                  <input type="radio" name={`${id}-yarrow`} value="hand" checked={draft.yarrowMode === 'hand'} onChange={() => onChange({ yarrowMode: 'hand' })} />
-                  <span>親手分蓍（18 步）</span>
-                </label>
-                <label>
-                  <input type="radio" name={`${id}-yarrow`} value="quick" checked={draft.yarrowMode === 'quick'} onChange={() => onChange({ yarrowMode: 'quick' })} />
-                  <span>一鍵完成</span>
-                </label>
+        {ready && (
+          <>
+            <fieldset className="choice-group">
+              <legend>這件事比較屬於哪方面</legend>
+              <div className="segmented-radio">
+                {CATEGORY_ORDER.map(c => (
+                  <label key={c}>
+                    <input type="radio" name={`${id}-category`} value={c} checked={draft.category === c} onChange={() => onChange({ category: c as Category })} />
+                    <span>{CATEGORY_LABELS[c]}</span>
+                  </label>
+                ))}
               </div>
-            )}
-          </fieldset>
-        </>
-      )}
+            </fieldset>
 
-      <div className="step-actions">
-        <button type="button" className="btn btn-primary" disabled={!ready} onClick={onStart}>開始起卦</button>
+            <fieldset className="choice-group">
+              <legend>
+                起卦方式
+                <button type="button" className="link-button" aria-expanded={help} onClick={() => setHelp(h => !h)}>這是什麼</button>
+              </legend>
+              <div className="method-cards">
+                {METHODS.map(m => (
+                  <label key={m} className="method-card">
+                    <input type="radio" name={`${id}-method`} value={m} checked={draft.method === m} onChange={() => onChange({ method: m })} />
+                    <span><b>{DRAFT_METHOD_LABELS[m]}</b><small>{METHOD_NOTES[m]}</small></span>
+                  </label>
+                ))}
+              </div>
+              {help && (
+                <dl className="method-help">
+                  {METHODS.map(m => [<dt key={`${m}-t`}>{DRAFT_METHOD_LABELS[m]}</dt>, <dd key={`${m}-d`}>{METHOD_HELP[m]}</dd>])}
+                </dl>
+              )}
+              {draft.method === 'yarrow' && (
+                <div className="segmented-radio yarrow-mode" role="radiogroup" aria-label="大衍筮法的方式">
+                  <label>
+                    <input type="radio" name={`${id}-yarrow`} value="hand" checked={draft.yarrowMode === 'hand'} onChange={() => onChange({ yarrowMode: 'hand' })} />
+                    <span>親手分蓍（18 步）</span>
+                  </label>
+                  <label>
+                    <input type="radio" name={`${id}-yarrow`} value="quick" checked={draft.yarrowMode === 'quick'} onChange={() => onChange({ yarrowMode: 'quick' })} />
+                    <span>一鍵完成</span>
+                  </label>
+                </div>
+              )}
+            </fieldset>
+          </>
+        )}
+
+        <div className="step-actions">
+          <button type="button" className="btn btn-primary" disabled={!ready} onClick={onStart}>開始起卦</button>
+        </div>
       </div>
+      <aside className="question-aside">
+        <LineBuilder lines={[]} />
+        <Scripture className="question-classic" text={textOf(4).judgment} perColumn={9} head="蒙卦辭" />
+      </aside>
     </section>
   )
 }

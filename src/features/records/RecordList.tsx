@@ -5,6 +5,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { HexagramGlyph } from '../../components/HexagramGlyph.tsx'
+import { Scripture } from '../../components/Scripture.tsx'
+import { textOf } from '../../data/classic.ts'
 import { hexagram } from '../../data/hexagrams.ts'
 import { formatDateTime } from '../../lib/dates.ts'
 import { readings, useDb, useLiveQuery, type Category, type Method } from '../../storage/index.ts'
@@ -70,7 +72,7 @@ function RecordPage({ filters, cursor, last, onNext }: { filters: RecordFilters;
                 {r.moving.length > 0 && <>　→　<HexagramGlyph lines={result.lines} />{result.name}</>}
               </span>
               <span className="record-tags">
-                {r.starred === 1 && <span className="tag-star" aria-label="已加星號">★</span>}
+                {r.starred === 1 && <span className="chip tag-star">星號</span>}
                 {r.followUp && <span className="chip">已回顧</span>}
                 <span>{METHOD_LABELS[r.method]}</span>
               </span>
@@ -132,11 +134,16 @@ function ReadingList({ onRestoreBackup }: { onRestoreBackup?: () => void }) {
 
   if (total === 0) {
     return (
-      <div className="empty-state">
-        <p>還沒有任何占卜紀錄。</p>
-        <div className="step-actions">
-          <Link className="btn btn-primary" to="/divine">去占卜</Link>
-          {onRestoreBackup && <button type="button" className="btn" onClick={onRestoreBackup}>從備份還原</button>}
+      <div className="empty-state empty-book">
+        {/* 大畜大象「多識前言往行」：記下過去的問與答，日後對照 */}
+        <Scripture className="empty-classic" text={textOf(26).daxiang} perColumn={8} head="大畜・大象" />
+        <div>
+          <p className="empty-title">還沒有任何占卜紀錄。</p>
+          <p>每次占卜都會自動存在這裡：問的事、六爻、本卦與之卦。之後可以補寫筆記，事過之後回來寫下結果，對照當時的卦。</p>
+          <div className="step-actions">
+            <Link className="btn btn-primary" to="/divine">去占卜</Link>
+            {onRestoreBackup && <button type="button" className="btn" onClick={onRestoreBackup}>從備份還原</button>}
+          </div>
         </div>
       </div>
     )

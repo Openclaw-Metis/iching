@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { FLAGS } from '../app/flags.ts'
 import { toast } from '../app/toast.ts'
+import { rise } from '../components/rise.ts'
 import { IcsReminder, TodayCard } from '../features/daily/index.ts'
 import { watchDate } from '../lib/dateWatch.ts'
 import { localDateKey } from '../lib/dates.ts'
@@ -23,7 +24,7 @@ export function Today() {
 
   return (
     <div className="today-page">
-      <header className="page-head">
+      <header className="page-head rise" style={rise(0)}>
         <h1>今日一卦</h1>
         <p className="note">{date.replace(/-/g, '/')}</p>
       </header>

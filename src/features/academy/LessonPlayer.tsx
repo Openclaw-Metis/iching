@@ -18,6 +18,7 @@ import { attempts as attemptsRepo, lessons, logError, type Attempt, type SealId 
 import { advance, answer, completeLesson, restart, select, startAttempt, submitExam, type ExamOutcome, type LessonOutcome } from './attempts.ts'
 import { EXAM_SIZE, flatten, lessonById, PASS_SCORE, type ReadStep } from './curriculum.ts'
 import { ExamResult } from './ExamResult.tsx'
+import { StationMark } from './StationMark.tsx'
 import { isSealShown } from './seals.ts'
 import { SealStamp } from './SealStamp.tsx'
 import { QuestionCard } from './QuestionCard.tsx'
@@ -96,6 +97,12 @@ type LessonPhase =
   | { name: 'active'; attempt: Attempt }
   | { name: 'resolved'; outcome: LessonOutcome; gained: number; reviewAdded: number }
 
+// 閱讀段落的第一句，課程開始前列出這一課會讀到什麼
+function excerpt(text: string) {
+  const first = text.split('。')[0]
+  return [...first].length > 26 ? [...first].slice(0, 26).join('') + '…' : first + '。'
+}
+
 export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHref?: string }) {
   const lesson = lessonById(lessonId)!
   const flat = useMemo(() => flatten(lesson), [lesson])
@@ -143,13 +150,21 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
 
   if (phase.name === 'empty') {
     return (
-      <section className="lesson-player">
-        {head}
-        <p className="note">約 {lesson.minutes} 分鐘・共 {flat.length} 步（閱讀 {flat.filter(s => s.kind === 'read').length} 段、作答 {flat.filter(s => s.kind === 'question').length} 題）</p>
-        {banner}
-        <div className="step-actions player-actions">
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void start()}>開始</button>
+      <section className="lesson-player lesson-intro">
+        <div>
+          {head}
+          <p className="note">約 {lesson.minutes} 分鐘・共 {flat.length} 步（閱讀 {flat.filter(s => s.kind === 'read').length} 段、作答 {flat.filter(s => s.kind === 'question').length} 題）</p>
+          <ol className="lesson-outline">
+            {lesson.steps.map((s, i) => (
+              <li key={i}>{s.kind === 'read' ? <><b>讀</b><span>{excerpt(s.text)}</span></> : <><b>答</b><span>{s.count} 題</span></>}</li>
+            ))}
+          </ol>
+          {banner}
+          <div className="step-actions player-actions">
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void start()}>開始</button>
+          </div>
         </div>
+        <StationMark station={lesson.station} note={`第${STATION_NUMERALS[Number(lesson.id.slice(-1)) - 1]}課，共三課`} />
       </section>
     )
   }
@@ -310,14 +325,17 @@ export function ExamPlayer({ stationId }: { stationId: number }) {
 
   if (phase.name === 'empty') {
     return (
-      <section className="lesson-player">
-        {head}
-        <p>共 {EXAM_SIZE} 題，答對 {PASS_SCORE} 題以上通過，通過後晉升為「{station.rank}」並開放下一站。</p>
-        <p className="note">考核逐題作答，送出後才一起顯示對錯；當天沒考完，隔天回來會重新出題。</p>
-        {banner}
-        <div className="step-actions player-actions">
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void start()}>開始考核</button>
+      <section className="lesson-player lesson-intro">
+        <div>
+          {head}
+          <p>共 {EXAM_SIZE} 題，答對 {PASS_SCORE} 題以上通過，通過後晉升為「{station.rank}」並開放下一站。</p>
+          <p className="note">考核逐題作答，送出後才一起顯示對錯；當天沒考完，隔天回來會重新出題。</p>
+          {banner}
+          <div className="step-actions player-actions">
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void start()}>開始考核</button>
+          </div>
         </div>
+        <StationMark station={station} note={`通過晉升「${station.rank}」`} />
       </section>
     )
   }

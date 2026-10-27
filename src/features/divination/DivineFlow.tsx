@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from '../../app/toast.ts'
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx'
 import { LineBuilder } from '../../components/LineBuilder.tsx'
+import { rise } from '../../components/rise.ts'
 import { Stepper } from '../../components/Stepper.tsx'
 import type { LineValue } from '../../lib/castLines.ts'
 import { localDateKey } from '../../lib/dates.ts'
@@ -329,7 +330,7 @@ export function DivineFlow() {
 
   return (
     <div className="divine">
-      <header className="page-head">
+      <header className="page-head rise" style={rise(0)}>
         <h1>占卜</h1>
         <Stepper steps={STEPS} current={step} label="占卜步驟" onSelect={() => setSummaryOpen(o => !o)} />
         {step > 0 && (

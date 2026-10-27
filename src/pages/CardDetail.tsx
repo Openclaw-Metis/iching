@@ -4,6 +4,8 @@ import { FocusText } from '../components/FocusText.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
 import { LinePlain } from '../components/LinePlain.tsx'
+import { rise } from '../components/rise.ts'
+import { Scripture } from '../components/Scripture.tsx'
 import artDirection from '../data/art-direction.json'
 import { hasArt } from '../data/cards.ts'
 import { textOf } from '../data/classic.ts'
@@ -15,6 +17,7 @@ import { touch as touchCardCache } from '../app/cardCache.ts'
 import { FLAGS } from '../app/flags.ts'
 import { FavoriteButton, QuoteButton } from '../features/collection/index.ts'
 import { ReviewToggle } from '../features/review/index.ts'
+import { balancedPerColumn } from '../lib/columns.ts'
 import { interpret } from '../lib/reading.ts'
 
 type Tab = 'meaning' | 'text' | 'structure' | 'lab' | 'source'
@@ -126,7 +129,7 @@ function Detail({ n }: { n: number }) {
   return (
     <>
       <div className="detail">
-        <section className="detail-stage">
+        <section className="detail-stage rise" style={rise(0)}>
           <HoloCard
             front={n}
             back={{ kind: 'card', number: c.number }}
@@ -146,14 +149,15 @@ function Detail({ n }: { n: number }) {
           <SequenceNav hex={hex} />
         </section>
 
-        <section>
+        <section className="detail-body rise" style={rise(1)}>
           <header className="detail-head">
-            <HexagramGlyph lines={hex.lines} />
-            <div>
+            <div className="detail-title">
+              <HexagramGlyph key={n} className="glyph grow" lines={hex.lines} />
               <h1>{hex.name}</h1>
-              <div className="meta">第<b>{n}</b>卦・{hex.fullName}・{hex.upper.name}上{hex.lower.name}下・{n <= 30 ? '上經' : '下經'}</div>
+              <div className="meta">第<b>{n}</b>卦・{hex.fullName}<br />{hex.upper.name}上{hex.lower.name}下・{n <= 30 ? '上經' : '下經'}</div>
+              {FLAGS.collection && <FavoriteButton hexagram={n} label={`${hex.name}卦`} />}
             </div>
-            {FLAGS.collection && <FavoriteButton hexagram={n} label={`${hex.name}卦`} />}
+            <Scripture key={n} className="detail-classic" text={textOf(n).judgment} perColumn={balancedPerColumn(textOf(n).judgment, 4, 5, 9)} />
           </header>
 
           <div className="tabs" role="tablist">

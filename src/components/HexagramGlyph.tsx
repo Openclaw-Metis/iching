@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Bit } from '../data/trigrams.ts'
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
   highlight?: number
 }
 
-/** 卦畫：由下而上的爻，畫成由上而下排列的橫條 */
+/** 卦畫：由下而上的爻，畫成由上而下排列的橫條。每一爻帶 --k（初爻為 0），進場時依序由初爻長出 */
 export function HexagramGlyph({ lines, className = 'glyph', moving = [], highlight }: Props) {
   const n = lines.length
   const bar = 10, gap = 7, h = n * bar + (n - 1) * gap
@@ -21,10 +22,10 @@ export function HexagramGlyph({ lines, className = 'glyph', moving = [], highlig
       )}
       {lines.map((bit, i) => {
         const y = (n - 1 - i) * (bar + gap)
-        const fill = moving.includes(i) ? 'var(--vermilion)' : undefined
+        const style = { fill: moving.includes(i) ? 'var(--vermilion)' : undefined, '--k': i } as CSSProperties
         return bit
-          ? <rect key={i} x="0" y={y} width="60" height={bar} rx="1.5" style={{ fill }} />
-          : <g key={i} style={{ fill }}><rect x="0" y={y} width="25" height={bar} rx="1.5" /><rect x="35" y={y} width="25" height={bar} rx="1.5" /></g>
+          ? <rect key={i} className="gl" x="0" y={y} width="60" height={bar} rx="1.5" style={style} />
+          : <g key={i} className="gl" style={style}><rect x="0" y={y} width="25" height={bar} rx="1.5" /><rect x="35" y={y} width="25" height={bar} rx="1.5" /></g>
       })}
     </svg>
   )

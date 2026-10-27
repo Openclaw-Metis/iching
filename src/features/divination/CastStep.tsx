@@ -47,7 +47,7 @@ export function CastStep({ draft, saveState, onLine, onSplit, onAbandon }: Props
   return (
     <section className="divine-step cast-step">
       <div className="cast-figure">
-        <LineBuilder lines={draft.lines} />
+        <LineBuilder lines={draft.lines} live />
       </div>
       <div className="cast-panel">
         <p className="cast-progress" aria-live="polite">

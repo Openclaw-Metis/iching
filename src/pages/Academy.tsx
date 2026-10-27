@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { FLAGS } from '../app/flags.ts'
+import { rise } from '../components/rise.ts'
 import { STATION_NUMERALS } from '../data/stations.ts'
 import { AcademyRoute, DailyGoalRing, highestPassed, ImagePractice, lessonById, nextStep, RankBadge } from '../features/academy/index.ts'
 import { lessons, review, useDb, useLiveQuery, xp } from '../storage/index.ts'
@@ -34,8 +35,8 @@ export function Academy() {
 
   return (
     <div className="academy">
-      <header className="page-head"><h1>學堂</h1></header>
-      <div className="academy-overview">
+      <header className="page-head rise" style={rise(0)}><h1>學堂</h1></header>
+      <div className="academy-overview rise" style={rise(1)}>
         <RankBadge highest={highestPassed(state.exams)} total={summary.total} streak={summary.streak} best={summary.best} />
         <section className="academy-today">
           <DailyGoalRing today={summary.today} goal={summary.goal} />
@@ -51,11 +52,12 @@ export function Academy() {
           <Link className={due ? 'btn btn-primary' : 'btn'} to="/academy/review">{due ? '開始溫故' : '看看溫故'}</Link>
         </section>
       )}
-      <section className="academy-route">
+      <section className="academy-route rise" style={rise(2)}>
         <h2>修行路線</h2>
+        <p className="note">八站依先天八卦方位排成一圈，路線由乾沿太極 S 形走到坤。點一站看它的三課與考核。</p>
         <AcademyRoute progress={state.progress} exams={state.exams} />
       </section>
-      <section className="practice-entry">
+      <section className="practice-entry rise" style={rise(3)}>
         <h2>看圖猜卦練習</h2>
         <p className="note">每次 10 題，只看卡圖的背景與人物猜是哪一卦，優先出還沒答對過的卦。已看圖答對 {imageDone.size}／64 卦。</p>
         <button type="button" className="btn" onClick={() => setPracticing(true)}>開始練習</button>
