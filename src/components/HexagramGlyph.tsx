@@ -22,10 +22,12 @@ export function HexagramGlyph({ lines, className = 'glyph', moving = [], highlig
       )}
       {lines.map((bit, i) => {
         const y = (n - 1 - i) * (bar + gap)
-        const style = { fill: moving.includes(i) ? 'var(--vermilion)' : undefined, '--k': i } as CSSProperties
+        // 變爻的顏色要寫在每個 rect 上：樣式表的 .hexglyph rect 會蓋過從 g 繼承來的 fill，陰爻寫在 g 上不會變色
+        const fill = moving.includes(i) ? { fill: 'var(--vermilion)' } : undefined
+        const order = { '--k': i } as CSSProperties
         return bit
-          ? <rect key={i} className="gl" x="0" y={y} width="60" height={bar} rx="1.5" style={style} />
-          : <g key={i} className="gl" style={style}><rect x="0" y={y} width="25" height={bar} rx="1.5" /><rect x="35" y={y} width="25" height={bar} rx="1.5" /></g>
+          ? <rect key={i} className="gl" x="0" y={y} width="60" height={bar} rx="1.5" style={{ ...order, ...fill }} />
+          : <g key={i} className="gl" style={order}><rect x="0" y={y} width="25" height={bar} rx="1.5" style={fill} /><rect x="35" y={y} width="25" height={bar} rx="1.5" style={fill} /></g>
       })}
     </svg>
   )

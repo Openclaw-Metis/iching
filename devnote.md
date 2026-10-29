@@ -654,6 +654,7 @@
 ### 本次失敗經驗與填坑
 - React Router 站內換頁以 transition 進行，Suspense 不會顯示骨架，舊畫面留到新頁就緒；骨架只在直接開啟延遲載入的頁面時看得到，驗證要用直接開網址並延遲程式包。
 - 作答揭露後選錯項的樣式被 `input:checked + span` 蓋過（選擇器較具體），改成同樣帶 `input +` 才生效。
+- 上線後使用者發現經文分頁的小卦畫只有陽爻會變朱紅：`HexagramGlyph` 把變爻的 fill 寫在陰爻的 g 上，樣式表 `.hexglyph rect { fill: currentColor }` 直接指定在 rect，蓋過繼承；改為寫在每個 rect 上，並加 `HexagramGlyph.test.tsx`（修正前會失敗）。這個問題在紀錄列表與學堂題目的變爻也存在已久。
 
 ### 備註
 - 使用者要求後快轉合併到 `main` 並部署：run `40801640122` 成功，正式站 `sw.js` 修訂碼 `b45631fa…` 與本機以 `VITE_SITE_ORIGIN=https://openclaw-metis.github.io` 建置相同。頁尾的版本號是建置時的提交編號。部署紀錄 `88e5a97` 依使用者要求推上 `main` 再部署一次（run `40801915797` 成功，正式站 `sw.js` 修訂碼 `14ce438f…` 與本機同提交建置相同）；這句更正本身也推上 `main` 部署，版本號為該提交。
