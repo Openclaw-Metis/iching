@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>易經卦殿 UI 檢視</title>
+<!--
+  易經卦殿 UI／UX 檢視（cc-designer，2026-10-29）
+  設計敘事（取自 ./DESIGN.md Overview）：介面是一部墨底泥金的寫經冊。經文直排金字配朱絲欄，是畫面的主角；
+  白話、說明與操作像注疏，用橫排系統字跟在旁邊。色彩只花在卦畫、經文、關係與狀態上，控制元件維持中性墨色表面。
+  本檔的版面決策：每個提案一列，左邊是現況截圖（證據），右邊是用同一套 token 重建的提案稿；註解寫在兩者下方。
+  假設：基準為提交 e3844a5（與正式站同版）；截圖來自本機 preview，以 Playwright 1440×900 與 390×844 取得。
+  素材都在 ./assets：現況截圖（now-*.jpg）、卦牌縮圖（card-*.webp）、品牌圖示（favicon.svg）。
+  字型：與正式站相同，經由 Google Fonts 載入 Noto Serif TC；離線時退回本機宋體。
+  TODO（下一步）：使用者選定方向後，依提案順序改進 production（先改 docs/spec.md，再實作）。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* token 值與 DESIGN.md 一致 */
+    --neutral: #10100f; --surface: #181714; --surface-high: #22201c; --surface-highest: #2d2b26;
+    --primary: #eeedea; --on-primary: #10100f;
+    --secondary: #c8ab73; --secondary-high: #e5d2a5; --secondary-low: #947c50;
+    --tertiary: #d98b77; --celadon: #abc0b5;
+    --on-surface: #deddd9; --on-surface-variant: #b8b2a8; --on-surface-faint: #a19b91;
+    --outline: #57544c; --outline-variant: #2d2b26; --rule: #5e3a31; --rule-high: #8c5142;
+    --serif: 'Noto Serif TC', 'Source Han Serif TC', 'PMingLiU', serif;
+    --sans: system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--neutral); color: var(--on-surface); font: 16px/1.8 var(--sans); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { font-family: var(--serif); color: var(--primary); }
+  a { color: var(--secondary-high); }
+  .wrap { max-width: 1520px; margin: 0 auto; padding: 0 48px 96px; }
+  .note { color: var(--on-surface-variant); font-size: 14px; }
+  .sev { display: inline-block; min-width: 2.2em; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; font-size: 13px; line-height: 1.6; text-align: center; }
+  .sev.hi { color: var(--tertiary); } .sev.mid { color: var(--secondary); } .sev.lo { color: var(--on-surface-faint); }
+
+  /* 頁首 */
+  .rv-head { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 48px; padding: 56px 0 40px; border-bottom: 1px solid var(--outline-variant); }
+  .rv-head h1 { margin: 0 0 8px; font-size: 40px; letter-spacing: .06em; }
+  .rv-head .lead { margin: 0; max-width: 46em; font-size: 18px; color: var(--on-surface); }
+  .rv-head dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 14px; }
+  .rv-head dt { color: var(--on-surface-faint); }
+  .rv-head dd { margin: 0; color: var(--on-surface); }
+
+  /* 結論 */
+  .verdict { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 64px; padding: 48px 0; border-bottom: 1px solid var(--outline-variant); }
+  .verdict h2, .sec-head h2 { margin: 0 0 16px; font-size: 24px; }
+  .keep { margin: 0; padding: 0; list-style: none; }
+  .keep li { padding: 14px 0; border-top: 1px solid var(--outline-variant); }
+  .keep b { color: var(--secondary-high); font-weight: 600; }
+  .top5 { margin: 0; padding: 0; list-style: none; counter-reset: t; }
+  .top5 li { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto 4em; gap: 4px 16px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--outline-variant); counter-increment: t; }
+  .top5 li::before { content: counter(t, cjk-ideographic); color: var(--secondary); font: 22px var(--serif); }
+  .top5 b { color: var(--primary); font-weight: 600; }
+  .top5 .meta { display: flex; gap: 6px; }
+  .top5 a { font-size: 14px; text-align: right; }
+
+  table.findings { width: 100%; margin-top: 32px; border-collapse: collapse; font-size: 14px; }
+  .findings th { padding: 8px 10px; border-bottom: 1px solid var(--outline); color: var(--on-surface-faint); font-weight: 400; text-align: left; white-space: nowrap; }
+  .findings td { padding: 10px; border-bottom: 1px solid var(--outline-variant); vertical-align: top; }
+  .findings td:first-child { color: var(--secondary); font-family: var(--serif); white-space: nowrap; }
+  .findings td:nth-child(2) { white-space: nowrap; color: var(--on-surface-variant); }
+
+  /* 提案列 */
+  section.prop { padding: 64px 0 24px; border-bottom: 1px solid var(--outline-variant); }
+  .sec-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; margin-bottom: 24px; }
+  .sec-head .no { color: var(--secondary); font: 15px var(--serif); letter-spacing: .1em; }
+  .sec-head p { margin: 0; max-width: 60em; }
+  .boards { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; }
+  .board { flex: none; }
+  .board > .label { margin: 0 0 10px; font-size: 13px; color: var(--on-surface-faint); letter-spacing: .04em; }
+  .board > .label b { color: var(--primary); font-weight: 600; }
+  .board .frame { position: relative; overflow: hidden; border: 1px solid var(--outline); background: var(--neutral); }
+  .board .frame > img { display: block; width: 100%; height: auto; }
+  .ann { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 28px; font-size: 14px; }
+  .ann h3 { margin: 0 0 6px; font-size: 15px; color: var(--secondary-high); }
+  .ann p, .ann ul { margin: 0; }
+  .ann ul { padding-left: 1.2em; }
+  [data-view='proposal'] .board.now, [data-view='current'] .board.next { display: none; }
+  [data-notes='false'] .ann { display: none; }
+  /* 變體：沒被選中的才隱藏，選中的保留自己的 display */
+  .variant:not(.on) { display: none !important; }
+
+  /* ---- 重建的介面元件（與 global.css 同值） ---- */
+  .ui { font: 16px/1.8 var(--sans); color: var(--on-surface); }
+  .ui .hdr { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--outline-variant); }
+  .ui .brand { display: flex; align-items: center; gap: 10px; color: var(--primary); font: 700 19px var(--serif); letter-spacing: .12em; }
+  .ui .brand img { width: 32px; height: 32px; }
+  .ui .menu { width: 24px; height: 16px; border-top: 2px solid var(--primary); border-bottom: 2px solid var(--primary); position: relative; }
+  .ui .menu::after { content: ''; position: absolute; left: 0; right: 0; top: 5px; border-top: 2px solid var(--primary); }
+  .ui .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 6px 16px; border: 1px solid var(--outline); border-radius: 4px; background: var(--surface); color: var(--primary); font-size: 14px; }
+  .ui .btn small { color: var(--on-surface-variant); font-size: 12px; }
+  .ui .btn-primary { border-color: var(--primary); border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 700; }
+  .ui .btn-danger { color: var(--tertiary); }
+  .ui .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--outline-variant); font-size: 14px; }
+  .ui .tabs span { padding: 10px 0; color: var(--on-surface-variant); }
+  .ui .tabs span.on { color: var(--primary); font-weight: 700; border-bottom: 2px solid var(--tertiary); }
+  .ui .seg { display: inline-flex; gap: 2px; }
+  .ui .seg span { padding: 6px 14px; border-radius: 4px; color: var(--on-surface-variant); font-size: 14px; }
+  .ui .seg span.on { background: var(--surface-high); color: var(--primary); }
+  .ui .chip { padding: 2px 10px; border-radius: 3px; background: var(--surface-high); font-size: 13px; }
+  .ui h1 { margin: 0; font-size: 26px; line-height: 1.2; letter-spacing: .06em; }
+  /* 直排經文 */
+  .sc { display: inline-flex; flex-direction: row-reverse; padding: .7em .1em; border: 1px solid var(--rule); color: var(--secondary-high); font: 400 var(--sz, 22px)/1.75 var(--serif); }
+  .sc span { writing-mode: vertical-rl; padding: 0 .12em; letter-spacing: .08em; white-space: nowrap; }
+  .sc span + span { border-right: 1px solid var(--rule); }
+  .sc .hd { color: var(--tertiary); font-size: .56em; letter-spacing: .32em; padding: .1em .55em 0; }
+  /* 卦畫：由 JS 依資料產生，初爻在下 */
+  .gly { display: inline-flex; flex-direction: column-reverse; gap: var(--g, 3px); width: var(--w, 28px); }
+  .gly i { display: flex; justify-content: space-between; height: var(--h, 4px); }
+  .gly i::before, .gly i::after { content: ''; background: var(--secondary); border-radius: 1px; }
+  .gly i.y::before { width: 100%; } .gly i.y::after { width: 0; }
+  .gly i.n::before, .gly i.n::after { width: 42%; }
+  .gly i.hi::before, .gly i.hi::after { background: var(--tertiary); }
+  /* 爻位（畫卦） */
+  .fg { display: flex; flex-direction: column-reverse; gap: 8px; width: 210px; }
+  .fg div { display: grid; grid-template-columns: 1.4em 1fr; gap: 8px; align-items: center; font: 12px var(--serif); color: var(--on-surface-faint); }
+  .fg b { display: flex; justify-content: space-between; height: 13px; outline: 1px dashed var(--rule-high); outline-offset: -1px; }
+  .fg b.y, .fg b.n { outline: 0; }
+  .fg b.y::before { content: ''; width: 100%; background: var(--secondary); border-radius: 2px; }
+  .fg b.n::before, .fg b.n::after { content: ''; width: 42%; background: var(--secondary); border-radius: 2px; }
+
+  /* 提案一：手機卡牌頁 */
+  .m390 { width: 390px; height: 844px; }
+  .mcard { padding: 12px 16px 0; }
+  .mcard .stage { display: flex; justify-content: center; height: 352px; }
+  .mcard .stage img { height: 100%; border-radius: 6px; }
+  .mcard .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .mcard .acts .btn { flex: 1; }
+  .mcard .title { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 14px; align-items: start; margin-top: 18px; }
+  .mcard .title .meta { color: var(--on-surface-variant); font-size: 13px; line-height: 1.7; }
+  .mcard .tabs { margin-top: 14px; justify-content: space-between; gap: 0; }
+  .mcard .peek { display: flex; gap: 6px; margin-top: 12px; }
+  .mcard.split .row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; margin-top: 4px; }
+  .mcard.split .row img { width: 150px; border-radius: 5px; }
+  .mcard.split .stack { display: grid; gap: 10px; align-content: start; }
+  .mcard.split .advice { margin-top: 14px; padding: 12px 14px; border-left: 2px solid var(--tertiary); background: var(--surface); font: 17px/1.7 var(--serif); color: var(--primary); }
+  .mcard.split .para { margin: 10px 0 0; font-size: 15px; }
+  .ui .tip { margin: 10px 0 0; font-size: 12px; color: var(--on-surface-faint); }
+
+  /* 提案二：畫卦結果 */
+  .d1200 { width: 1200px; }
+  .draw-mock { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; padding: 32px; }
+  .draw-mock h3 { margin: 0 0 4px; font-size: 20px; }
+  .draw-mock .status { margin: 14px 0 12px; color: var(--primary); }
+  .draw-mock .status b { color: var(--secondary-high); font: 700 20px var(--serif); }
+  .tgrid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 18px 14px; }
+  .tgrid figure { margin: 0; }
+  .tgrid img { display: block; width: 100%; aspect-ratio: 5 / 7; border-radius: 3px; }
+  .tgrid figcaption { display: flex; justify-content: space-between; padding-top: 4px; font-size: 12px; color: var(--on-surface-faint); }
+  .tgrid figcaption b { color: var(--primary); font: 500 15px var(--serif); }
+  .divider { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--on-surface-faint); font-size: 13px; }
+  .divider::after { content: ''; flex: 1; border-top: 1px solid var(--outline-variant); }
+  .ghost { aspect-ratio: 5 / 7; border-radius: 3px; background: var(--surface); opacity: .5; display: grid; place-items: center; color: var(--on-surface-faint); font: 15px var(--serif); }
+
+  /* 提案三：經文分頁 */
+  .d760 { width: 760px; }
+  .text-mock { padding: 24px 28px 28px; }
+  .text-mock .bar { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; }
+  .text-mock h4 { margin: 18px 0 6px; color: var(--primary); font: 700 18px var(--serif); }
+  .text-mock .classic { color: var(--primary); font: 17px/1.8 var(--serif); }
+  .text-mock .plain { margin: 6px 0 0; font-size: 15px; line-height: 1.85; }
+  .text-mock .adv { margin: 8px 0 0; padding: 6px 12px; border-left: 2px solid var(--tertiary); background: var(--surface); font-size: 14px; }
+  .text-mock .adv b { display: block; color: var(--secondary); font-size: 12px; font-weight: 500; letter-spacing: .2em; }
+  .lines { margin: 0; padding: 0; list-style: none; }
+  .lines li { display: grid; grid-template-columns: 34px 52px minmax(0, 1fr); gap: 4px 14px; padding: 14px 0; border-bottom: 1px solid var(--outline-variant); }
+  .lines .lb { color: var(--secondary); font-family: var(--serif); letter-spacing: .1em; }
+  .lines .gly { align-self: start; margin-top: 9px; }
+  .lines .xi { color: var(--on-surface-variant); font-size: 13px; }
+
+  /* 提案四：書卜與設定 */
+  .me-mock { padding: 28px 40px 0; }
+  .me-mock h1 { font-size: 32px; }
+  .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; margin: 16px 0 4px; padding: 14px 18px; border: 1px solid var(--rule); background: var(--surface); font-size: 14px; }
+  .strip .warn { color: var(--tertiary); }
+  .strip .btn-primary { margin-left: auto; }
+  .groups { display: grid; gap: 28px; margin: 24px 0 36px; }
+  .grp h3 { margin: 0 0 10px; font-size: 18px; }
+  .row2 { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--outline-variant); }
+  .row2 p { margin: 0; font-size: 14px; color: var(--on-surface-variant); }
+  .row2 b { display: block; color: var(--primary); font-weight: 600; }
+  .row2 .acts { display: flex; gap: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 15px; }
+  .danger { padding: 4px 20px 6px; border: 1px solid var(--rule); }
+  .danger h3 { margin-top: 14px; color: var(--tertiary); }
+  .foot { display: flex; flex-wrap: wrap; gap: 6px 24px; padding: 20px 40px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-faint); font-size: 13px; }
+  .foot span:first-child { color: var(--on-surface-variant); }
+
+  /* 其他發現 */
+  .minor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; }
+  .minor article { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px; padding: 24px 0; border-top: 1px solid var(--outline-variant); }
+  .minor article.noimg { grid-template-columns: minmax(0, 1fr); }
+  .minor img { width: 180px; max-height: 220px; object-fit: cover; object-position: top; border: 1px solid var(--outline); }
+  .minor h3 { margin: 0 0 6px; font-size: 17px; }
+  .minor p { margin: 0 0 6px; font-size: 14px; }
+  .minor .fix { color: var(--on-surface); }
+  .minor .fix::before { content: '提案　'; color: var(--secondary); }
+
+  .plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
+  .plan h3 { margin: 0 0 8px; font-size: 18px; }
+  .plan ol { margin: 0; padding-left: 1.3em; font-size: 15px; }
+  .plan li { margin-bottom: 6px; }
+  .plan .when { color: var(--on-surface-faint); font-size: 13px; }
+
+  .flow { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; max-width: 980px; }
+  .flow li { display: grid; grid-template-columns: 220px 120px minmax(0, 1fr); gap: 20px; padding: 14px 0; border-top: 1px solid var(--outline-variant); font-size: 15px; }
+  .flow .now { color: var(--tertiary); }
+  .flow .next { color: var(--celadon); }
+
+  /* Tweaks */
+  #tweaks { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: none; width: 260px; padding: 16px 18px; border: 1px solid var(--outline); border-radius: 8px; background: var(--surface-high); font-size: 13px; }
+  #tweaks.open { display: grid; gap: 12px; }
+  #tweaks h3 { margin: 0; font: 600 14px var(--sans); color: var(--primary); }
+  #tweaks label { display: grid; gap: 4px; color: var(--on-surface-variant); }
+  #tweaks select { min-height: 32px; padding: 2px 8px; border: 1px solid var(--outline); border-radius: 4px; background: var(--neutral); color: var(--primary); font: inherit; }
+  #tweaks .check { display: flex; align-items: center; gap: 8px; }
+  #tweaks-toggle { position: fixed; right: 20px; bottom: 20px; z-index: 49; display: none; min-height: 36px; padding: 4px 14px; border: 1px solid var(--outline); border-radius: 999px; background: var(--surface-high); color: var(--primary); font: 13px var(--sans); cursor: pointer; }
+  #tweaks-toggle.show { display: block; }
+  @media (max-width: 900px) {
+    .wrap { padding: 0 16px 64px; }
+    .rv-head, .verdict, .ann, .minor, .plan { grid-template-columns: 1fr; }
+    .boards { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 12px; }
+    table.findings { display: block; overflow-x: auto; }
+    .flow li, .minor article, .sec-head { grid-template-columns: 1fr; }
+    .minor img { width: 100%; }
+  }
+</style>
+</head>
+<body data-view="both" data-notes="true">
+<div class="wrap">
+
+<header class="rv-head" data-screen-label="01 檢視範圍">
+  <div>
+    <h1>易經卦殿 UI／UX 檢視</h1>
+    <p class="lead">經冊與畫卦改版後的第一次全面檢視。整體已經站得住，下一步要補的是手機首屏、找卦效率、鍵盤與螢幕閱讀器的換頁體驗，以及只存在本機的資料要讓人安心。</p>
+  </div>
+  <dl>
+    <dt>日期</dt><dd>2026-10-29</dd>
+    <dt>基準</dt><dd>提交 e3844a5（與正式站同版）</dd>
+    <dt>範圍</dt><dd>卦殿、卡牌、今日、占卜、解讀、書卜、紀錄詳情、設定、學堂、課程、404</dd>
+    <dt>畫面</dt><dd>桌機 1440×900、手機 390×844，共 41 張截圖</dd>
+    <dt>工具</dt><dd>axe-core 4.10.2（WCAG 2.2 AA 與最佳實務）；Playwright 走查三錢起卦、畫卦、讀經、上課、看紀錄等流程，並量測焦點位置與觸控目標</dd>
+    <dt>品牌層</dt><dd><a href="DESIGN.md">DESIGN.md</a>（取自 global.css 的實際值）</dd>
+  </dl>
+</header>
+
+<section class="verdict" data-screen-label="02 結論">
+  <div>
+    <h2>維持的部分</h2>
+    <ul class="keep">
+      <li><b>直排經文與朱絲欄</b>已是全站辨識度最高的元素，卦殿、卡牌、今日、占卜、書卜用法一致。</li>
+      <li><b>畫卦尋牌與金粉起卦</b>把「卦由下而上成形」變成可以親手做的事，沒有 WebGL 或減少動態效果時也能操作。</li>
+      <li><b>無障礙基本面乾淨</b>：axe 只剩 2 個中度問題，沒有對比錯誤；10 個路徑在 375 與 1280px 都沒有橫向捲動；觸控目標都在 44px 以上（隱藏的單選框由 44px 的標籤承擔）。</li>
+      <li><b>先天八卦學堂路線</b>讓八站的順序本身就是一課。</li>
+    </ul>
+  </div>
+  <div>
+    <h2>最值得先改的五件事</h2>
+    <ol class="top5">
+      <li><b>手機卡牌頁首屏只有卡牌</b><span class="meta"><span class="sev hi">高</span><span class="sev lo">小</span></span><a href="#p1">提案一</a></li>
+      <li><b>畫卦後符合的卦散在 5 個螢幕高</b><span class="meta"><span class="sev hi">高</span><span class="sev mid">中</span></span><a href="#p2">提案二</a></li>
+      <li><b>換頁後鍵盤焦點留在原地或掉到頁面最上層</b><span class="meta"><span class="sev hi">高</span><span class="sev lo">小</span></span><a href="#p3">提案三</a></li>
+      <li><b>經文分頁有 8 組重複的原文／白話切換</b><span class="meta"><span class="sev mid">中</span><span class="sev lo">小</span></span><a href="#p4">提案四</a></li>
+      <li><b>資料只存在本機，備份狀態卻藏在一行小字</b><span class="meta"><span class="sev hi">高</span><span class="sev mid">中</span></span><a href="#p5">提案五</a></li>
+    </ol>
+    <p class="note">標記：第一個是影響（高、中、低），第二個是工作量（小、中、大）。</p>
+  </div>
+  <table class="findings" style="grid-column: 1 / -1">
+    <thead><tr><th>編號</th><th>頁面</th><th>發現</th><th>證據</th><th>影響</th><th>工作量</th></tr></thead>
+    <tbody>
+      <tr><td>H1</td><td>卡牌（手機）</td><td>首屏只有卡牌與兩顆按鈕；卦名落在 830px，卦辭與分頁在第二屏；序卦連結夾在卡牌與卦名之間。</td><td>390×844 截圖</td><td><span class="sev hi">高</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>H2</td><td>卦殿</td><td>畫初九、六二後 16 卦符合，首屏只看得到 1 卦，最後一卦在 4462px。變淡在上下卦、八宮有意義（格位固定），在文王卦序只是讓人去找。</td><td>Playwright 量測</td><td><span class="sev hi">高</span></td><td><span class="sev mid">中</span></td></tr>
+      <tr><td>H3</td><td>全站</td><td>從導覽按 Enter 換頁後，焦點仍在導覽連結；從圖錄開卦牌後焦點掉到 body。螢幕閱讀器只會發現標題變了，聽不到新頁開始。</td><td>量測 activeElement</td><td><span class="sev hi">高</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>H4</td><td>書卜</td><td>紀錄只存在這個瀏覽器，但「還沒有匯出過」只是設定分頁裡的一行小字；從沒備份時，30 天提醒要從第一筆紀錄算起，之前沒有任何提示。</td><td>截圖、BackupReminder</td><td><span class="sev hi">高</span></td><td><span class="sev mid">中</span></td></tr>
+      <tr><td>H5</td><td>卡牌・經文</td><td>乾卦經文分頁有 8 組原文／白話切換，預設都是原文，要讀白話得點 8 次；爻名「九四」旁沒有位置提示。</td><td>計數 8 組</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M1</td><td>卡牌・爻變</td><td>仍用舊式橫條，旁邊又畫一次本卦，與卦殿畫卦、起卦的爻位元件不一致。</td><td>截圖</td><td><span class="sev mid">中</span></td><td><span class="sev mid">中</span></td></tr>
+      <tr><td>M2</td><td>解讀、紀錄詳情</td><td>左欄在 640px 就結束，讀到問事指引時本卦與之卦已捲出畫面。</td><td>截圖</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M3</td><td>解讀</td><td>類別選「不分類」時，問事指引是三個收合框，要點三次。</td><td>手機截圖</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M4</td><td>占卜（手機）</td><td>類別按鈕排成 3＋1，「不分類」獨占一整行，看起來像另一種東西。</td><td>手機截圖</td><td><span class="sev lo">低</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M5</td><td>書卜・設定</td><td>五塊同權面板，其中一塊沒有標題；「清除全部資料」與「匯出」長得一樣重。</td><td>截圖</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M6</td><td>書卜・紀錄</td><td>紀錄少時首屏大半空白；列表只有日期、問題、卦名，看不出當時讀的是哪一句。</td><td>截圖</td><td><span class="sev lo">低</span></td><td><span class="sev mid">中</span></td></tr>
+      <tr><td>M7</td><td>全站</td><td>沒有頁尾；使用說明只在設定分頁的收合框，經文底本與插圖來源只在卡牌頁的「來源」分頁。</td><td>走查</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>M8</td><td>卡牌、占卜</td><td>axe：分頁內的 h3 直接接在 h1 之後（heading-order）；問題步驟的 aside 包在 section 裡（landmark-complementary-is-top-level）。</td><td>axe-core</td><td><span class="sev mid">中</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>L1</td><td>404</td><td>只有「回到卦殿」，可以直接放搜尋框或畫卦入口。</td><td>截圖</td><td><span class="sev lo">低</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>L2</td><td>全站</td><td>延遲載入時只有一行置中的「載入中…」。</td><td>Layout.tsx</td><td><span class="sev lo">低</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>L3</td><td>全站</td><td>每次換頁都重播 0.62 秒的上升進場（四層，最後一層延遲 0.21 秒），卦殿與卡牌來回時會重複看到。</td><td>global.css</td><td><span class="sev lo">低</span></td><td><span class="sev lo">小</span></td></tr>
+      <tr><td>L4</td><td>課程</td><td>作答只能點選或用 Tab；可加數字鍵 1 到 4 選答、Enter 檢查。</td><td>走查</td><td><span class="sev lo">低</span></td><td><span class="sev lo">小</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="prop" id="p1" data-screen-label="03 提案一 手機卡牌頁">
+  <div class="sec-head">
+    <div><span class="no">提案一・H1</span><h2>手機卡牌頁：卦名與卦辭進首屏</h2>
+      <p>卡牌是這一頁的主角，但手機首屏只剩卡牌時，使用者要先往下捲才知道這是哪一卦、怎麼讀。把卡牌縮到約一半高度，讓卦名、直排卦辭與分頁列都在首屏。</p></div>
+  </div>
+  <div class="boards">
+    <div class="board now"><p class="label"><b>現況</b>　390×844</p><div class="frame m390"><img src="assets/now-card-mobile.jpg" alt="現況：手機卡牌頁首屏只有卡牌"></div></div>
+    <div class="board next"><p class="label"><b>提案</b>　390×844・<span data-variant-label="cardVariant"></span></p>
+      <div class="frame m390 ui">
+        <div class="hdr"><span class="brand"><img src="assets/favicon.svg" alt="">易經卦殿</span><span class="menu" aria-hidden="true"></span></div>
+        <div class="variant mcard" data-variant="cardVariant:titleFirst">
+          <div class="stage"><img src="assets/card-01.webp" alt="乾卦卦牌"></div>
+          <div class="acts"><span class="btn">倒轉 <small>看綜卦</small></span><span class="btn">翻面 <small>看錯卦</small></span></div>
+          <div class="title">
+            <span class="gly" data-lines="111111" style="--w:32px;--h:5px;--g:3px"></span>
+            <div><h1>乾</h1><div class="meta">第1卦・乾為天<br>乾上乾下・上經</div></div>
+            <span class="sc" style="--sz:21px"><span>乾，元亨</span><span>利貞。</span></span>
+          </div>
+          <div class="tabs"><span class="on">牌義</span><span>經文</span><span>卦象</span><span>爻變</span><span>來源</span></div>
+          <div class="peek"><span class="chip">剛健</span><span class="chip">自強</span><span class="chip">開創</span><span class="chip">知時</span></div>
+        </div>
+        <div class="variant mcard split" data-variant="cardVariant:split">
+          <div class="row">
+            <img src="assets/card-01.webp" alt="乾卦卦牌（點一下放大成全息卡）">
+            <div class="stack">
+              <span class="gly" data-lines="111111" style="--w:30px;--h:5px;--g:3px"></span>
+              <div><h1>乾</h1><div class="note" style="font-size:13px;line-height:1.7">第1卦・乾為天<br>乾上乾下・上經</div></div>
+              <span class="sc" style="--sz:19px;justify-self:start"><span>乾，元亨</span><span>利貞。</span></span>
+            </div>
+          </div>
+          <div class="acts"><span class="btn">倒轉 <small>綜卦</small></span><span class="btn">翻面 <small>錯卦</small></span><span class="btn">放大</span></div>
+          <div class="tabs"><span class="on">牌義</span><span>經文</span><span>卦象</span><span>爻變</span><span>來源</span></div>
+          <div class="advice">自強不息，也懂得進退之時</div>
+          <p class="para">乾是六爻皆陽的純陽之卦，象徵源源不絕的創造力與開拓的時機，整體通達向上。</p>
+        </div>
+        <p class="tip" style="padding:0 16px">序卦的上一卦／下一卦移到頁尾。</p>
+      </div>
+    </div>
+  </div>
+  <div class="ann">
+    <div><h3>改什麼</h3><ul><li>手機版全息卡高度由 62vh 降到約 46vh（約 360px）。</li><li>卦畫、卦名與直排卦辭排在卡牌正下方，分頁列在首屏底部露出。</li><li>序卦連結移到頁尾，桌機維持在卡牌下方。</li></ul></div>
+    <div><h3>兩個方向</h3><p>「卦名接在卡下」保留全息卡的份量，適合以卡牌為主的使用者；「卡與卦名並排」首屏多出牌義第一句，但全息卡要點「放大」才看得清楚。建議前者。</p></div>
+    <div><h3>驗收</h3><ul><li>390×844 首屏看得到卦名、卦辭與分頁列。</li><li>倒轉、翻面按鈕底緣在 720px 以內。</li><li>卦牌仍可傾斜、雙擊翻面。</li></ul></div>
+  </div>
+</section>
+
+<section class="prop" id="p2" data-screen-label="04 提案二 畫卦結果">
+  <div class="sec-head">
+    <div><span class="no">提案二・H2</span><h2>畫卦結果：讓符合的卦聚在一起</h2>
+      <p>畫卦的價值是「縮小範圍」。文王卦序與十二消息的位置沒有幾何意義，符合的卦應該直接聚在一起；上下卦與京房八宮的格位有意義，維持變淡。</p></div>
+  </div>
+  <div class="boards">
+    <div class="board now"><p class="label"><b>現況</b>　1440×900，畫初九、六二後捲到圖錄</p><div class="frame" style="width:600px"><img src="assets/now-hall-drawn.jpg" alt="現況：符合的屯卦與噬嗑之間隔了一整列變淡的卦"></div></div>
+    <div class="board next"><p class="label"><b>提案</b>　1200 寬・<span data-variant-label="drawVariant"></span></p>
+      <div class="frame d1200 ui">
+        <div class="draw-mock">
+          <div>
+            <h3>畫卦尋牌</h3>
+            <p class="note" style="margin:0">由下而上點爻：點一下為陽，再點為陰，三點回到未定。</p>
+            <div class="fg" style="margin-top:18px"><div>初<b class="y"></b></div><div>二<b class="n"></b></div><div>三<b></b></div><div>四<b></b></div><div>五<b></b></div><div>上<b></b></div></div>
+            <p class="status">已畫 2 爻，符合 <b>16</b> 卦</p>
+            <span class="seg variant" data-variant="drawVariant:filter"><span class="on">只列符合</span><span>全部</span></span>
+            <p class="note variant" data-variant="drawVariant:pin" style="margin:0">符合的卦排在最前，其餘維持原順序並變淡。</p>
+          </div>
+          <div class="tgrid" id="tgrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ann">
+    <div><h3>改什麼</h3><ul><li>文王卦序與十二消息：畫卦時預設「只列符合」，可切回「全部」。</li><li>上下卦、京房八宮：維持現在的變淡，因為格位本身就是資訊。</li><li>搜尋沿用同一個切換。</li></ul></div>
+    <div><h3>兩個方向</h3><p>「只列符合」最省捲動，16 卦兩列就看完；「符合的排前面」保留 64 卦的整體感，但改變了文王卦序，兩兩成對的關係會被打散。建議前者，並在切回「全部」時恢復原順序。</p></div>
+    <div><h3>驗收</h3><ul><li>畫兩爻後 16 卦都在 1440×900 的第一個螢幕內。</li><li>規格「畫卦尋牌」一節先改寫（目前寫的是變淡）。</li><li>符合數量的朗讀照舊。</li></ul></div>
+  </div>
+</section>
+
+<section class="prop" id="p3" data-screen-label="05 提案三 換頁焦點">
+  <div class="sec-head">
+    <div><span class="no">提案三・H3</span><h2>換頁後把焦點交給新的一頁</h2>
+      <p>這是單頁應用常見的缺口：網址與標題換了，鍵盤焦點與螢幕閱讀器卻還停在上一頁的位置。改法很小，影響每一次換頁。</p></div>
+  </div>
+  <ol class="flow">
+    <li><span>從導覽按 Enter 到「占卜」</span><span class="now">焦點：導覽「占卜」</span><span class="next">提案：焦點移到頁面標題「占卜」，下一個 Tab 落在問題輸入框。</span></li>
+    <li><span>點導覽「學堂」</span><span class="now">焦點：導覽「學堂」</span><span class="next">提案：焦點移到「學堂」標題，螢幕閱讀器朗讀「學堂｜易經卦殿」。</span></li>
+    <li><span>在圖錄對「屯」按 Enter</span><span class="now">焦點：body（遺失）</span><span class="next">提案：焦點移到「屯」標題；按返回鍵回到卦殿時，焦點還給剛才那張卦牌，捲動位置也回到原處。</span></li>
+  </ol>
+  <div class="ann">
+    <div><h3>改什麼</h3><ul><li>路徑變更時，把焦點移到新頁的 h1（tabIndex −1，不畫外框）。</li><li>同時用既有的 polite 朗讀區念出新頁標題。</li><li>同一頁內換分頁或查詢參數不移動焦點。</li></ul></div>
+    <div><h3>為什麼現在改</h3><p>改動集中在 Layout 一處，所有頁面一起受益；和 WCAG 2.4.3（焦點順序）與 4.1.3（狀態訊息）有關。</p></div>
+    <div><h3>驗收</h3><ul><li>上述三種換頁後，document.activeElement 都是新頁的 h1。</li><li>卡牌頁的分頁切換與深層連結捲動不受影響。</li></ul></div>
+  </div>
+</section>
+
+<section class="prop" id="p4" data-screen-label="06 提案四 經文分頁">
+  <div class="sec-head">
+    <div><span class="no">提案四・H5</span><h2>經文分頁：一個總開關，加上爻位小卦畫</h2>
+      <p>經文分頁是讀經的主要地方。白話一條一條點開很累；用一個記得住的總開關，每爻旁邊再畫出它在卦裡的位置。</p></div>
+  </div>
+  <div class="boards">
+    <div class="board now"><p class="label"><b>現況</b>　乾卦經文分頁（截取）</p><div class="frame" style="width:520px"><img src="assets/now-card-text.jpg" alt="現況：每一爻下面各有一組原文、白話切換"></div></div>
+    <div class="board next"><p class="label"><b>提案</b>　760 寬，已切到「全部顯示」</p>
+      <div class="frame d760 ui text-mock">
+        <div class="tabs"><span>牌義</span><span class="on">經文</span><span>卦象</span><span>爻變</span><span>來源</span></div>
+        <div class="bar"><span class="note">白話與占得提醒</span><span class="seg"><span class="on">全部顯示</span><span>只看原文</span></span></div>
+        <h4>卦辭</h4>
+        <div class="classic">乾，元亨利貞。</div>
+        <p class="plain">乾卦六爻皆陽，象徵天的剛健運行。卦辭只有「元亨利貞」四字，通行的白話解為開創、通達、適宜、正固；彖傳說「大哉乾元，萬物資始」，把乾看成萬物生發的源頭，並強調順著時機各正其位。</p>
+        <h4>爻辭與小象</h4>
+        <ul class="lines">
+          <li><span class="gly" data-lines="111111" data-hi="5" style="--w:30px;--h:4px;--g:2px"></span><span class="lb">上九</span><div><div class="classic">亢龍有悔。</div><div class="xi">象曰：亢龍有悔，盈不可久也。</div><p class="plain">龍飛得太高，到了極點便會有悔恨。上九位在卦的最上，剛強過頭而不知節制，小象說「盈不可久也」，滿了就難以長久。</p><p class="adv"><b>占得提醒</b>留意自己是否過度擴張、太過自信或聽不進勸告；適時減速、交棒或留些餘地。</p></div></li>
+          <li><span class="gly" data-lines="111111" data-hi="4" style="--w:30px;--h:4px;--g:2px"></span><span class="lb">九五</span><div><div class="classic">飛龍在天，利見大人。</div><div class="xi">象曰：飛龍在天，大人造也。</div><p class="plain">龍飛上天，是乾卦最得時的一爻，九五剛健中正，能力與位置相配。此時適合發揮影響力，也適合與志同道合的人相見共事。</p></div></li>
+          <li><span class="gly" data-lines="111111" data-hi="3" style="--w:30px;--h:4px;--g:2px"></span><span class="lb">九四</span><div><div class="classic">或躍在淵，无咎。</div><div class="xi">象曰：或躍在淵，進无咎也。</div><p class="plain">九四已進入上卦，龍或許躍起，或許仍留在深淵，進退都還在斟酌。只要審時度勢，往前一試也沒有過失。</p></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="ann">
+    <div><h3>改什麼</h3><ul><li>分頁頂端一個「全部顯示／只看原文」，偏好存在本機。</li><li>每爻前加 30px 小卦畫，朱色標出這一爻。</li><li>深層連結（?focus=line-2）仍會展開並標示該爻。</li></ul></div>
+    <div><h3>取捨</h3><p>全部顯示時頁面變長約一倍；所以預設仍是「只看原文」，第一次切到「全部顯示」後記住。白話是按需載入的 lines.json，總開關打開時才載入，首屏體積不變。</p></div>
+    <div><h3>驗收</h3><ul><li>一次切換即可看到卦辭與六爻共 7 條白話（乾坤另有用九、用六，共 8 條）。</li><li>小卦畫的朱色爻與資料索引一致（初爻為 0）。</li></ul></div>
+  </div>
+</section>
+
+<section class="prop" id="p5" data-screen-label="07 提案五 書卜與設定">
+  <div class="sec-head">
+    <div><span class="no">提案五・H4、M5、M7</span><h2>書卜：讓只存在本機的資料令人安心</h2>
+      <p>網站沒有帳號，紀錄只在這個瀏覽器裡。這件事應該在書卜頁一眼可見，備份要比清除更容易找到，說明與來源要有固定的出口。</p></div>
+  </div>
+  <div class="boards">
+    <div class="board now"><p class="label"><b>現況</b>　設定與備份</p><div class="frame" style="width:520px"><img src="assets/now-settings.jpg" alt="現況：設定頁五塊同權的面板"></div></div>
+    <div class="board next"><p class="label"><b>提案</b>　1200 寬</p>
+      <div class="frame d1200 ui">
+        <div class="me-mock">
+          <h1>書卜</h1>
+          <div class="strip"><span>1 則占卜</span><span>1 則今日卦</span><span>最近一次 10/29 01:00</span><span class="warn">尚未備份</span><span class="btn btn-primary">匯出備份</span></div>
+          <div class="tabs" style="margin-top:20px"><span>紀錄</span><span>印譜</span><span class="on">設定與備份</span></div>
+          <div class="groups">
+            <div class="grp"><h3>備份與還原</h3>
+              <div class="row2"><p><b>上次匯出：尚未</b>紀錄與學習進度只存在這台裝置的這個瀏覽器。換裝置或清除瀏覽器前，先匯出一個備份檔。</p><span class="acts"><span class="btn">匯出全部資料</span><span class="btn">匯入</span></span></div>
+            </div>
+            <div class="grp"><h3>說明</h3><div class="links"><a>使用說明</a><a>加到主畫面與離線使用</a><a>診斷資訊</a></div></div>
+            <div class="grp danger"><h3>無法復原的操作</h3>
+              <div class="row2"><p><b>重設學堂進度</b>清除課程與考核進度、XP、打卡與學堂印章；占卜紀錄與「筮」「錄」兩枚印章不受影響。</p><span class="btn btn-danger">重設學堂進度</span></div>
+              <div class="row2"><p><b>清除全部資料</b>刪掉這台裝置上的所有紀錄、收藏與學習進度。需要的話先匯出備份。</p><span class="btn btn-danger">清除全部資料</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="foot"><span>易經卦殿</span><span>使用說明</span><span>資料只存在這台裝置</span><span>經文底本：王弼《周易注》</span><span>卡面插圖說明</span><span>版本 e3844a5</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="ann">
+    <div><h3>改什麼</h3><ul><li>書卜頁首一行狀態：紀錄數、最近一次、上次備份；從未備份時第一筆紀錄後就提示。</li><li>設定分成「備份與還原」「說明」「無法復原的操作」三組，危險操作集中並用朱絲框區隔。</li><li>全站加極簡頁尾：說明、資料位置、經文底本、插圖說明、版本。</li></ul></div>
+    <div><h3>不做的事</h3><p>不加帳號或雲端同步；狀態列只放能從本機資料算出的數字。現有的 30 天提醒保留，只是把「從未備份」也納入。</p></div>
+    <div><h3>驗收</h3><ul><li>從書卜頁首一次點擊就能匯出。</li><li>「清除全部資料」不和匯出在同一組。</li><li>每頁頁尾都能到使用說明。</li></ul></div>
+  </div>
+</section>
+
+<section class="prop" data-screen-label="08 其他發現">
+  <div class="sec-head"><div><span class="no">其他</span><h2>可以順手改的</h2><p>工作量小、各自獨立，可以穿插在上面五項之間做。</p></div></div>
+  <div class="minor">
+    <article><img src="assets/now-card-lab.jpg" alt="爻變分頁現況"><div><h3>M1 爻變分頁換成爻位元件</h3><p>左邊是舊式橫條，右邊又畫一次本卦。</p><p class="fix">改用與畫卦、起卦相同的爻位元件，點爻變朱紅；右邊只留之卦與讀法。</p></div></article>
+    <article><img src="assets/now-record.jpg" alt="紀錄詳情現況"><div><h3>M2 解讀左欄黏在畫面上</h3><p>左欄在 640px 結束，右欄長到 1800px。</p><p class="fix">桌機左欄（兩張卡與卦畫）改為 sticky，讀問事指引時仍看得到本卦與之卦。</p></div></article>
+    <article><img src="assets/now-guidance-mobile.jpg" alt="問事指引現況"><div><h3>M3 「不分類」直接攤開指引</h3><p>三個收合框要點三次。</p><p class="fix">不分類時改成一段三項的定義清單；選了類別時維持現在的「該面向展開＋看其他面向」。</p></div></article>
+    <article><img src="assets/now-divine-mobile.jpg" alt="手機問題步驟現況"><div><h3>M4 手機類別排成 2×2</h3><p>3＋1 讓「不分類」看起來像另一類東西。</p><p class="fix">600px 以下四個類別固定兩欄。</p></div></article>
+    <article><img src="assets/now-me.jpg" alt="書卜紀錄現況"><div><h3>M6 紀錄列多一句主讀</h3><p>列表看不出當時讀的是哪一句經文。</p><p class="fix">每列加一行主讀出處（例：夬卦辭、革上六）；紀錄少於 5 則時下方接「再問一事」。</p></div></article>
+    <article class="noimg"><div><h3>M8 兩個 axe 問題</h3><p>卡牌頁分頁內的 h3 直接接在 h1 之後；問題步驟的 aside 包在 section 裡。</p><p class="fix">分頁內標題改為 h2（樣式不變）；問題步驟的 aside 改為 div 並加 aria-label。</p></div></article>
+    <article class="noimg"><div><h3>L1 404 頁給一條路</h3><p>只有「回到卦殿」。</p><p class="fix">放卦名搜尋框，輸入後直接到那一卦。</p></div></article>
+    <article class="noimg"><div><h3>L2、L3 載入與進場</h3><p>延遲載入只有「載入中…」；每次換頁都重播上升進場。</p><p class="fix">載入時顯示頁面標題與空的爻位；同一次瀏覽中再進同一頁只淡入、不位移。</p></div></article>
+    <article class="noimg"><div><h3>L4 課程鍵盤作答</h3><p>作答只能點選或用 Tab。</p><p class="fix">數字鍵 1 到 4 選答、Enter 檢查與下一步，畫面上標出鍵位。</p></div></article>
+  </div>
+</section>
+
+<section class="prop" data-screen-label="09 建議順序">
+  <div class="sec-head"><div><span class="no">順序</span><h2>建議的施工順序</h2><p>每一批照專案規則：先改 docs/spec.md，再實作；npm test、typecheck、build、375 與 1280px 實測都過才算完成。</p></div></div>
+  <div class="plan">
+    <div><h3>第一批</h3><p class="when">工作量小、影響大</p><ol><li>H3 換頁焦點</li><li>H1 手機卡牌首屏</li><li>H5 經文總開關與小卦畫</li><li>M8 兩個 axe 問題</li><li>M4 手機類別 2×2</li></ol></div>
+    <div><h3>第二批</h3><p class="when">需要改規格</p><ol><li>H2 畫卦只列符合</li><li>H4、M5 書卜狀態列與設定分組</li><li>M7 全站頁尾</li><li>M2 解讀左欄黏住</li><li>M3 不分類攤開指引</li></ol></div>
+    <div><h3>第三批</h3><p class="when">體驗加分</p><ol><li>M1 爻變改用爻位元件</li><li>M6 紀錄列主讀</li><li>L1 到 L4</li></ol></div>
+  </div>
+</section>
+
+</div>
+
+<button type="button" id="tweaks-toggle">Tweaks</button>
+<aside id="tweaks" aria-label="Tweaks">
+  <h3>Tweaks</h3>
+  <label>顯示<select data-key="view"><option value="both">現況與提案並列</option><option value="proposal">只看提案</option><option value="current">只看現況</option></select></label>
+  <label>提案一：手機卡牌頁<select data-key="cardVariant"><option value="titleFirst">卦名接在卡下</option><option value="split">卡與卦名並排</option></select></label>
+  <label>提案二：畫卦結果<select data-key="drawVariant"><option value="filter">只列符合</option><option value="pin">符合的排前面</option></select></label>
+  <label class="check"><input type="checkbox" data-key="notes"> 顯示說明欄</label>
+</aside>
+
+<script>
+  // 卦畫：data-lines 由初爻到上爻（1 陽 0 陰），data-hi 是要標朱色的爻（0 為初爻）
+  for (const el of document.querySelectorAll('.gly')) {
+    const hi = el.dataset.hi === undefined ? -1 : Number(el.dataset.hi)
+    el.setAttribute('aria-hidden', 'true')
+    el.innerHTML = [...el.dataset.lines].map((b, i) => `<i class="${b === '1' ? 'y' : 'n'}${i === hi ? ' hi' : ''}"></i>`).join('')
+  }
+
+  // 初九、六二的十六卦（卦序依 src/data/hexagrams.ts 算出）
+  const MATCHES = [[3, '屯'], [13, '同人'], [17, '隨'], [21, '噬嗑'], [22, '賁'], [24, '復'], [25, '无妄'], [27, '頤'], [30, '離'], [36, '明夷'], [37, '家人'], [42, '益'], [49, '革'], [51, '震'], [55, '豐'], [63, '既濟']]
+  const REST = ['乾', '坤', '蒙', '需', '訟', '師', '比', '小畜']
+  function renderGrid(variant) {
+    const cards = MATCHES.map(([n, name]) => `<figure><img src="assets/card-${String(n).padStart(2, '0')}.webp" alt="${name}卦卦牌"><figcaption><b>${name}</b>第${n}卦</figcaption></figure>`).join('')
+    const rest = variant === 'pin' ? `<p class="divider">其餘 48 卦（變淡，維持文王卦序）</p>${REST.map(n => `<div class="ghost">${n}</div>`).join('')}` : ''
+    document.getElementById('tgrid').innerHTML = cards + rest
+  }
+
+  // Tweaks：先註冊 listener，再宣告 available
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "view": "both",
+    "cardVariant": "titleFirst",
+    "drawVariant": "filter",
+    "notes": true
+  }/*EDITMODE-END*/
+  const LABELS = { cardVariant: { titleFirst: '卦名接在卡下', split: '卡與卦名並排' }, drawVariant: { filter: '只列符合', pin: '符合的排前面' } }
+  let saved = {}
+  try { saved = JSON.parse(localStorage.getItem('iching-ui-review-tweaks') || '{}') } catch { saved = {} }
+  const tweaks = { ...TWEAK_DEFAULTS, ...saved }
+  const panel = document.getElementById('tweaks'), toggle = document.getElementById('tweaks-toggle')
+  const hosted = window.parent && window.parent !== window
+
+  function apply() {
+    document.body.dataset.view = tweaks.view
+    document.body.dataset.notes = String(tweaks.notes)
+    for (const el of document.querySelectorAll('[data-variant]')) {
+      const [key, value] = el.dataset.variant.split(':')
+      el.classList.toggle('on', tweaks[key] === value)
+    }
+    for (const el of document.querySelectorAll('[data-variant-label]')) el.textContent = LABELS[el.dataset.variantLabel][tweaks[el.dataset.variantLabel]]
+    renderGrid(tweaks.drawVariant)
+    for (const input of panel.querySelectorAll('[data-key]')) {
+      if (input.type === 'checkbox') input.checked = Boolean(tweaks[input.dataset.key])
+      else input.value = tweaks[input.dataset.key]
+    }
+  }
+  function setTweak(key, value) {
+    tweaks[key] = value
+    apply()
+    try { localStorage.setItem('iching-ui-review-tweaks', JSON.stringify(tweaks)) } catch { /* 偏好記不住而已 */ }
+    if (hosted) window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*')
+  }
+  panel.addEventListener('change', e => {
+    const input = e.target
+    if (!input.dataset.key) return
+    setTweak(input.dataset.key, input.type === 'checkbox' ? input.checked : input.value)
+  })
+  window.addEventListener('message', e => {
+    if (e.data?.type === '__activate_edit_mode') { panel.classList.add('open'); toggle.classList.remove('show') }
+    if (e.data?.type === '__deactivate_edit_mode') panel.classList.remove('open')
+  })
+  if (hosted) window.parent.postMessage({ type: '__edit_mode_available' }, '*')
+  else toggle.classList.add('show')
+  toggle.addEventListener('click', () => {
+    const open = panel.classList.toggle('open')
+    toggle.textContent = open ? '收起 Tweaks' : 'Tweaks'
+    toggle.style.bottom = open ? (panel.offsetHeight + 32) + 'px' : '20px'
+  })
+  apply()
+</script>
+</body>
+</html>
