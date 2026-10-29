@@ -264,14 +264,31 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .month-label b { color: var(--ivory); font-weight: 400; }
 
 .spotlight { min-width: 0; background: var(--ink-1); }
-/* 預覽約 720px 高，視窗夠高才黏住，否則底部的錯綜互會捲不到 */
-@media (min-height: 860px) and (min-width: 1001px) { .spotlight { position: sticky; top: 108px; } }
+/* 預覽黏在畫面上，捲到圖錄下方仍看得到（規格「2026-10-29 介面檢視後修訂」）。完整版最高約 760px（坤），
+   視窗低於 900px 改用精簡版；再矮的視窗由預覽自己捲動，錯綜互不會被擋在畫面外 */
+@media (min-width: 1001px) {
+  .spotlight { position: sticky; top: 100px; max-height: calc(100dvh - 116px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
+/* 精簡版：卡圖縮小與卦名並排（preview-body 以 contents 攤平進同一個格線），卦辭略小，坤也放得進 720px 高的視窗 */
+@media (min-width: 1001px) and (max-height: 899px) {
+  .spotlight { top: 92px; max-height: calc(100dvh - 108px); display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 12px; padding: 16px; }
+  .spotlight .preview-body { display: contents; }
+  .spotlight .preview-art { padding: 0; }
+  .spotlight .preview-art img { max-width: none; }
+  .spotlight .preview-title { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .spotlight .preview-title h2 { font-size: 26px; }
+  .spotlight .preview-classic { --sc-size: 18px; grid-column: 1 / -1; margin: 4px 0 0; }
+  .spotlight .rels, .spotlight .hint-hover { grid-column: 1 / -1; }
+  .spotlight .rels { margin-top: 0; }
+}
 .preview-art { display: block; padding: 20px 20px 0; }
 .preview-art img { display: block; width: 100%; max-width: 150px; height: auto; margin-inline: auto; aspect-ratio: 5 / 7; border-radius: 3px; }
 .preview-body { padding: 20px; }
 .preview-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .preview-title h2 { margin: 0; color: var(--ivory); font-size: var(--fs-title); line-height: 1.2; }
 .preview-title p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+/* 窄欄要換行時只在「・」之後換，卦全名不拆開 */
+.preview-title p span { white-space: nowrap; }
 .preview-title .glyph { flex: none; width: 30px; }
 .preview-classic { --sc-size: 19px; justify-content: center; margin: 18px 0 4px; }
 .rels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }

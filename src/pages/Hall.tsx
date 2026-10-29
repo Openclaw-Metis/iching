@@ -268,7 +268,7 @@ function Spotlight({ focus }: { focus: Hexagram | null }) {
         <img src={cardAsset(focus.number, 'thumb')} alt="" width={400} height={560} />
       </Link>
       <div className="preview-body">
-        <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・{focus.fullName}</p></div><HexagramGlyph key={focus.number} className="glyph grow" lines={focus.lines} /></div>
+        <div className="preview-title"><div><h2>{focus.name}</h2><p>第{focus.number}卦・<span>{focus.fullName}</span></p></div><HexagramGlyph key={focus.number} className="glyph grow" lines={focus.lines} /></div>
         <Scripture key={focus.number} className="preview-classic" text={judgment} perColumn={balancedPerColumn(judgment, 3, 4, 10)} />
         <div className="rels">
           <Link to={`/gua/${c.number}`} data-relation="cuo" aria-label={`錯卦：${c.fullName}`}><span>錯卦</span><b>{c.name}</b><HexagramGlyph lines={c.lines} /></Link>
