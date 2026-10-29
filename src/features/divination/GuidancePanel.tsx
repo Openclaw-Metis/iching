@@ -1,5 +1,5 @@
 // 問事指引：預設顯示主讀所屬那一卦的指引，可切換本卦、之卦。選了類別時展開該類，
-// 其餘兩類收在「看其他面向」；不分類時三類都收合但可展開。
+// 其餘兩類收在「看其他面向」；不分類時沒有哪一類比較重要，三類直接列成清單。
 
 import { useState } from 'react'
 import type { Hexagram } from '../../data/hexagrams.ts'
@@ -50,12 +50,9 @@ export function GuidancePanel({ primary, result, initial, category }: Props) {
           </details>
         </>
       ) : (
-        FACETS.map(f => (
-          <details key={f} className="accordion">
-            <summary>{CATEGORY_LABELS[f]}</summary>
-            <p>{guidance[f]}</p>
-          </details>
-        ))
+        <dl className="guidance">
+          {FACETS.map(f => [<dt key={`${f}-t`}>{CATEGORY_LABELS[f]}</dt>, <dd key={`${f}-d`}>{guidance[f]}</dd>])}
+        </dl>
       )}
     </section>
   )

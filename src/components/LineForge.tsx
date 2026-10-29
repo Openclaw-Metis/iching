@@ -11,6 +11,8 @@ export interface ForgeLine {
   moving?: boolean
   /** 爻旁的小字，例如起卦時的「老陽」 */
   note?: string
+  /** 可點的爻是開關時（爻變分頁）帶 aria-pressed */
+  pressed?: boolean
 }
 
 interface Props {
@@ -102,7 +104,7 @@ export function LineForge({ lines, label, onLine, lineLabel, eager = false, stil
         )
         const data = { 'data-bit': l.bit ?? undefined, 'data-moving': (l.bit !== null && l.moving) || undefined }
         return onLine
-          ? <button key={i} type="button" className="forge-line" {...data} aria-label={lineLabel?.(i)} onClick={() => onLine(i)}>{inner}</button>
+          ? <button key={i} type="button" className="forge-line" {...data} aria-label={lineLabel?.(i)} aria-pressed={l.pressed} onClick={() => onLine(i)}>{inner}</button>
           : <span key={i} className="forge-line" {...data}>{inner}</span>
       })}
     </div>

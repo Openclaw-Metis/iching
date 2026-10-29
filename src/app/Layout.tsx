@@ -1,11 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { NavLink, Outlet, ScrollRestoration, useLocation, useRouteError } from 'react-router'
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useRouteError } from 'react-router'
 import { afterFirstPaint } from './idle.ts'
 import { NAV_ITEMS } from './nav.ts'
+import { useRouteFocus } from './routeFocus.ts'
 import { titleFor } from './routes.ts'
 import { StorageBanner } from './StorageBanner.tsx'
 import { Toaster } from './Toaster.tsx'
+import { APP_VERSION } from './version.ts'
 import { Drawer } from '../components/Drawer.tsx'
+import { LineForge } from '../components/LineForge.tsx'
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -59,19 +62,63 @@ function useAfterFirstPaint(): boolean {
   return ready
 }
 
+const pageName = (pathname: string) => titleFor(pathname).split('｜')[0]
+const EMPTY_LINES = Array.from({ length: 6 }, () => ({ bit: null }))
+
+/** 延遲載入時的骨架：頁面名稱與六個空爻位，換上內容時版面不會從一行字跳成整頁 */
+function RouteLoading() {
+  const { pathname } = useLocation()
+  return (
+    <div className="route-loading" aria-busy="true">
+      <p className="route-loading-title">{pageName(pathname)}</p>
+      <LineForge lines={EMPTY_LINES} label="載入中" still />
+    </div>
+  )
+}
+
+// 同一次瀏覽中再次進入同一路徑時只淡入、不位移（規格「2026-10-29 介面檢視後修訂」）。
+// 以 location.key 記住結果，StrictMode 重複渲染也得到同樣答案
+const seenPaths = new Set<string>()
+const revisitByKey = new Map<string, boolean>()
+function isRevisit(key: string, pathname: string) {
+  if (!revisitByKey.has(key)) {
+    revisitByKey.set(key, seenPaths.has(pathname))
+    seenPaths.add(pathname)
+  }
+  return revisitByKey.get(key)!
+}
+
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="footer-inner">
+        <Link to="/me?tab=settings#guide">使用說明</Link>
+        <span>資料只存在這台裝置</span>
+        <span>經文底本：王弼《周易注》</span>
+        <Link to="/gua/1?tab=source">卡面插圖說明</Link>
+        <span>版本 {APP_VERSION}</span>
+      </div>
+    </footer>
+  )
+}
+
 export function Layout() {
   useDocumentTitle()
   useStartupTasks()
   const idle = useAfterFirstPaint()
+  const announce = useRouteFocus()
+  const location = useLocation()
   return (
     <>
       <Header />
       <StorageBanner />
-      <main id="main-content" className="app-main" tabIndex={-1}>
-        <Suspense fallback={<p className="note" style={{ textAlign: 'center', marginTop: 48 }}>載入中…</p>}>
+      <main id="main-content" className="app-main" tabIndex={-1} data-revisit={isRevisit(location.key, location.pathname) || undefined}>
+        <Suspense fallback={<RouteLoading />}>
           <Outlet />
         </Suspense>
       </main>
+      <Footer />
+      <p className="sr-only" aria-live="polite" aria-atomic="true">{announce}</p>
       <Toaster />
       {idle && import.meta.env.PROD && <Suspense fallback={null}><UpdateToast /></Suspense>}
       <ScrollRestoration />

@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useEffect, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router'
 import { DiagnosticsPanel } from '../app/DiagnosticsPanel.tsx'
 import { FLAGS } from '../app/flags.ts'
 import { InstallHelp } from '../app/InstallHelp.tsx'
 import { rise } from '../components/rise.ts'
 import { UserGuide } from '../app/UserGuide.tsx'
 import { ResetAcademyButton, SealBook } from '../features/academy/index.ts'
-import { BackupPanel, BackupReminder, ClearDataButton } from '../features/backup/index.ts'
+import { BackupPanel, BackupStatus, ClearDataButton } from '../features/backup/index.ts'
 import { CollectionTab } from '../features/collection/index.ts'
 import { RecordDetail, RecordList } from '../features/records/index.ts'
 
@@ -20,6 +20,7 @@ const ALL_TABS: { id: Tab; label: string }[] = [
 // 記住的分頁若是已關閉的收藏，loadTab 找不到就回到紀錄
 const TABS = ALL_TABS.filter(t => FLAGS.collection || t.id !== 'collection')
 const TAB_KEY = 'iching:me-tab'
+const isTab = (v: string | null): v is Tab => TABS.some(t => t.id === v)
 
 function loadTab(): Tab {
   try {
@@ -32,8 +33,12 @@ function loadTab(): Tab {
 
 export function Me() {
   const [params] = useSearchParams()
+  const { hash } = useLocation()
   const record = params.get('record')
-  const [tab, setTabState] = useState<Tab>(loadTab)
+  // ?tab=settings（頁尾的「使用說明」）指定分頁時優先於記住的分頁
+  const linked = params.get('tab')
+  const [tab, setTabState] = useState<Tab>(() => (isTab(linked) ? linked : loadTab()))
+  useEffect(() => { if (isTab(linked)) setTabState(linked) }, [linked])
   const setTab = (t: Tab) => {
     setTabState(t)
     try { localStorage.setItem(TAB_KEY, t) } catch { /* 偏好記不住而已 */ }
@@ -51,7 +56,7 @@ export function Me() {
   return (
     <div className="me">
       <header className="page-head rise" style={rise(0)}><h1>書卜</h1><p className="note">每一次占卜與今日卦的紀錄都留在這台裝置上。</p></header>
-      <BackupReminder />
+      <BackupStatus />
       <div className="tabs me-tabs rise" style={rise(1)} role="tablist">
         {TABS.map(t => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
       </div>
@@ -62,14 +67,17 @@ export function Me() {
         {tab === 'settings' && (
           <>
             <BackupPanel />
-            <section className="settings-section">
-              <UserGuide />
+            <section className="settings-section" aria-labelledby="help-title">
+              <h2 id="help-title">說明</h2>
+              <UserGuide open={hash === '#guide'} />
               <InstallHelp />
-            </section>
-            <ResetAcademyButton />
-            <ClearDataButton />
-            <section className="settings-section">
               <DiagnosticsPanel />
+            </section>
+            {/* 無法復原的操作集中在一起，和備份分開，不會在找匯出時誤按 */}
+            <section className="settings-danger" aria-labelledby="danger-title">
+              <h2 id="danger-title">無法復原的操作</h2>
+              <ResetAcademyButton />
+              <ClearDataButton />
             </section>
           </>
         )}

@@ -1,14 +1,17 @@
 // 紀錄列表：分「占卜」與「每日」兩個子分頁。
 // 占卜紀錄可搜尋與篩選（方法、類別、是否回顧、星號），每頁 50 筆，捲到底以游標載入下一頁。
 // 每一頁各自訂閱資料，另一個分頁修改後畫面自動更新；篩選條件與子分頁記在 localStorage。
+// 每列附主讀出處（依朱熹讀法，與解讀頁相同），不必點開就知道當時該讀哪一段。
 
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { focusTitle } from '../../components/FocusText.tsx'
 import { HexagramGlyph } from '../../components/HexagramGlyph.tsx'
 import { Scripture } from '../../components/Scripture.tsx'
 import { textOf } from '../../data/classic.ts'
 import { hexagram } from '../../data/hexagrams.ts'
 import { formatDateTime } from '../../lib/dates.ts'
+import { interpret } from '../../lib/reading.ts'
 import { readings, useDb, useLiveQuery, type Category, type Method } from '../../storage/index.ts'
 import { DailyList } from '../daily/index.ts'
 import { CATEGORY_LABELS, METHOD_LABELS } from '../divination/index.ts'
@@ -61,6 +64,7 @@ function RecordPage({ filters, cursor, last, onNext }: { filters: RecordFilters;
     <>
       {page.items.map(r => {
         const primary = hexagram(r.primary), result = hexagram(r.result)
+        const main = interpret(primary, r.moving).focus[0]
         return (
           <li key={r.id}>
             <Link to={`/me?record=${r.id}`} className="record-item">
@@ -76,6 +80,7 @@ function RecordPage({ filters, cursor, last, onNext }: { filters: RecordFilters;
                 {r.followUp && <span className="chip">已回顧</span>}
                 <span>{METHOD_LABELS[r.method]}</span>
               </span>
+              <span className="record-focus">主讀　{focusTitle(main)}</span>
             </Link>
           </li>
         )
@@ -188,9 +193,15 @@ function ReadingList({ onRestoreBackup }: { onRestoreBackup?: () => void }) {
           <button type="button" className="btn" onClick={() => update(EMPTY)}>清除篩選</button>
         </div>
       ) : (
-        <ul className="records">
-          {cursors.map((c, i) => <RecordPage key={c?.id ?? 'first'} filters={filters} cursor={c} last={i === cursors.length - 1} onNext={onNext} />)}
-        </ul>
+        <>
+          <ul className="records">
+            {cursors.map((c, i) => <RecordPage key={c?.id ?? 'first'} filters={filters} cursor={c} last={i === cursors.length - 1} onNext={onNext} />)}
+          </ul>
+          {/* 紀錄還少時，列表下方直接接回占卜，不必回到頁首導覽 */}
+          {total !== undefined && total < 5 && (
+            <p className="record-again"><Link className="btn" to="/divine">再問一事</Link></p>
+          )}
+        </>
       )}
     </div>
   )

@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { copyFileSync, readFileSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
@@ -140,6 +141,11 @@ const pwa = () => VitePWA({
     ],
   },
 })
+
+// 網站版本：建置時的提交編號，頁尾與診斷資訊顯示；沒有 git 的環境照常建置，前端顯示 dev
+try {
+  process.env.VITE_APP_VERSION ??= execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+} catch { /* 不影響建置 */ }
 
 export default defineConfig(({ command, isPreview }) => ({
   // 正式版部署在 https://openclaw-metis.github.io/iching/；本機開發維持根路徑，vite preview 比照正式版

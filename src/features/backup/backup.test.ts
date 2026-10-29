@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { isAppError } from '../../lib/errors.ts'
 import { daily, openStorage, provideStorage, readings, requireDb, type CastDraft, type Reading, type ReviewCard, type XpEvent } from '../../storage/index.ts'
 import { applyImport } from './apply.ts'
+import { backupStatusOf } from './BackupStatus.tsx'
 import { exportAll, type ExportFile } from './exportAll.ts'
 import { partialBackup } from './format.ts'
 import { previewImport, type ImportSource } from './preview.ts'
@@ -261,3 +262,29 @@ describe('匯出與匯入', () => {
   })
 })
 
+describe('書卜狀態列', () => {
+  const now = new Date('2026-10-29T00:00:00.000Z')
+
+  it('列出占卜與今日卦的筆數、最近一次的時間，從未備份時提示（刪除中的紀錄不算）', async () => {
+    const db = await requireDb()
+    expect(await backupStatusOf(db, now)).toEqual({ readings: 0, daily: 0, latest: null, lastBackup: null, remind: false })
+    await db.readings.bulkAdd([
+      reading({ createdAt: '2026-09-01T00:00:00.000Z' }),
+      reading({ createdAt: '2026-10-20T00:00:00.000Z' }),
+      reading({ createdAt: '2026-10-28T00:00:00.000Z', deletedAt: '2026-10-28T01:00:00.000Z' }),
+    ])
+    await db.dailyDraws.add({ date: '2026-10-25', hexagram: 29, drawnAt: '2026-10-25T01:00:00.000Z', note: '', updatedAt: '2026-10-25T01:00:00.000Z', rev: 1 })
+    expect(await backupStatusOf(db, now)).toEqual({ readings: 2, daily: 1, latest: '2026-10-25T01:00:00.000Z', lastBackup: null, remind: true })
+  })
+
+  it('30 天內備份過就不提醒；按「稍後」的期間內也不提醒', async () => {
+    const db = await requireDb()
+    await db.readings.add(reading({ createdAt: '2026-08-01T00:00:00.000Z' }))
+    await db.settings.put({ key: 'lastBackupAt', value: '2026-10-10T00:00:00.000Z', updatedAt: '2026-10-10T00:00:00.000Z' })
+    expect(await backupStatusOf(db, now)).toMatchObject({ lastBackup: '2026-10-10T00:00:00.000Z', remind: false })
+    await db.settings.put({ key: 'lastBackupAt', value: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z' })
+    expect((await backupStatusOf(db, now)).remind).toBe(true)
+    await db.settings.put({ key: 'backupSnoozeUntil', value: '2026-11-02T00:00:00.000Z', updatedAt: '2026-10-26T00:00:00.000Z' })
+    expect((await backupStatusOf(db, now)).remind).toBe(false)
+  })
+})

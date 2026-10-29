@@ -29,9 +29,10 @@ const FAQ: { q: string; a: string; feature?: keyof typeof FLAGS }[] = [
   { q: '只下載了一筆結果的檔案，為什麼不能選「取代」？', a: '那個檔案只有一筆占卜，選取代會清掉其他所有資料，所以只能合併。' },
 ]
 
-export function UserGuide() {
+/** open：從頁尾「使用說明」（#guide）進來時直接展開 */
+export function UserGuide({ open = false }: { open?: boolean }) {
   return (
-    <details className="accordion user-guide">
+    <details id="guide" className="accordion user-guide" open={open || undefined}>
       <summary>使用說明</summary>
       <div className="install-body">
         <h4>限制與注意事項</h4>

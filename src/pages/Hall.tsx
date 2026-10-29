@@ -73,6 +73,7 @@ export function Hall() {
   const [focus, setFocus] = useState<Hexagram | null>(hexagram(1))
   const [drawn, setDrawn] = useState<Drawn>(EMPTY_DRAWN)
   const [drawOpen, setDrawOpen] = useState(false)
+  const [onlyMatches, setOnlyMatches] = useState(true)
   const [mapOn, setMapOn] = useState(loadMapOn)
   const { map, failed } = useLearningMap(mapOn)
   const toggleMap = () => {
@@ -81,7 +82,8 @@ export function Hall() {
     try { localStorage.setItem(MAP_KEY, next ? '1' : '0') } catch { /* 偏好記不住而已 */ }
   }
 
-  // 搜尋與畫卦同時生效；不符合的卦變淡而不移除，上下卦與八宮的格位才不會跑掉
+  // 搜尋與畫卦同時生效。文王卦序與十二消息預設只列符合的卦，可切回全部（不符合的變淡）；
+  // 上下卦與八宮的格位本身有意義，一律變淡而不移除
   const drawnLines = drawnCount(drawn)
   const matches = useMemo(() => {
     const q = query.trim()
@@ -110,6 +112,9 @@ export function Hall() {
   )
   const scope = view === 'months' ? MONTH_ORDER : hexagrams.map(h => h.number)
   const count = matches ? scope.filter(n => matches.has(n)).length : scope.length
+  const listView = view === 'kingwen' || view === 'months'
+  const compact = matches !== null && onlyMatches && listView
+  const shown = (n: number) => !compact || matches.has(n)
 
   return (
     <div className="hall" data-view={view}>
@@ -165,13 +170,30 @@ export function Hall() {
           <div className="collection-heading">
             <h2>{VIEWS.find(v => v.id === view)!.label}</h2>
             <p role="status">{matches ? `符合 ${count} 卦` : `${count} 卦`}</p>
+            {matches && listView && (
+              <div className="segmented match-toggle" role="group" aria-label="不符合的卦">
+                <button type="button" aria-pressed={onlyMatches} onClick={() => setOnlyMatches(true)}>只列符合</button>
+                <button type="button" aria-pressed={!onlyMatches} onClick={() => setOnlyMatches(false)}>全部</button>
+              </div>
+            )}
           </div>
           <div className="view-notes" aria-live="polite">
             {VIEWS.map(v => <p key={v.id} className={v.id === view ? undefined : 'off'} aria-hidden={v.id !== view}>{v.note}</p>)}
           </div>
           <div className="legend" aria-hidden="true"><span className="l-cuo">錯卦：陰陽全變</span><span className="l-zong">綜卦：上下顛倒</span><span className="l-hu">互卦：取中間四爻</span></div>
 
-          {view === 'kingwen' && <div className="hall-grid">{hexagrams.map(thumb)}</div>}
+          {compact && count === 0 && (
+            <div className="hall-empty">
+              <p>沒有符合的卦。</p>
+              <div className="step-actions start">
+                {query.trim() && <button type="button" className="btn" onClick={() => setQuery('')}>清除搜尋</button>}
+                {drawnLines > 0 && <button type="button" className="btn" onClick={() => setDrawn(EMPTY_DRAWN)}>清除畫卦</button>}
+                <button type="button" className="btn" onClick={() => setOnlyMatches(false)}>列出全部</button>
+              </div>
+            </div>
+          )}
+
+          {view === 'kingwen' && <div className="hall-grid">{hexagrams.filter(h => shown(h.number)).map(thumb)}</div>}
 
           {view === 'matrix' && (
             <div className="matrix-wrap">
@@ -204,7 +226,7 @@ export function Hall() {
 
           {view === 'months' && (
             <div className="months">
-              {MONTH_ORDER.map((n, i) => (
+              {MONTH_ORDER.map((n, i) => shown(n) && (
                 <div key={n}>
                   {thumb(hexagram(n))}
                   <div className="month-label"><b>{MONTH_NAMES[i]}</b>・{BRANCHES[i]}　陽爻 {hexagram(n).lines.filter(Boolean).length}</div>

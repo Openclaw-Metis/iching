@@ -50,7 +50,7 @@ export function QuestionStep({ draft, saveState, onChange, onStart }: Props) {
           <>
             <fieldset className="choice-group">
               <legend>這件事比較屬於哪方面</legend>
-              <div className="segmented-radio">
+              <div className="segmented-radio category-options">
                 {CATEGORY_ORDER.map(c => (
                   <label key={c}>
                     <input type="radio" name={`${id}-category`} value={c} checked={draft.category === c} onChange={() => onChange({ category: c as Category })} />
@@ -98,10 +98,11 @@ export function QuestionStep({ draft, saveState, onChange, onStart }: Props) {
           <button type="button" className="btn btn-primary" disabled={!ready} onClick={onStart}>開始起卦</button>
         </div>
       </div>
-      <aside className="question-aside">
+      {/* 只是陪襯的爻位與命辭，不是頁面地標，所以不用 aside */}
+      <div className="question-aside">
         <LineBuilder lines={[]} />
         <Scripture className="question-classic" text={SHIYI_INVOCATION} perColumn={10} head="筮儀" />
-      </aside>
+      </div>
     </section>
   )
 }

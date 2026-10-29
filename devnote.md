@@ -9,11 +9,11 @@
 ## 📌 SNAPSHOT — 當前狀態
 <!-- 這一整段每次 /devnote 會被覆寫，只反映「到目前為止的最新狀態」 -->
 
-**最後更新**：2026-10-27（經冊與畫卦全站改版，已部署）
+**最後更新**：2026-10-29（介面檢視 17 項修訂，在分支 `claude/keen-mayer-v9g6tt`，未合併到 main）
 
 **位置**：本機 `C:\Users\jimai\project-claude\iching`；公開倉庫 https://github.com/Openclaw-Metis/iching （手機選單圖示版 `f4ff1ae` 已由 `main` 發布）；網站 https://openclaw-metis.github.io/iching/
 
-**目前狀態**：2026-10-27「經冊與畫卦」全站改版 `f06fc90` 已依使用者要求快轉合併到 `main` 並部署（GitHub Actions run `40591512185` 測試、建置、體積檢查與部署全部成功；正式站 `sw.js` 的 `index.html` 修訂碼與主程式、樣式、金粉場景檔名都與本機同網址建置相同，`/gua/2` 與 `/academy` 回 200、標題正確且是新版畫面）。改版內容（規格「經冊與畫卦」、`docs/ui-design.md`）：直排經文配朱絲欄、卦殿畫卦尋牌、Three.js／GLSL 金粉成爻（起卦與畫卦，延遲載入並有 CSS 後備）、先天八卦學堂路線、問題步驟爻位與蒙卦辭、書卜空狀態、全站進場動態與字級；42 檔 284 項測試、型別、建置、體積（卦殿 133.5 KB）、102 路徑、Taste Skill lint 與 inspect 通過。之前的狀態：`f4ff1ae` 已上線，GitHub Actions run `40200392323` 成功。本次移除大有品牌 SVG 的固定黑底，安裝用 PNG 改由產生腳本補底；全站「我的」入口與頁面標題改名「書卜」，操作說明與文件同步，`/me`、資料與偏好鍵名保留。276 項測試、型別、正式建置、體積與 320／375／600／1280px 瀏覽器檢查通過，102 路徑皆回 200 且標題正確；品牌透明區及 4 張安裝圖示的不透明底與 maskable 安全區已檢查。使用者已授權 commit、push 與部署，結果以本次提交的 GitHub Actions 為準。
+**目前狀態**：2026-10-29 依使用者要求以 cc-designer 檢視全站 UI/UX（`design/ui-review/`，`54125af`），再依「都改好」把 17 項發現全部實作（規格「2026-10-29 介面檢視後修訂」、`docs/ui-design.md` 同名一節）：換頁焦點、手機卡牌頁、經文總開關與每爻小卦畫、卦殿只列符合、書卜狀態列、設定三組、全站頁尾與版本、解讀左欄黏住、爻變改用爻位元件、紀錄主讀出處、404 搜尋、載入骨架、重訪只淡入、作答鍵盤；提交在分支，尚未合併部署。先前：2026-10-27「經冊與畫卦」全站改版 `f06fc90` 已依使用者要求快轉合併到 `main` 並部署（GitHub Actions run `40591512185` 測試、建置、體積檢查與部署全部成功；正式站 `sw.js` 的 `index.html` 修訂碼與主程式、樣式、金粉場景檔名都與本機同網址建置相同，`/gua/2` 與 `/academy` 回 200、標題正確且是新版畫面）。改版內容（規格「經冊與畫卦」、`docs/ui-design.md`）：直排經文配朱絲欄、卦殿畫卦尋牌、Three.js／GLSL 金粉成爻（起卦與畫卦，延遲載入並有 CSS 後備）、先天八卦學堂路線、問題步驟爻位與蒙卦辭、書卜空狀態、全站進場動態與字級；42 檔 284 項測試、型別、建置、體積（卦殿 133.5 KB）、102 路徑、Taste Skill lint 與 inspect 通過。之前的狀態：`f4ff1ae` 已上線，GitHub Actions run `40200392323` 成功。本次移除大有品牌 SVG 的固定黑底，安裝用 PNG 改由產生腳本補底；全站「我的」入口與頁面標題改名「書卜」，操作說明與文件同步，`/me`、資料與偏好鍵名保留。276 項測試、型別、正式建置、體積與 320／375／600／1280px 瀏覽器檢查通過，102 路徑皆回 200 且標題正確；品牌透明區及 4 張安裝圖示的不透明底與 maskable 安全區已檢查。使用者已授權 commit、push 與部署，結果以本次提交的 GitHub Actions 為準。
 
 **下一步**：Stage 0 至 11 已完成並部署（使用者同意後把分支快轉合併到 `main`），正式站通過 AC-23 與 AC-27。剩下要在實機做的：正式站 Chrome 安裝、iPhone Safari 加到主畫面與離線、`.ics` 在 Google 日曆與 Apple 行事曆匯入、Firefox 匯入、陀螺儀與低階手機；等使用者決定的事（授權、抽牌占卜）在 `docs/known-issues.md`。白話已在本機補跑三方撰稿與交叉複審（2026-10-25）。規格是之後開發的依據，和規格不同的決定先改規格再實作。
 
@@ -60,6 +60,7 @@
 - 牌義的「不斷定現況、不保證結果」是依 Codex 複審逐條修的，沒有被點到的卦可能還留有「自然就會」「就能」這類語氣，尚未全面掃過。
 
 ### 驗證狀態
+- 介面檢視後修訂（2026-10-29，雲端）：44 檔 290 項測試、typecheck、build、check:size（卦殿 134.5 KB、占卜 113.3 KB）、本機 preview `check:routes` 102 條全過；Playwright 375／1280 逐項檢查 17 項修訂（細節見 `docs/ui-design.md`），無橫向捲動、主控台無錯誤。未驗證實機螢幕閱讀器朗讀。
 - 經冊與畫卦改版（2026-10-27，雲端）：42 檔 284 項測試、typecheck、build、check:size（卦殿 133.5 KB、占卜 113.2 KB）、本機 preview `check:routes` 102 條全過；Taste Skill lint 0 FAIL／0 WARN，inspect（1440／768／390px）卦殿、卡牌、今日、學堂、書卜 0／0，占卜問題步驟與課程、考核的開始畫面各留一個首屏留白 WARN（依規格只露必要資訊，理由見 `docs/ui-design.md`）；Playwright 41 項功能檢查（畫卦滑鼠與鍵盤、與搜尋並用、六爻畫齊、減少動態不載入金粉、停用 WebGL 起卦到解讀、學堂選站、手機收合與選單、10 個路徑 375／1280px 無橫向捲動）全過。
 - 圖錄式 UI：40 檔 276 項測試、typecheck、build、check:size 全過；Taste Skill 1440／768／390px 為 0 FAIL、0 WARN；Chrome 1280／375px 六頁互動、保存及備份下載通過，102 條路徑正確。詳見 `docs/ui-design.md`。
 - `npm test`：40 個測試檔、276 項通過（2026-10-25 穩定性修正後，新增 14 項回歸測試）；型別、建置、體積與瀏覽器結果見 HISTORY。
@@ -136,7 +137,7 @@
 - **GitHub Pages 的 `<路徑>/index.html` 會先 301 到結尾斜線**：直接 200 要用 `<路徑>.html`（2026-10-24 以正式站實測）
 - **雲端環境連不到 github.io 與 Actions 產物網址**：正式站檢查改用 Firecrawl 抓取（每分鐘約 10 次）；Firecrawl 的瀏覽器會移除 CSP 標籤，CSP 要以 `sw.js` 的 `index.html` 修訂碼比對本機同環境變數的建置來確認
 - **這個雲端環境預設 Node 22**：先 `export PATH=/opt/nvm/versions/node/v24.22.1/bin:$PATH`（`nvm install 24` 已裝）；Playwright 用 `/opt/node-tools/node_modules/playwright`
-- **liveQuery 的查詢函式裡不要先 await 非 Dexie 的 promise**：會失去追蹤，訂閱不再更新；畫面用 `useDb()` 拿到 db 後直接查詢（例：`queryList(db, …)`、`needsBackupReminder(db)`）
+- **liveQuery 的查詢函式裡不要先 await 非 Dexie 的 promise**：會失去追蹤，訂閱不再更新；畫面用 `useDb()` 拿到 db 後直接查詢（例：`queryList(db, …)`、`needsBackupReminder(db)`、`backupStatusOf(db)`）
 - **筆記保存要帶開始編輯時的 rev**：即時訂閱會把 rev 更新成最新，若用最新 rev 保存會默默蓋掉另一個分頁的內容（`NoteEditor` 的 `version`）
 - **預設設定以 1970 年的時間戳寫入**：用現在時間會讓新裝置的預設值在合併匯入時蓋過舊裝置的真實設定
 - **happy-dom 的 `<dialog>` 不在無障礙樹裡**：元件測試找對話框內的按鈕要用 `getByText`；元件測試也要 `vi.stubGlobal('fetch', ...)`，否則白話的 fetch 會打到 localhost:3000
@@ -636,4 +637,21 @@
 
 - 依使用者要求，問題步驟右側的直排經文由「蒙卦辭」改為卷題「筮儀」，內容為使用者指定的命筮之辭（常數 `SHIYI_INVOCATION` 在 `features/divination/labels.ts`）。四庫全書本《原本周易本義》卷末〈筮儀〉、《周易會通》與 Kanripo 本都作「爰質所疑于神于靈」，使用者確認後補上「所」字，現與四庫全書本一致。
 - 命辭 60 字，每欄 10 字共 6 欄；右欄改為只取內容寬度，1200px 以下爻位與命辭上下排，修正 900 到 1200px 之間右欄放不下而被裁掉的問題。重複提問的測試改回以對話框裡的蒙卦辭確認。
+
+
+## [2026-10-29] 介面檢視與 17 項修訂
+
+### 本次做了什麼（增量）
+- 依使用者要求以 cc-designer 檢視全站 UI/UX，產出 `design/ui-review/`（`UI Review.html`、`DESIGN.md`、截圖），列出 17 項發現（H1 到 H5、M1 到 M8、L1 到 L4）。
+- 使用者回「都改好」：先在規格加「2026-10-29 介面檢視後修訂」，再全部實作。新檔 `app/routeFocus.ts`（換頁焦點與朗讀）、`app/version.ts`（建置時的提交編號）、`features/backup/BackupStatus.tsx`（取代原 `BackupReminder.tsx`，30 天提醒併入狀態列）；`Layout` 加頁尾、載入骨架與 `data-revisit`；`Me` 支援 `?tab=` 與 `#guide`、設定分三組；卡牌頁、卦殿、解讀、紀錄、404、學堂作答各自修改。
+
+### 本次重大技術決策
+- 換頁焦點只在路徑改變時處理，查詢參數不算；觸發換頁的元素還在主要內容裡（倒轉、翻面、序卦）就不搶焦點；返回時依 `location.key` 找回離開前點的連結。
+- 版本號在 `vite.config.ts` 以 `git rev-parse --short HEAD` 寫入 `VITE_APP_VERSION`，取不到時顯示 `dev`，不影響建置。
+- 卦殿只列符合限於文王卦序與十二消息；上下卦與八宮的格位有意義，維持變淡。
+- 經文總開關以 key 重設每條 `LinePlain`，避免把總開關的狀態再往下傳；個別切換仍可用。
+
+### 本次失敗經驗與填坑
+- React Router 站內換頁以 transition 進行，Suspense 不會顯示骨架，舊畫面留到新頁就緒；骨架只在直接開啟延遲載入的頁面時看得到，驗證要用直接開網址並延遲程式包。
+- 作答揭露後選錯項的樣式被 `input:checked + span` 蓋過（選擇器較具體），改成同樣帶 `input +` 才生效。
 

@@ -84,6 +84,17 @@ main { padding: 0 var(--page-gutter) 72px; }
 .app-main { max-width: calc(var(--page-width) + 2 * var(--page-gutter)); margin: auto; padding-top: 40px; overflow-x: clip; }
 .app-main:focus:not(:focus-visible) { outline: none; }
 
+/* 頁尾：使用說明、資料位置、經文底本、插圖說明與版本，每一頁都找得到 */
+.site-footer { border-top: 1px solid var(--line); }
+.footer-inner { display: flex; flex-wrap: wrap; gap: 8px 28px; max-width: calc(var(--page-width) + 2 * var(--page-gutter)); margin: auto; padding: 20px var(--page-gutter) max(24px, env(safe-area-inset-bottom)); color: var(--faint); font-size: 13px; }
+.footer-inner a { display: inline-flex; align-items: center; min-height: 32px; color: var(--muted); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
+.footer-inner a:hover { color: var(--gold-hi); }
+.footer-inner span { display: inline-flex; align-items: center; min-height: 32px; }
+/* 延遲載入頁面的骨架：頁名與六個空爻位 */
+.route-loading { display: grid; justify-items: start; gap: 24px; min-height: 50vh; }
+.route-loading-title { margin: 0; color: var(--ivory); font: 700 var(--fs-title)/1.35 var(--serif); letter-spacing: .06em; }
+.route-loading .forge { --forge-w: 120px; --bar-h: 10px; --forge-gap: 10px; opacity: .7; }
+
 .page-head { margin: 0 0 32px; }
 .page-head h1 { margin: 0 0 6px; color: var(--ivory); font-size: var(--fs-title); line-height: 1.35; letter-spacing: .06em; }
 .page-head .note { margin: 0; }
@@ -116,8 +127,8 @@ main { padding: 0 var(--page-gutter) 72px; }
 .tabs button { min-height: 44px; margin-bottom: -1px; padding: 8px 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; }
 .tabs button:hover { color: var(--ivory); }
 .tabs button[aria-selected='true'] { border-color: var(--vermilion); color: var(--ivory); font-weight: 700; }
-.panel h3 { margin: 32px 0 8px; color: var(--ivory); font-size: 18px; letter-spacing: .04em; }
-.panel h3:first-child { margin-top: 8px; }
+.panel h3, .detail .panel h2 { margin: 32px 0 8px; color: var(--ivory); font-size: 18px; letter-spacing: .04em; }
+.panel h3:first-child, .detail .panel h2:first-child { margin-top: 8px; }
 .panel p { margin: 0 0 12px; line-height: 1.95; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 3px 10px; border-radius: 3px; background: var(--ink-2); color: var(--text); font-size: 13px; }
@@ -210,9 +221,14 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 /* 1200 = 248px 預覽 + 36px 間距 + 916px 圖錄 */
 .hall-body { display: grid; grid-template-columns: 248px minmax(0, 1fr); align-items: start; gap: 36px; }
 .hall-collection { min-width: 0; }
-.collection-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.collection-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
 .collection-heading h2 { margin: 0; color: var(--ivory); font-size: var(--fs-section); line-height: 1.4; }
 .collection-heading p { margin: 0; color: var(--muted); font-size: var(--fs-note); font-variant-numeric: tabular-nums; }
+/* 有搜尋或畫卦時出現：筆數緊跟標題，切換靠右 */
+.match-toggle { margin-left: auto; }
+.match-toggle button { padding: 4px 14px; font-size: 14px; }
+.hall-empty { padding: 24px 0 32px; border-bottom: 1px solid var(--line); }
+.hall-empty p { margin: 0; color: var(--ivory); font: 500 18px/1.6 var(--serif); }
 .view-notes { display: grid; max-width: 760px; margin: 10px 0 14px; }
 .view-notes p { grid-area: 1 / 1; margin: 0; color: var(--muted); font-size: var(--fs-note); line-height: 1.85; }
 .view-notes .off { visibility: hidden; }
@@ -299,6 +315,7 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .seq-nav a:hover { color: var(--text); border-top-color: var(--gold-lo); }
 .seq-nav b { display: block; margin-bottom: 4px; color: var(--ivory); font: 500 16px var(--serif); }
 .seq-nav .next { text-align: right; }
+.seq-nav-foot { display: none; }
 
 .detail-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 24px 40px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
 .detail-title { display: grid; justify-items: start; gap: 14px; }
@@ -316,26 +333,20 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .relation b { color: var(--ivory); font: 500 17px var(--serif); letter-spacing: .1em; }
 .relation small { color: var(--muted); font-size: 13px; }
 .line-list { list-style: none; margin: 0; padding: 0; }
-.line-list li { display: grid; grid-template-columns: 56px 1fr; gap: 4px 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.line-list li { display: grid; grid-template-columns: 22px 56px minmax(0, 1fr); gap: 4px 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .line-list li:last-child { border-bottom: 0; }
-.line-list .label { display: flex; align-items: flex-start; flex-wrap: wrap; color: var(--gold); font-family: var(--serif); letter-spacing: .1em; }
-.line-list .xiang { grid-column: 2; color: var(--muted); font-size: var(--fs-note); }
-.line-list .line-plain { grid-column: 2; }
-.lab { display: grid; grid-template-columns: auto 1fr; gap: 18px 32px; align-items: start; }
-.lab-lines { display: grid; gap: 6px; }
-.lab-line { display: grid; grid-template-columns: 44px 120px; align-items: center; gap: 10px; min-height: 36px; padding: 3px 8px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; cursor: pointer; }
-.lab-line:hover { border-color: var(--line-strong); }
-.lab-line[aria-pressed='true'] { border-color: var(--vermilion); background: var(--ink-1); }
-.lab-line span { color: var(--muted); font-size: 13px; text-align: right; }
-.lab-line i { display: flex; justify-content: space-between; height: 12px; }
-.lab-line i::before, .lab-line i::after { content: ''; height: 100%; background: var(--gold); border-radius: 2px; }
-.lab-line i[data-bit='1']::before { width: 100%; }
-.lab-line i[data-bit='1']::after { width: 0; }
-.lab-line i[data-bit='0']::before, .lab-line i[data-bit='0']::after { width: 42%; }
-.lab-line[aria-pressed='true'] i::before, .lab-line[aria-pressed='true'] i::after { background: var(--vermilion); }
-.lab-result { display: flex; align-items: center; gap: 14px; }
-.lab-result > .hexglyph { width: 56px; }
-.lab-result .arrow { color: var(--muted); }
+/* 每爻前的小卦畫：朱色標出這一爻在卦中的位置 */
+.line-list .line-glyph { grid-column: 1; grid-row: 1 / span 2; width: 22px; margin-top: 7px; color: var(--gold-lo); }
+.line-list .label { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; color: var(--gold); font-family: var(--serif); letter-spacing: .1em; }
+.line-list .classic { grid-column: 3; }
+.line-list .xiang, .line-list .line-plain { grid-column: 3; }
+.line-list .xiang { color: var(--muted); font-size: var(--fs-note); }
+.text-mode { margin: 4px 0 8px; }
+.lab { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px 40px; align-items: start; }
+.lab-forge { --forge-w: 260px; --bar-h: 12px; --forge-gap: 6px; }
+.lab-result { display: inline-grid; justify-items: start; grid-template-columns: auto auto; align-items: center; gap: 2px 14px; padding: 12px 22px 12px 18px; text-align: left; }
+.lab-result small { grid-column: 1 / -1; }
+.lab-result .glyph { width: 36px; }
 
 /* 白話與占得提醒（LinePlain） */
 .line-plain { margin-top: 8px; }
@@ -428,6 +439,10 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 
 .result-step { display: grid; grid-template-columns: minmax(260px, 380px) minmax(0, 1fr); gap: 32px 56px; align-items: start; }
 .result-cards { display: grid; gap: 18px; }
+/* 寬而高的視窗：讀經文與指引時本卦、之卦與卦畫留在畫面上；矮的視窗放不下整欄就不黏 */
+@media (min-width: 901px) and (min-height: 760px) {
+  .result-cards { position: sticky; top: 100px; }
+}
 .card-pair { display: flex; align-items: center; gap: 10px; }
 .result-card { flex: 1 1 0; display: grid; gap: 6px; justify-items: center; color: var(--text); font: 15px var(--serif); }
 .result-card img { width: 100%; height: auto; aspect-ratio: 5 / 7; object-fit: contain; border-radius: 5% / 3.6%; }
@@ -605,8 +620,15 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .q-option input:checked + span { border-color: var(--ivory); background: var(--ink-2); }
 .q-option input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .q-option input:disabled + span { cursor: default; }
-.q-option[data-state='correct'] span { border-color: var(--success); background: var(--ink-2); color: #d6eadb; }
-.q-option[data-state='wrong'] span { border-color: var(--vermilion); background: var(--ink-2); color: #f0cfc6; }
+/* 帶 input + 才蓋得過上面的已選取樣式：選錯的那一項要是朱紅框，不是白框 */
+.q-option[data-state='correct'] input + span { border-color: var(--success); background: var(--ink-2); color: #d6eadb; }
+.q-option[data-state='wrong'] input + span { border-color: var(--vermilion); background: var(--ink-2); color: #f0cfc6; }
+/* 數字鍵提示：只在有滑鼠等精確指標、多半也有實體鍵盤的裝置顯示 */
+.q-key { display: none; }
+@media (pointer: fine) {
+  .q-option span { position: relative; }
+  .q-key { position: absolute; top: 4px; left: 7px; display: block; color: var(--faint); font: 12px/1 var(--sans); }
+}
 .q-opt-glyph { width: 40px; }
 .q-explain { padding: 12px 16px; border-left: 2px solid var(--vermilion); background: var(--ink-1); }
 .q-explain[data-correct] { border-left-color: var(--success); }
@@ -663,8 +685,12 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 
 /* ---------- 書卜 ---------- */
 .me .result-step { max-width: 1100px; }
-.reminder-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 10px 0; padding: 12px 16px; border-left: 2px solid var(--celadon); background: var(--ink-1); font-size: var(--fs-note); }
-.reminder-bar p { margin: 0; }
+/* 狀態列：紀錄只在這台裝置，筆數與上次備份放在頁首，旁邊就能匯出 */
+.backup-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; margin: -12px 0 24px; padding: 12px 0; border-block: 1px solid var(--line); color: var(--muted); font-size: var(--fs-note); }
+.backup-status .warn { color: var(--vermilion); }
+.backup-status-actions { display: flex; gap: 8px; margin-left: auto; }
+.backup-status[data-remind] { border-block-color: var(--rule-hi); }
+.backup-status-remind { flex: 1 1 100%; order: 1; margin: 0; color: var(--text); }
 .record-subs { display: inline-flex; margin: 0 0 16px; }
 .record-subs button { min-width: 72px; }
 .record-toolbar { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
@@ -684,6 +710,8 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .record-tags .chip { padding: 0 8px; }
 .record-tags .tag-star { color: var(--gold-hi); }
 .record-more { display: flex; justify-content: center; padding: 12px; }
+.record-focus { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.record-again { margin: 20px 0 0; }
 .daily-item .link-button { justify-self: end; min-height: 44px; }
 .daily-item .record-hex { color: var(--gold-hi); }
 .empty-state { margin: 8px 0 24px; padding: 32px; background: var(--ink-1); color: var(--muted); }
@@ -700,7 +728,13 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .question-edit input { flex: 1 1 220px; min-height: 44px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--ink-1); color: var(--ivory); }
 .star-toggle { justify-self: start; }
 .settings-section { margin: 0 0 24px; padding: 24px; background: var(--ink-1); }
+.settings-section h2, .settings-danger h2 { margin: 0 0 8px; color: var(--ivory); font-size: var(--fs-section); }
 .settings-section h3 { margin: 0 0 8px; }
+/* 無法復原的操作：朱絲欄框起來，和備份、說明分開 */
+.settings-danger { margin: 40px 0 0; padding: 24px; border: 1px solid var(--rule); }
+.danger-item + .danger-item { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.danger-item h3 { margin: 0 0 4px; color: var(--ivory); font-size: 17px; }
+.danger-item .note { margin: 0 0 12px; }
 .import-preview .note { margin: 0 0 8px; }
 .preview-table { width: 100%; margin: 6px 0 10px; border-collapse: collapse; font-size: var(--fs-note); }
 .preview-table th { padding: 3px 0; color: var(--muted); font-weight: 400; text-align: left; }
@@ -722,6 +756,12 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 .placeholder h1 { margin: 0 0 8px; color: var(--ivory); font-size: var(--fs-title); }
 .placeholder p { color: var(--muted); }
 .placeholder .btn { margin-top: 12px; }
+.notfound-search { display: flex; gap: 8px; margin: 20px 0 8px; }
+.notfound-search .search { flex: 1; }
+.notfound-search .btn { margin-top: 0; }
+.notfound-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0; padding: 0; list-style: none; }
+.notfound-list a { display: inline-flex; align-items: baseline; gap: 6px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius); font-family: var(--serif); }
+.notfound-list small { color: var(--muted); font: 13px var(--sans); }
 .storage-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px; margin: 0; padding: 10px var(--page-gutter); border-bottom: 1px solid var(--vermilion); background: var(--ink-1); color: var(--ivory); font-size: var(--fs-note); }
 .storage-banner p { margin: 0; }
 .storage-banner[data-mode='memory'], .storage-banner[data-mode='blocked'] { border-bottom-color: var(--line-strong); }
@@ -747,12 +787,15 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
    區塊依序上升進場；卦畫由初爻依序長出；學堂已通過的路段依站序描出。減少動態效果時全部停用，內容照常顯示。 */
 @media (prefers-reduced-motion: no-preference) {
   .rise, .divine-step, .today-symbols { animation: rise .62s var(--ease) both; animation-delay: calc(var(--i, 1) * 70ms); }
+  /* 同一次瀏覽再回到看過的頁面只淡入，不再一段段升起 */
+  [data-revisit] .rise, [data-revisit] .divine-step, [data-revisit] .today-symbols { animation: fade .28s ease-out both; animation-delay: 0ms; }
   .hexglyph.grow .gl { animation: grow-line .42s var(--ease) both; animation-delay: calc(var(--k) * 60ms + 140ms); transform-box: fill-box; transform-origin: center; }
   .route-path.passed { animation: draw-path .7s var(--ease) both; animation-delay: calc(var(--k) * 110ms + 240ms); }
   .forge:not([data-gl]) .forge-line[data-bit='1'] .forge-bar i { animation: forge-yang .5s var(--ease) both; }
   .forge:not([data-gl]) .forge-line[data-bit='0'] .forge-bar i { animation: forge-yin .5s var(--ease) both; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+@keyframes fade { from { opacity: 0; } }
 @keyframes grow-line { from { opacity: 0; transform: scaleX(.15); } }
 @keyframes draw-path { from { stroke-dashoffset: 1; } }
 /* 兩種爻用不同的動畫名稱：陰陽互換時動畫會重新播放 */
@@ -789,6 +832,8 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 @media (max-width: 900px) {
   .detail, .today { grid-template-columns: 1fr; gap: 28px; }
   .detail-stage { position: static; }
+  .seq-nav-stage { display: none; }
+  .seq-nav-foot { display: grid; margin-top: 40px; }
   .detail .holo-stage { height: min(62vh, 560px); }
   .detail .panel { max-width: none; }
   .detail-classic { --sc-size: 24px; }
@@ -804,6 +849,7 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 @media (max-width: 600px) {
   :root { --fs-title: 26px; }
   main { padding: 0 16px 56px; }
+  .footer-inner { padding-inline: 16px; gap: 4px 20px; }
   .header-inner { min-height: 64px; }
   .brand strong { font-size: 19px; }
   .desktop-nav { display: none !important; }
@@ -831,23 +877,27 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
   .view-notes { margin: 8px 0 10px; }
   .legend { gap: 5px 12px; margin-bottom: 14px; }
 
-  /* 窄螢幕上經文改到標題下方，最長的坤卦辭（39 字）也不會擠出畫面 */
-  .detail-head { grid-template-columns: 1fr; gap: 20px; padding-bottom: 20px; }
-  .detail-title { grid-template-columns: auto 1fr; align-items: center; gap: 4px 16px; }
+  /* 卡牌縮到視窗約一半，卦名與直排卦辭放得下時並排，放不下（如坤卦辭）時卦辭換到下一行 */
+  .detail .holo-stage { height: min(46vh, 380px); min-height: 300px; }
+  .detail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; padding-bottom: 20px; }
+  .detail-title { flex: 1 1 150px; grid-template-columns: auto 1fr; align-items: center; gap: 4px 16px; }
   .detail-title .glyph { grid-row: span 2; width: 36px; }
   .detail-title .fav-button { grid-column: 1 / -1; }
-  .detail-classic { --sc-size: 22px; justify-content: flex-end; }
+  .detail-classic { --sc-size: 22px; justify-content: flex-end; margin-left: auto; }
   .detail .tabs { gap: 0; justify-content: space-between; }
   .detail .tabs button { font-size: 14px; }
   .detail .card-actions { flex-wrap: nowrap; gap: 6px; }
   .detail .card-actions .btn { flex: 1; padding-inline: 6px; font-size: 13px; }
   .detail .card-actions .btn small { font-size: 12px; }
   .relations { gap: 8px; }
+  .line-list li { grid-template-columns: 18px 48px minmax(0, 1fr); gap: 4px 10px; }
+  .line-list .line-glyph { width: 18px; }
   .lab { grid-template-columns: 1fr; }
   .advice { padding: 16px 18px; font-size: 18px; }
 
   .stepper li + li::before { width: 18px; margin: 0 6px; }
   .question-summary span { display: block; }
+  .category-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .question-label { font-size: 19px; }
   .method-cards { grid-template-columns: 1fr; }
   .method-card span { grid-template-columns: auto 1fr; gap: 10px; align-items: center; text-align: left; }
@@ -890,7 +940,9 @@ li[data-status='locked'] .route-item.exam .route-title { color: var(--faint); }
 
   .record-item { grid-template-columns: 1fr; }
   .record-tags { justify-content: flex-start; }
-  .empty-state, .settings-section { padding: 20px; }
+  .empty-state, .settings-section, .settings-danger { padding: 20px; }
+  .backup-status { margin-top: -8px; }
+  .backup-status-actions { flex: 1 1 100%; margin-left: 0; }
   .empty-book { grid-template-columns: 1fr; justify-content: stretch; gap: 20px; padding: 24px 20px; }
   .empty-classic { --sc-size: 21px; justify-content: flex-end; }
   .drawer { margin: auto 0 0; width: 100vw; height: auto; max-height: 85dvh; border-left: 0; border-top: 1px solid var(--line); border-radius: 8px 8px 0 0; }

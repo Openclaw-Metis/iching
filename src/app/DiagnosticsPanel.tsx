@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { getStorage, maintenance, readErrors, requireDb, review, storageStatus, type StorageStatus } from '../storage/index.ts'
 import { FLAGS } from './flags.ts'
 import { toast } from './toast.ts'
+import { APP_VERSION } from './version.ts'
 
 const MODE_LABEL: Record<string, string> = {
   indexeddb: '正常保存', memory: '只在這次瀏覽（記憶體）', 'version-error': '資料版本比網站新', 'upgrade-failed': '資料更新失敗', blocked: '等待其他分頁', stale: '另一個分頁已更新',
@@ -33,6 +34,7 @@ export function DiagnosticsPanel() {
           <dt>保存模式</dt><dd>{MODE_LABEL[status.mode] ?? status.mode}</dd>
           <dt>持久保存</dt><dd>{status.persisted === null ? '不明' : status.persisted ? '已持久保存' : '未持久保存'}</dd>
           <dt>已用空間</dt><dd>{mb(status.usage)}／配額 {mb(status.quota)}</dd>
+          <dt>網站版本</dt><dd>{APP_VERSION}</dd>
           <dt>資料版本</dt><dd>{status.schema ?? '不明'}</dd>
           {counts && <><dt>資料筆數</dt><dd>{Object.entries(counts).filter(([, n]) => n > 0).map(([t, n]) => `${t} ${n}`).join('、') || '沒有資料'}</dd></>}
           {due !== null && <><dt>今日待溫</dt><dd>{due} 張</dd></>}

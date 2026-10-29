@@ -232,7 +232,8 @@ export function LessonPlayer({ lessonId, nextHref }: { lessonId: string; nextHre
       setPhase({ name: 'active', attempt: r.attempt })
       setLastCheck({ xp: r.xp, capped: r.capped })
     })
-    body = <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={checked} disabled={busy} onChoose={choose} feedback={xpNote(lastCheck)} />
+    const enter = busy ? undefined : checked ? () => void next() : choice !== null ? () => void check() : undefined
+    body = <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={checked} disabled={busy} onChoose={choose} onEnter={enter} feedback={xpNote(lastCheck)} />
     cta = checked
       ? <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void next()}>{last ? '完成' : '下一步'}</button>
       : <button type="button" className="btn btn-primary" disabled={busy || choice === null} onClick={() => void check()}>檢查</button>
@@ -377,7 +378,7 @@ export function ExamPlayer({ stationId }: { stationId: number }) {
       {head}
       <div className="player-count-row"><span>第 {index + 1} 題／共 {attempt.questions.length} 題</span></div>
       <Progress value={index + 1} total={attempt.questions.length} label={`第 ${index + 1} 題，共 ${attempt.questions.length} 題`} />
-      <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={false} disabled={busy} onChoose={choose} />
+      <QuestionCard key={`${attempt.id}-${index}`} question={q} choice={choice} revealed={false} disabled={busy} onChoose={choose} onEnter={!busy && choice !== null ? () => void save() : undefined} />
       {banner}
       <div className="step-actions player-actions">
         <button type="button" className="btn btn-primary" disabled={busy || choice === null} onClick={() => void save()}>{last ? '送出' : '下一題'}</button>

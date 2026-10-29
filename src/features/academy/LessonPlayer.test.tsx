@@ -41,6 +41,33 @@ describe('課程頁（TC-18）', () => {
   })
 })
 
+describe('作答鍵盤（規格「2026-10-29 介面檢視後修訂」）', () => {
+  it('數字鍵選答、Enter 檢查再到下一步；焦點在按鈕上時不攔截', async () => {
+    render(<MemoryRouter><LessonPlayer lessonId="S1-L2" /></MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: '開始' }))
+    await waitFor(() => expect(primary().textContent).toBe('繼續'))
+    // S1-L2 前兩步是閱讀；Enter 只在題目時接手
+    for (let i = 0; i < 2; i++) {
+      await waitFor(() => expect(primary().disabled).toBe(false))
+      fireEvent.click(primary())
+      await waitFor(() => expect(primary().textContent).not.toBe(''))
+    }
+    await waitFor(() => expect(primary().textContent).toBe('檢查'))
+    // 焦點在按鈕上時，數字鍵不選答
+    fireEvent.keyDown(primary(), { key: '1' })
+    expect(document.querySelectorAll<HTMLInputElement>('.q-option input')[0].checked).toBe(false)
+    fireEvent.keyDown(document.body, { key: '2' })
+    await waitFor(() => expect(document.querySelectorAll<HTMLInputElement>('.q-option input')[1].checked).toBe(true))
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    await screen.findByRole('status')
+    expect(document.querySelector('.q-explain')).toBeTruthy()
+    await waitFor(() => expect(primary().textContent).toBe('下一步'))
+    // 揭露後不能再改答案
+    fireEvent.keyDown(document.body, { key: '1' })
+    expect(document.querySelectorAll<HTMLInputElement>('.q-option input')[1].checked).toBe(true)
+  })
+})
+
 describe('考核頁（AC-14）', () => {
   it('選答保存失敗時保留選擇，按重試後存入且不揭露答案', async () => {
     render(<MemoryRouter><ExamPlayer stationId={1} /></MemoryRouter>)

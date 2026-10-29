@@ -9,5 +9,5 @@ export { previewImport, type ImportPreview, type ImportSource } from './preview.
 export { applyImport, type ImportMode, type ImportResult } from './apply.ts'
 export { BackupPanel, exportAndDownload } from './BackupPanel.tsx'
 export { ImportPreviewDialog, TABLE_LABELS } from './ImportPreviewDialog.tsx'
-export { BackupReminder, needsBackupReminder } from './BackupReminder.tsx'
+export { BackupStatus, backupStatusOf, needsBackupReminder, type BackupStatusInfo } from './BackupStatus.tsx'
 export { ClearDataButton } from './ClearDataButton.tsx'

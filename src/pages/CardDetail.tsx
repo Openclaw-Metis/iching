@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { FocusText } from '../components/FocusText.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
+import { LineForge } from '../components/LineForge.tsx'
 import { LinePlain } from '../components/LinePlain.tsx'
 import { rise } from '../components/rise.ts'
 import { Scripture } from '../components/Scripture.tsx'
@@ -146,7 +147,7 @@ function Detail({ n }: { n: number }) {
             {x !== hex && <button className="btn" type="button" aria-pressed={dived} onClick={diveToHu}>取中 <small>看互卦</small></button>}
           </div>
           {FLAGS.review && <ReviewToggle hexagram={n} />}
-          <SequenceNav hex={hex} />
+          <SequenceNav hex={hex} className="seq-nav-stage" />
         </section>
 
         <section className="detail-body rise" style={rise(1)}>
@@ -172,17 +173,19 @@ function Detail({ n }: { n: number }) {
             {tab === 'lab' && <Lab hex={hex} />}
             {tab === 'source' && <Sources hex={hex} />}
           </div>
+          {/* 900px 以下卡牌在上、內容在下，上一卦與下一卦改到讀完之後（規格「2026-10-29 介面檢視後修訂」） */}
+          <SequenceNav hex={hex} className="seq-nav-foot" />
         </section>
       </div>
     </>
   )
 }
 
-function SequenceNav({ hex }: { hex: Hexagram }) {
+function SequenceNav({ hex, className }: { hex: Hexagram; className: string }) {
   const prev = hex.number > 1 ? hexagram(hex.number - 1) : null
   const next = hex.number < 64 ? hexagram(hex.number + 1) : null
   return (
-    <nav className="seq-nav" aria-label="序卦">
+    <nav className={`seq-nav ${className}`} aria-label="序卦">
       {prev ? <Link to={`/gua/${prev.number}`}><b>← {prev.name}</b>{xugua[hex.number]}</Link> : <span />}
       {next ? <Link className="next" to={`/gua/${next.number}`}><b>{next.name} →</b>{xugua[next.number]}</Link> : <span />}
     </nav>
@@ -193,7 +196,7 @@ function ArtNote({ hex }: { hex: Hexagram }) {
   const subject = artDirection.subjects[String(hex.number) as keyof typeof artDirection.subjects]
   return (
     <>
-      <h3>卡面</h3>
+      <h2>卡面</h2>
       <p className="note">
         {subject?.zh}
         {hex.upper === hex.lower
@@ -210,9 +213,9 @@ function Meaning({ hex }: { hex: Hexagram }) {
   if (!c) {
     return (
       <>
-        <h3>大象</h3>
+        <h2>大象</h2>
         <p className="classic">{t.daxiang}</p>
-        <h3>卦辭</h3>
+        <h2>卦辭</h2>
         <p className="classic">{t.judgment}</p>
         <ArtNote hex={hex} />
         <p className="note">這一卦的白話導讀與牌義還在撰寫中，經文、卦象與爻變都已可查看。</p>
@@ -222,22 +225,29 @@ function Meaning({ hex }: { hex: Hexagram }) {
   return (
     <>
       <div className="chips">{c.keywords.map(k => <span key={k} className="chip">{k}</span>)}</div>
-      <h3>整體牌義</h3>
+      <h2>整體牌義</h2>
       <p className="advice">{c.motto}</p>
       <p>{c.meaning}</p>
-      <h3>白話導讀</h3>
+      <h2>白話導讀</h2>
       <p>{c.summary}</p>
-      <h3>問事指引</h3>
+      <h2>問事指引</h2>
       <dl className="guidance">
         <dt>事業與學業</dt><dd>{c.guidance.career}</dd>
         <dt>感情與人際</dt><dd>{c.guidance.relations}</dd>
         <dt>行動與決策</dt><dd>{c.guidance.decision}</dd>
       </dl>
-      <h3>大象</h3>
+      <h2>大象</h2>
       <p className="classic">{t.daxiang}</p>
       <ArtNote hex={hex} />
     </>
   )
+}
+
+const PLAIN_KEY = 'iching:text-plain'
+const ALL_LINES = [0, 1, 2, 3, 4, 5]
+
+function loadAllPlain() {
+  try { return localStorage.getItem(PLAIN_KEY) === '1' } catch { return false }
 }
 
 /** 經文分頁。爻由上往下排，但 id 與白話的鍵一律用 classic 的原始索引（初爻為 0，乾坤的 6 為用九用六）。 */
@@ -245,6 +255,12 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
   const n = hex.number
   const t = textOf(n)
   const [flash, setFlash] = useState<TextFocus | null>(null)
+  // 總開關：預設只看原文；切換時每一條的白話一起重設，偏好記在本機
+  const [allPlain, setAllPlain] = useState(loadAllPlain)
+  const chooseAll = (plain: boolean) => {
+    setAllPlain(plain)
+    try { localStorage.setItem(PLAIN_KEY, plain ? '1' : '0') } catch { /* 偏好記不住而已 */ }
+  }
   const done = useRef(false)
 
   // 內容就位後才捲動，標示一陣子再淡掉；每次掛載只捲一次
@@ -270,24 +286,28 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
 
   const target = (id: TextFocus) => ({ id: `text-${id}`, 'data-flash': flash === id || undefined })
   const plainFor = (id: TextFocus, key: string, label: string) => (
-    <LinePlain entryKey={key} label={label} initial={focus === id ? 'plain' : 'original'} onSettled={focus === id ? reveal : undefined} />
+    <LinePlain key={`${key}-${allPlain}`} entryKey={key} label={label} initial={focus === id || allPlain ? 'plain' : 'original'} onSettled={focus === id ? reveal : undefined} />
   )
   const order = t.lines.map((_, i) => i).reverse()
 
   return (
     <>
+      <div className="segmented text-mode" role="group" aria-label="白話顯示方式">
+        <button type="button" aria-pressed={!allPlain} onClick={() => chooseAll(false)}>只看原文</button>
+        <button type="button" aria-pressed={allPlain} onClick={() => chooseAll(true)}>全部顯示白話</button>
+      </div>
       <div className="text-target" {...target('judgment')}>
-        <h3 className="with-quote">卦辭{FLAGS.collection && <QuoteButton quote={{ hexagram: n, kind: 'judgment' }} />}</h3>
+        <h2 className="with-quote">卦辭{FLAGS.collection && <QuoteButton quote={{ hexagram: n, kind: 'judgment' }} />}</h2>
         <p className="classic">{t.judgment}</p>
         {plainFor('judgment', lineKey(n, { kind: 'judgment' }), `${hex.name}卦辭`)}
       </div>
-      <h3>彖傳</h3>
+      <h2>彖傳</h2>
       <p>{t.tuan}</p>
       <div className="text-target" {...target('daxiang')}>
-        <h3 className="with-quote">大象{FLAGS.collection && <QuoteButton quote={{ hexagram: n, kind: 'daxiang' }} />}</h3>
+        <h2 className="with-quote">大象{FLAGS.collection && <QuoteButton quote={{ hexagram: n, kind: 'daxiang' }} />}</h2>
         <p>{t.daxiang}</p>
       </div>
-      <h3>爻辭與小象</h3>
+      <h2>爻辭與小象</h2>
       <ul className="line-list">
         {order.map(i => {
           const l = t.lines[i]
@@ -295,6 +315,7 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
           const key = i === 6 ? lineKey(n, { kind: 'useAll' }) : lineKey(n, { kind: 'line', position: i })
           return (
             <li key={i} className="text-target" {...target(id)}>
+              <HexagramGlyph className="glyph line-glyph" lines={hex.lines} moving={i === 6 ? ALL_LINES : [i]} />
               <span className="label">{l.label}{FLAGS.collection && <QuoteButton quote={i === 6 ? { hexagram: n, kind: 'useAll' } : { hexagram: n, kind: 'line', position: i }} />}</span>
               <span className="classic">{l.text}</span>
               <span className="xiang">象曰：{l.xiang}</span>
@@ -305,7 +326,7 @@ function Classic({ hex, focus }: { hex: Hexagram; focus: TextFocus | null }) {
       </ul>
       {t.wenyan.length > 0 && (
         <>
-          <h3>文言</h3>
+          <h2>文言</h2>
           {t.wenyan.map((p, i) => <p key={i}>{p}</p>)}
         </>
       )}
@@ -330,13 +351,13 @@ function Structure({ hex }: { hex: Hexagram }) {
   const BRANCH_MONTH: Record<number, string> = { 11: '十一月（子）', 12: '十二月（丑）', 1: '正月（寅）', 2: '二月（卯）', 3: '三月（辰）', 4: '四月（巳）', 5: '五月（午）', 6: '六月（未）', 7: '七月（申）', 8: '八月（酉）', 9: '九月（戌）', 10: '十月（亥）' }
   return (
     <>
-      <h3>相關卦</h3>
+      <h2>相關卦</h2>
       <div className="relations">
         <Relation label="錯卦" hex={cuo(hex)} note="陰陽全變" />
         <Relation label="綜卦" hex={z} note={z === hex ? '上下對稱' : '上下顛倒'} />
         <Relation label="互卦" hex={hu(hex)} note="二至五爻" />
       </div>
-      <h3>上下卦</h3>
+      <h2>上下卦</h2>
       <dl className="kv">
         {[['上卦', hex.upper], ['下卦', hex.lower]].map(([label, t]) => {
           const tr = t as typeof hex.upper
@@ -346,16 +367,16 @@ function Structure({ hex }: { hex: Hexagram }) {
           ]
         })}
       </dl>
-      <h3>次序與歸屬</h3>
+      <h2>次序與歸屬</h2>
       <dl className="kv">
         <dt>文王卦序</dt><dd>第 {hex.number} 卦（{hex.number <= 30 ? '上經' : '下經'}）</dd>
         <dt>伏羲先天序</dt><dd>第 {hex.fuxi} 卦</dd>
         <dt>京房八宮</dt><dd>{hex.palace.trigram.name}宮{hex.palace.generation}・世在{lineLabel(hex.palace.shi - 1, hex.lines[hex.palace.shi - 1])}、應在{lineLabel(hex.palace.ying - 1, hex.lines[hex.palace.ying - 1])}・宮五行屬{hex.palace.trigram.element}</dd>
         {hex.month && <><dt>十二消息</dt><dd>{BRANCH_MONTH[hex.month]}</dd></>}
       </dl>
-      <h3>序卦傳</h3>
+      <h2>序卦傳</h2>
       <p>{xugua[hex.number]}</p>
-      <h3>雜卦傳</h3>
+      <h2>雜卦傳</h2>
       <p>{zagua[hex.number]}</p>
     </>
   )
@@ -366,29 +387,28 @@ function Lab({ hex }: { hex: Hexagram }) {
   useEffect(() => setMoving([]), [hex])
   const reading = interpret(hex, moving)
   const toggle = (i: number) => setMoving(m => m.includes(i) ? m.filter(x => x !== i) : [...m, i])
+  // 與起卦相同的爻位：變爻朱紅並標老陽圈、老陰叉，不變的爻標少陽、少陰
+  const lines = hex.lines.map(bit => ({ bit, pressed: false, moving: false, note: bit ? '少陽' : '少陰' }))
+  for (const i of moving) Object.assign(lines[i], { pressed: true, moving: true, note: hex.lines[i] ? '老陽' : '老陰' })
   return (
     <>
       <p className="note">點選任一爻讓它變動（老陽變陰、老陰變陽），右邊會出現變出來的之卦，並依朱熹《易學啟蒙》的規則標出該讀哪段經文。</p>
       <div className="lab">
-        <div className="lab-lines">
-          {[5, 4, 3, 2, 1, 0].map(i => (
-            <button key={i} type="button" className="lab-line" aria-pressed={moving.includes(i)} onClick={() => toggle(i)}>
-              <span>{lineLabel(i, hex.lines[i])}</span>
-              <i data-bit={hex.lines[i]} />
-            </button>
-          ))}
-        </div>
+        <LineForge
+          className="lab-forge"
+          lines={lines}
+          label={`${hex.name}卦六爻`}
+          onLine={toggle}
+          lineLabel={i => `${lineLabel(i, hex.lines[i])}變動`}
+          still
+        />
         <div>
-          <div className="lab-result">
-            <HexagramGlyph lines={hex.lines} moving={moving} />
-            <span className="arrow">→</span>
-            <Link to={`/gua/${reading.result.number}`} className="relation" style={{ padding: '8px 14px' }}>
-              <HexagramGlyph lines={reading.result.lines} />
-              <b>{reading.result.name}</b>
-              <small>{moving.length ? '之卦' : '不變'}</small>
-            </Link>
-          </div>
-          <h3>讀法</h3>
+          <Link to={`/gua/${reading.result.number}`} className="relation lab-result">
+            <small>{moving.length ? '之卦' : '不變'}</small>
+            <HexagramGlyph lines={reading.result.lines} />
+            <b>{reading.result.name}</b>
+          </Link>
+          <h2>讀法</h2>
           <p>{reading.rule}</p>
           {reading.focus.map((f, i) => <FocusText key={i} focus={f} main={i === 0} />)}
         </div>
@@ -400,17 +420,17 @@ function Lab({ hex }: { hex: Hexagram }) {
 function Sources({ hex }: { hex: Hexagram }) {
   return (
     <>
-      <h3>經文</h3>
+      <h2>經文</h2>
       <p>卦辭、爻辭、彖傳、象傳、文言、序卦與雜卦底本為王弼《周易注》。</p>
-      <h3>八卦屬性</h3>
+      <h2>八卦屬性</h2>
       <p>八卦的性情、動物、身體、家人取自《說卦傳》；方位為後天八卦方位；八宮世應依京房八宮推算。</p>
-      <h3>卡面</h3>
+      <h2>卡面</h2>
       <p>
         {hasArt(hex.number)
           ? '插圖由 OpenAI Codex 的 image_gen 依本站撰寫的畫面描述生成，背景為上下卦的八卦紋樣面板拼合；卡框、文字、卦畫與朱印由程式以向量繪製，卦畫依卦象資料產生，不會出錯。'
           : '這一卦的插圖尚未繪製，目前顯示的是卡框、文字與八卦面板的佔位版本。'}
       </p>
-      <h3>白話導讀</h3>
+      <h2>白話導讀</h2>
       <p>導讀、問事指引與牌義為本站原創，是協助理解的現代說法，經文仍以原文為準。</p>
     </>
   )

@@ -79,7 +79,7 @@ export function BackupPanel() {
 
   return (
     <section className="settings-section" aria-labelledby="backup-title">
-      <h3 id="backup-title">備份</h3>
+      <h2 id="backup-title">備份與還原</h2>
       <p className="note">
         紀錄與學習進度只存在這台裝置的這個瀏覽器。換裝置或清除瀏覽器前，先匯出一個備份檔。
         {lastBackup?.value ? ` 上次匯出：${formatDateTime(lastBackup.value as string)}。` : ' 還沒有匯出過。'}
