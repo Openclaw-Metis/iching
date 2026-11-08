@@ -116,3 +116,10 @@ node scripts/cards/codex-batch.mjs C:/Users/jimai/exports/iching redo 7 panel:li
 ```
 
 已存在的輸出檔會被略過，不會覆寫。
+
+## 授權
+
+- **程式碼**：MIT（`LICENSE`）。
+- **本站撰寫與製作的內容**：創用 CC 姓名標示-非商業性-相同方式分享 4.0 國際（CC BY-NC-SA 4.0，`LICENSE-CONTENT`），包含卦辭與爻辭白話（`src/data/lines.json`）、64 卦牌義（`src/data/content.json`）、卡面畫面設計（`src/data/art-direction.json`）、學堂課程（`src/features/academy/lessons/`）、卡面插圖與圖示（`art/`、`public/cards/`、`public/icons/`、`public/favicon.svg`），以及 `docs/`、`design/` 的文件。可以非商業轉載與改作，須標示出處，改作以相同授權分享。
+- **不在授權範圍**：`易經_周易_原文.md` 與由它解析或摘錄的 `src/data/classic.json`、`src/data/xugua.ts`，以及內容中以「」引用的經傳原文；經文屬公有領域，標點校勘出自第三方整理本。卡面字型 Noto Serif TC 依 SIL Open Font License 1.1，第三方套件依各自的授權。
+- 部分文字與插圖以生成式 AI 協助製作，授權只及於依法享有著作權的部分。
