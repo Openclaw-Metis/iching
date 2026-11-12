@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { FLAGS } from '../../app/flags.ts'
 import { draft, openStorage, provideStorage, readings, requireDb } from '../../storage/index.ts'
 import { DivineFlow } from './DivineFlow.tsx'
 
@@ -49,6 +50,32 @@ describe('占卜頁（TC-17）', () => {
     const db = await requireDb()
     expect(await db.readings.count()).toBe(1)
     expect(await draft.get()).toBeUndefined()
+  })
+
+  it('解讀頁有讀法說明與收合的納甲六爻盤；najia 開關關閉時不出現（AC-35）', async () => {
+    const saved = FLAGS.najia
+    try {
+      FLAGS.najia = true
+      mount()
+      await ask('納甲折疊區在不在？')
+      await castAll(6)
+      await screen.findByText('已存入紀錄', {}, { timeout: 3000 })
+      const summary = screen.getByText('納甲六爻盤')
+      expect((summary.closest('details') as HTMLDetailsElement).open).toBe(false)
+      // 沒展開就不載入面板
+      expect(document.querySelector('.najia')).toBeNull()
+      expect(document.querySelectorAll('.result-text > p.note').length).toBeGreaterThan(0)
+      cleanup()
+      FLAGS.najia = false
+      sessionStorage.clear()
+      mount()
+      await ask('開關關閉時的另一個問題')
+      await castAll(6)
+      await screen.findByText('已存入紀錄', {}, { timeout: 3000 })
+      expect(screen.queryByText('納甲六爻盤')).toBeNull()
+    } finally {
+      FLAGS.najia = saved
+    }
   })
 
   it('連點擲爻按鈕只會成一爻', async () => {

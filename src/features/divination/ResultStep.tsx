@@ -1,7 +1,7 @@
 // 解讀步驟：左欄本卦與之卦兩張卡圖（5:7），卦畫以朱紅標出變爻；右欄是保存狀態、讀法說明、主讀經文與白話，
 // 下方是輔讀與問事指引。保存失敗（blocked）時解讀照常顯示，主操作改為下載這次結果。
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { FLAGS } from '../../app/flags.ts'
@@ -21,6 +21,23 @@ import type { ReadingFocus } from '../../lib/reading.ts'
 import type { Reading } from '../../storage/index.ts'
 import { buildReading } from './buildReading.ts'
 import { GuidancePanel } from './GuidancePanel.tsx'
+
+// 納甲盤展開才載入，不計入占卜頁自身的程式包（規格「納甲六爻盤：模組」）
+const NajiaPanel = lazy(() => import('../najia/index.ts').then(m => ({ default: m.NajiaPanel })))
+
+function NajiaSection({ reading }: { reading: Reading }) {
+  const [opened, setOpened] = useState(false)
+  return (
+    <details className="accordion" onToggle={e => { if (e.currentTarget.open) setOpened(true) }}>
+      <summary>納甲六爻盤</summary>
+      {opened && (
+        <Suspense fallback={<p className="note">載入中</p>}>
+          <NajiaPanel lines={reading.lines} castAt={reading.createdAt} />
+        </Suspense>
+      )}
+    </details>
+  )
+}
 
 interface Props {
   reading: Reading
@@ -115,7 +132,7 @@ export function ReadingView({ reading, header, footer }: ReadingViewProps) {
         {header}
         <h2>該讀哪一段</h2>
         <p>{r.rule}</p>
-        {moving.length === 3 && <p className="note">本站只取朱熹的大原則（本卦卦辭為主、之卦卦辭為輔），沒有再依「前十卦主貞，後十卦主悔」細分。</p>}
+        <p className="note">{r.ruleExplanation}</p>
         <FocusBlock focus={main} main />
         {rest.length > 0 && (
           <details className="accordion">
@@ -124,6 +141,7 @@ export function ReadingView({ reading, header, footer }: ReadingViewProps) {
           </details>
         )}
         <GuidancePanel key={reading.id} primary={primary} result={result} initial={main.hexagram} category={reading.category} />
+        {FLAGS.najia && <NajiaSection key={`najia-${reading.id}`} reading={reading} />}
         {footer}
       </div>
     </section>

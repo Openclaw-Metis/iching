@@ -476,6 +476,26 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .result-links a { color: var(--celadon); text-decoration: underline; text-underline-offset: 3px; }
 .result-text h2 { margin: 20px 0 6px; color: var(--ivory); font-size: var(--fs-section); }
 .result-text h3 { margin: 0; color: var(--gold); font-size: 15px; font-weight: 500; letter-spacing: .2em; }
+/* 納甲六爻盤：一爻一列，由上爻排到初爻；變出的爻與伏神縮在那一爻底下 */
+.najia > p:first-child { margin-top: 0; }
+.najia-time { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 4px; }
+.najia-time label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-note); }
+.najia-time select { min-height: 44px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--ink-0); color: var(--ivory); }
+.najia-time > span { color: var(--gold); font-family: var(--serif); }
+.najia-lines { list-style: none; margin: 12px 0; padding: 0; border-bottom: 1px solid var(--line); }
+.najia-lines li { --bar: var(--gold); display: grid; grid-template-columns: 1.2em 2.4em 2.8em minmax(0, 1fr); gap: 2px 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-family: var(--serif); }
+.najia-lines li[data-moving] { --bar: var(--vermilion); }
+.najia-ord { color: var(--faint); font-size: var(--fs-note); }
+.najia-spirit { color: var(--muted); font-size: var(--fs-note); }
+.najia-bar { height: 7px; border-radius: 1px; background: var(--bar); }
+.najia-lines li[data-bit='0'] .najia-bar { background: linear-gradient(90deg, var(--bar) 0 40%, transparent 40% 60%, var(--bar) 60%); }
+.najia-main, .najia-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+.najia-main b, .najia-sub b { color: var(--ivory); font-weight: 700; }
+.najia-sub { grid-column: 4; color: var(--muted); font-size: var(--fs-note); }
+.najia-sub b { color: var(--text); font-weight: 500; }
+.najia-sub small { color: var(--gold-lo); font-size: inherit; }
+.najia-seat { padding: 0 6px; border: 1px solid var(--gold-lo); border-radius: var(--radius); color: var(--gold-hi); font-size: 13px; font-style: normal; line-height: 1.5; }
+.najia-mark { color: var(--vermilion); font-family: var(--sans); font-size: 13px; font-style: normal; }
 .focus-block { margin: 12px 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
 .focus-block .classic { margin: 0 0 6px; }
 .focus-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
