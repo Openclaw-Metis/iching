@@ -29,4 +29,25 @@ describe('變爻讀法', () => {
     expect(r.result.name).toBe('鼎')
     expect(r.focus).toEqual([{ kind: 'judgment', hexagram: r.result }])
   })
+
+  it('每一種情況都有讀法與說明（AC-32）', () => {
+    const all = [0, 1, 2, 3, 4, 5]
+    const cases: [number, number[]][] = [...all.map((n): [number, number[]] => [3, all.slice(0, n)]), [3, all], [1, all], [2, all]]
+    const seen = new Set<string>()
+    for (const [n, moving] of cases) {
+      const r = interpret(hexagram(n), moving)
+      expect(r.rule).toBeTruthy()
+      expect(r.ruleExplanation).toBeTruthy()
+      seen.add(r.ruleExplanation)
+    }
+    // 乾坤共用一段說明
+    expect(seen.size).toBe(8)
+    expect(interpret(hexagram(1), all).rule).toContain('用九')
+    expect(interpret(hexagram(2), all).rule).toContain('用六')
+  })
+
+  it('爻位不是 0 到 5 的整數時丟出 RangeError，重複的爻位視為同一爻', () => {
+    for (const bad of [-1, 6, 1.5, Number.NaN]) expect(() => interpret(hexagram(1), [bad])).toThrow(RangeError)
+    expect(interpret(hexagram(1), [2, 2]).moving).toEqual([2])
+  })
 })

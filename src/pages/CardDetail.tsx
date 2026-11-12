@@ -410,6 +410,7 @@ function Lab({ hex }: { hex: Hexagram }) {
           </Link>
           <h2>讀法</h2>
           <p>{reading.rule}</p>
+          <p className="note">{reading.ruleExplanation}</p>
           {reading.focus.map((f, i) => <FocusText key={i} focus={f} main={i === 0} />)}
         </div>
       </div>
