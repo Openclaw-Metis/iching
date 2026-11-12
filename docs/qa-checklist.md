@@ -1,6 +1,6 @@
 # 驗收對照與手動檢查表
 
-規格 `docs/spec.md`「驗收條件」AC-01 至 AC-31 的對應測試與手動檢查。自動測試以 `npm test` 執行（node 環境跑單元與整合測試、`*.test.tsx` 用 happy-dom）；手動檢查以 `npm run build && npm run preview` 後在瀏覽器進行，下方記錄 2026-10-24 在雲端環境以 Playwright（Chromium）實際走過的結果。
+規格 `docs/spec.md`「驗收條件」AC-01 至 AC-36 的對應測試與手動檢查。自動測試以 `npm test` 執行（node 環境跑單元與整合測試、`*.test.tsx` 用 happy-dom）；手動檢查以 `npm run build && npm run preview` 後在瀏覽器進行，下方記錄 2026-10-24 在雲端環境以 Playwright（Chromium）實際走過的結果。
 
 ## AC 對照表
 
@@ -37,6 +37,11 @@
 | AC-29 | `readings.test.ts`（TC-13） | 兩個分頁同時寫筆記，其中一個收到衝突提示 |
 | AC-30 | `attempts.test.ts`（TC-23） | 第 3 題重新整理回到同題同選項同選擇 |
 | AC-31 | `src/features/academy/reconcile.test.ts`（含 TC-24）、`backup.test.ts`（匯入後補發） | 啟動後自動補發印章 |
+| AC-32 | `src/lib/reading.test.ts`（八種情況都有讀法與說明、不合法爻位丟 `RangeError`） | 解讀頁與卡牌頁爻變分頁的讀法下方有說明 |
+| AC-33 | `src/lib/najia.test.ts`（《增刪卜易》六個原文卦例、64 卦窮舉、4,096 種變爻） | 無 |
+| AC-34 | `src/lib/najia.test.ts`「月建與日辰」、`src/lib/ganzhi.test.ts`（旬空、六沖） | 無 |
+| AC-35 | `src/features/najia/NajiaPanel.test.tsx`、`DivineFlow.test.tsx`（收合時不載入、開關關閉時不出現）、`npm run check:size` | 375px 與桌機寬度展開納甲盤，沒有橫向捲動 |
+| AC-36 | `src/lib/ganzhi.test.ts`（已知日期的日干支、2026 年六個交節前後、晚上 11 點換日） | 無 |
 
 測試案例 TC-01 到 TC-26 中，TC-20 為手動，其餘都在上表的測試檔中，測試名稱標有編號。
 
@@ -144,3 +149,10 @@
 - 320／375／600px 選單與關閉按鈕均為 SVG，沒有可見文字，保留無障礙名稱且觸控範圍至少 44px；選單標題為大有品牌圖示，dialog 名稱為「主選單」。
 - 點擊關閉、Esc、焦點返回、鍵盤不聚焦背景、導覽後關閉通過；學堂每日目標抽屜仍有文字標題及文字關閉。1280px 桌機保持五個導覽入口，沒有橫向溢出或 JavaScript 執行錯誤。
 - 276 項測試、typecheck、build、check:size、Taste Skill lint 通過；首屏 131.7 KB，占卜頁 113.2 KB。使用者已授權 commit、push 與部署，結果以對應提交的 GitHub Actions 為準。
+
+## 2026-11-12 朱熹讀法說明與納甲六爻盤
+
+- 自動測試：48 個測試檔、327 項測試 `npm test` 全過，`npm run typecheck`、`npm run build`、`npm run check:size` 通過；卦殿首屏 134.5 KB，占卜頁 114.1 KB，納甲盤是獨立的延遲載入檔。
+- 本機開發站實測：三錢法起卦得革之頤（四爻變），讀法下方顯示說明；展開納甲盤，坎宮四世、世在四爻、應在初爻、缺妻財而午火伏在三爻，月建亥、日辰庚寅、旬空午未，與外部曆書的 2026-11-12（己亥月庚寅日）相符。書卜的紀錄詳情同樣可展開。
+- 375px 與桌機寬度都沒有橫向捲動，主控台沒有錯誤。
+- 沒有做：正式站部署後的實測、離線狀態下展開納甲盤、實體手機。
