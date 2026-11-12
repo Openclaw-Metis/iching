@@ -137,6 +137,10 @@ main { padding: 0 var(--page-gutter) 72px; }
 .guidance { margin: 0; }
 .guidance dt { margin-top: 20px; color: var(--ivory); font-weight: 600; }
 .guidance dd { margin: 2px 0 0; line-height: 1.95; }
+/* 民間占斷：和本站的指引分開，朱絲細線加小標，一眼看得出不是同一種說法 */
+.folk-line { margin: 8px 0 0; padding-left: 12px; border-left: 1px solid var(--rule-hi); color: var(--muted); font-size: 15px; line-height: 1.85; }
+.folk-line b { margin-right: 10px; color: var(--vermilion); font-size: 13px; font-weight: 400; letter-spacing: .08em; }
+.folk-note { margin: 16px 0 0; }
 .kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 0; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; color: var(--ivory); }

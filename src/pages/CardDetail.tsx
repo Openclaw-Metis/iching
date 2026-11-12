@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { FocusText } from '../components/FocusText.tsx'
+import { FolkLine, FolkNote, FolkWellness, useFolk } from '../components/FolkReading.tsx'
 import { HexagramGlyph } from '../components/HexagramGlyph.tsx'
 import { HoloCard } from '../components/holo/HoloCard.tsx'
 import { LineForge } from '../components/LineForge.tsx'
@@ -210,6 +211,7 @@ function ArtNote({ hex }: { hex: Hexagram }) {
 function Meaning({ hex }: { hex: Hexagram }) {
   const c = content[hex.number]
   const t = textOf(hex.number)
+  const folk = useFolk(hex.number)
   if (!c) {
     return (
       <>
@@ -232,10 +234,12 @@ function Meaning({ hex }: { hex: Hexagram }) {
       <p>{c.summary}</p>
       <h2>問事指引</h2>
       <dl className="guidance">
-        <dt>事業與學業</dt><dd>{c.guidance.career}</dd>
-        <dt>感情與人際</dt><dd>{c.guidance.relations}</dd>
-        <dt>行動與決策</dt><dd>{c.guidance.decision}</dd>
+        <dt>事業與學業</dt><dd>{c.guidance.career}<FolkLine folk={folk} facet="career" /></dd>
+        <dt>感情與人際</dt><dd>{c.guidance.relations}<FolkLine folk={folk} facet="relations" /></dd>
+        <dt>行動與決策</dt><dd>{c.guidance.decision}<FolkLine folk={folk} facet="decision" /></dd>
+        <FolkWellness folk={folk} />
       </dl>
+      <FolkNote folk={folk} />
       <h2>大象</h2>
       <p className="classic">{t.daxiang}</p>
       <ArtNote hex={hex} />
@@ -432,7 +436,7 @@ function Sources({ hex }: { hex: Hexagram }) {
           : '這一卦的插圖尚未繪製，目前顯示的是卡框、文字與八卦面板的佔位版本。'}
       </p>
       <h2>白話導讀</h2>
-      <p>導讀、問事指引與牌義為本站原創，是協助理解的現代說法，經文仍以原文為準。</p>
+      <p>導讀、問事指引與牌義為本站原創，是協助理解的現代說法，經文仍以原文為準。問事指引裡標明「民間占斷」的句子與「身體與作息」，取自坊間流傳的占卜說法並經本站改寫，不是出自經文，僅供參考。</p>
     </>
   )
 }
