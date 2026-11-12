@@ -1,6 +1,7 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { provideStorage } from '../connection.ts'
+import { SCHEMA_VERSION } from '../db.ts'
 import { openStorage } from '../open.ts'
 import * as meta from './meta.ts'
 import * as settings from './settings.ts'
@@ -26,6 +27,6 @@ describe('設定與中繼資料', () => {
   })
 
   it('meta 記錄資料表版本', async () => {
-    expect((await meta.get())?.schema).toBe(1)
+    expect((await meta.get())?.schema).toBe(SCHEMA_VERSION)
   })
 })

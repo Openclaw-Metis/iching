@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BRANCHES, castTime, clashOf, dayGanzhi, ganzhiIndex, ganzhiName, monthBranch, voidBranches } from './ganzhi.ts'
+import { BRANCHES, castTime, castTimeLabel, clashOf, dayGanzhi, ganzhiIndex, ganzhiName, monthBranch, voidBranches } from './ganzhi.ts'
 
 const HOUR = 3_600_000
 /** 香港天文台公布的時刻（協調世界時加 8 小時） */
@@ -91,5 +91,43 @@ describe('起卦時刻', () => {
 
   it('月建取自時刻', () => {
     expect(BRANCHES[castTime(new Date(hkt(2026, 11, 12, 12, 0))).month]).toBe('亥')
+  })
+
+  // 以下都給定時刻與時差，答案和測試機器的時區無關
+  it('給了起卦時差就依那個時區換日：台灣 22:59 與 23:00 分屬兩天', () => {
+    const day = dayGanzhi(2026, 11, 12)
+    expect(castTime(new Date('2026-11-12T14:59:00.000Z'), 480).day).toBe(day)
+    expect(castTime(new Date('2026-11-12T15:00:00.000Z'), 480).day).toBe((day + 1) % 60)
+  })
+
+  it('同一個時刻在不同時差下日辰不同，所以要用保存的時差而不是查看裝置的', () => {
+    // 台灣 11/12 23:30 已算 11/13；同一刻在洛杉磯（UTC−8）是 11/12 07:30
+    const at = new Date('2026-11-12T15:30:00.000Z')
+    expect(castTime(at, 480).day).toBe(dayGanzhi(2026, 11, 13))
+    expect(castTime(at, -480).day).toBe(dayGanzhi(2026, 11, 12))
+    expect(castTime(at, 480).month).toBe(castTime(at, -480).month)
+  })
+
+  it('跨月、跨年、閏日與半小時時區都照鐘面日期進位', () => {
+    expect(castTime(new Date('2026-12-31T15:30:00.000Z'), 480).day).toBe(dayGanzhi(2027, 1, 1))
+    expect(castTime(new Date('2028-02-28T15:10:00.000Z'), 480).day).toBe(dayGanzhi(2028, 2, 29))
+    expect(castTime(new Date('2028-02-29T15:10:00.000Z'), 480).day).toBe(dayGanzhi(2028, 3, 1))
+    // 印度 UTC+5:30：17:29 UTC 是當地 22:59
+    expect(castTime(new Date('2026-11-12T17:29:00.000Z'), 330).day).toBe(dayGanzhi(2026, 11, 12))
+    expect(castTime(new Date('2026-11-12T17:30:00.000Z'), 330).day).toBe(dayGanzhi(2026, 11, 13))
+  })
+
+  it('不合法的時間或時差拋出 RangeError', () => {
+    expect(() => castTime(new Date('nope'), 480)).toThrow(RangeError)
+    expect(() => castTime(new Date('2026-11-12T00:00:00.000Z'), 1.5)).toThrow(RangeError)
+    expect(() => castTime(new Date('2026-11-12T00:00:00.000Z'), NaN)).toThrow(RangeError)
+  })
+
+  it('起卦時間的文字依保存的時差顯示鐘面時間並註明時差', () => {
+    const at = new Date('2026-11-12T15:30:00.000Z')
+    expect(castTimeLabel(at, 480)).toBe('2026/11/12 23:30（UTC+8）')
+    expect(castTimeLabel(at, -480)).toBe('2026/11/12 07:30（UTC−8）')
+    expect(castTimeLabel(at, 330)).toBe('2026/11/12 21:00（UTC+5:30）')
+    expect(castTimeLabel(at, 0)).toBe('2026/11/12 15:30（UTC+0）')
   })
 })

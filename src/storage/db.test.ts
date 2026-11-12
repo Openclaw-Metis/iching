@@ -1,10 +1,11 @@
+import Dexie from 'dexie'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { describe, expect, it } from 'vitest'
-import { createDb, EXPORTED_TABLES, nativeVersion, SCHEMA_VERSION, TABLE_NAMES } from './db.ts'
+import { createDb, DB_NAME, EXPORTED_TABLES, nativeVersion, SCHEMA_VERSION, TABLE_NAMES } from './db.ts'
 
 const fresh = () => createDb({ indexedDB: new IDBFactory(), IDBKeyRange })
 
-describe('資料表（version 1）', () => {
+describe('資料表', () => {
   it('開啟後 16 張表都存在', async () => {
     const db = fresh()
     await db.open()
@@ -14,11 +15,11 @@ describe('資料表（version 1）', () => {
     expect(db.backendDB().version).toBe(nativeVersion(SCHEMA_VERSION))
   })
 
-  it('第一次建立時寫入 meta.schema = 1 與 installId', async () => {
+  it('第一次建立時寫入目前的 meta.schema 與 installId', async () => {
     const db = fresh()
     await db.open()
     const meta = await db.meta.get('install')
-    expect(meta?.schema).toBe(1)
+    expect(meta?.schema).toBe(SCHEMA_VERSION)
     expect(meta?.installId).toMatch(/^[0-9a-f-]{36}$/)
     expect(Number.isNaN(Date.parse(meta!.createdAt))).toBe(false)
   })
@@ -53,5 +54,25 @@ describe('資料表（version 1）', () => {
     expect(EXPORTED_TABLES).not.toContain('castDraft')
     expect(EXPORTED_TABLES).not.toContain('attempts')
     expect(EXPORTED_TABLES).not.toContain('meta')
+  })
+})
+
+describe('升級到 version 2（占卜紀錄的起卦時刻與時差）', () => {
+  it('版本 1 的資料庫升級後紀錄原封不動、不補寫起卦時區，meta.schema 改為 2', async () => {
+    const factory = new IDBFactory()
+    const old = new Dexie(DB_NAME, { indexedDB: factory, IDBKeyRange })
+    old.version(1).stores({ readings: 'id, [createdAt+id]', meta: 'key' })
+    await old.open()
+    const reading = { id: 'r-old', createdAt: '2026-10-01T15:30:00.000Z', updatedAt: '2026-10-01T15:30:00.000Z', rev: 1, question: '舊紀錄', lines: [7, 6, 8, 8, 7, 8] }
+    await old.table('readings').add(reading)
+    await old.table('meta').add({ key: 'install', schema: 1, installId: 'keep-me', createdAt: '2026-10-01T00:00:00.000Z' })
+    old.close()
+
+    const db = createDb({ indexedDB: factory, IDBKeyRange })
+    await db.open()
+    expect(db.backendDB().version).toBe(nativeVersion(2))
+    expect(await db.readings.get('r-old')).toEqual(reading)
+    expect(await db.meta.get('install')).toMatchObject({ schema: 2, installId: 'keep-me' })
+    db.close()
   })
 })

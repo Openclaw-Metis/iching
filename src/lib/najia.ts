@@ -90,6 +90,10 @@ function yaoOf(hexagram: Hexagram, position: number, palace: Element): NajiaYao 
 
 export function najia(primary: Hexagram, moving: readonly number[] = [], time?: NajiaTime): NajiaChart {
   const sorted = movingPositions(moving)
+  // 月建與日辰可能來自畫面選單或日後保存的資料；錯的序號會排出看似正常的盤，所以在入口擋下
+  if (time && !(Number.isInteger(time.month) && time.month >= 0 && time.month < 12 && Number.isInteger(time.day) && time.day >= 0 && time.day < 60)) {
+    throw new RangeError(`月建或日辰不合法：${time.month}、${time.day}`)
+  }
   const result = changed(primary, sorted)
   const palace = primary.palace.trigram
   const pure = hexagramOf([...palace.lines, ...palace.lines])

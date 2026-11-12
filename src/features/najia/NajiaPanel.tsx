@@ -1,11 +1,12 @@
 // 納甲六爻盤（規格「納甲六爻盤」）：同一卦在京房納甲法裡的排法，只排盤、不判吉凶。
 // 月建與日辰預設由起卦時間換算，使用者可以改；改動只留在畫面上，不保存。
+// 日辰依紀錄保存的起卦時差計算，換時區查看也不變；舊紀錄沒有時差，只能依查看裝置的時區並註明。
 
 import { useMemo, useState } from 'react'
 import { toast } from '../../app/toast.ts'
 import { hexagramsOf, type LineValue } from '../../lib/castLines.ts'
 import { formatDateTime } from '../../lib/dates.ts'
-import { BRANCHES, castTime, ganzhiName } from '../../lib/ganzhi.ts'
+import { BRANCHES, castTime, castTimeLabel, ganzhiName } from '../../lib/ganzhi.ts'
 import { najia, yaoGanzhi, type NajiaYao } from '../../lib/najia.ts'
 import { chartText } from './chartText.ts'
 
@@ -14,6 +15,8 @@ interface Props {
   lines: readonly LineValue[]
   /** 起卦時間（ISO） */
   castAt: string
+  /** 起卦當時的 UTC 時差（分鐘，東為正）；舊紀錄沒有 */
+  offsetMinutes?: number
   /** 占卜的問題；有才出現「附上我的問題」 */
   question?: string
 }
@@ -35,8 +38,9 @@ function Yao({ yao }: { yao: NajiaYao }) {
   return <><b>{yao.relation}</b> {yaoGanzhi(yao)}{yao.element}</>
 }
 
-export function NajiaPanel({ lines, castAt, question = '' }: Props) {
-  const cast = useMemo(() => castTime(new Date(castAt)), [castAt])
+export function NajiaPanel({ lines, castAt, offsetMinutes, question = '' }: Props) {
+  const cast = useMemo(() => castTime(new Date(castAt), offsetMinutes), [castAt, offsetMinutes])
+  const castLabel = offsetMinutes === undefined ? formatDateTime(castAt) : castTimeLabel(new Date(castAt), offsetMinutes)
   const [month, setMonth] = useState(cast.month)
   const [day, setDay] = useState(cast.day)
   const edited = month !== cast.month || day !== cast.day
@@ -51,7 +55,7 @@ export function NajiaPanel({ lines, castAt, question = '' }: Props) {
   const [manual, setManual] = useState(false)
   const hasQuestion = question.trim().length > 0
   const text = chartText(chart, { month, day }, {
-    castAtLabel: edited ? undefined : formatDateTime(castAt),
+    castAtLabel: edited ? undefined : castLabel,
     question: withQuestion ? question : undefined,
     withPrompt,
   })
@@ -86,7 +90,8 @@ export function NajiaPanel({ lines, castAt, question = '' }: Props) {
         {edited && <button type="button" className="btn" onClick={() => { setMonth(cast.month); setDay(cast.day) }}>回到起卦時間</button>}
       </div>
       <p className="note">
-        {edited ? '已改成你選的月建與日辰，只在這個畫面有效。' : `依起卦時間 ${formatDateTime(castAt)} 換算。`}
+        {edited ? '已改成你選的月建與日辰，只在這個畫面有效。' : `依起卦時間 ${castLabel} 換算。`}
+        {offsetMinutes === undefined && !edited && '這筆紀錄沒有保存起卦時的時區，日辰依這台裝置的時區推算。'}
         {cast.nearTerm && !edited && '這個時刻離交節不到一小時，月建可能差一個月，請對照曆書。'}
       </p>
 

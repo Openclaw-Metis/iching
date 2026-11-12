@@ -96,4 +96,25 @@ describe('納甲六爻盤', () => {
     expect(screen.getByText(/本卦六爻沒有妻財，從本宮首卦乾為天取伏神/)).toBeTruthy()
     expect(rows()[4]).toContain('伏妻財 甲寅木')
   })
+
+  // 台灣 2026-11-12 23:30：子時已過，日辰算 11/13
+  const late = '2026-11-12T15:30:00.000Z'
+  const selects = () => [screen.getByLabelText('月建'), screen.getByLabelText('日辰')] as HTMLSelectElement[]
+
+  it('給了起卦時差時日辰依那個時差，並在說明註明時差；和執行環境的時區無關', () => {
+    render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={late} offsetMinutes={480} />)
+    expect(Number(selects()[1].value)).toBe(castTime(new Date(late), 480).day)
+    expect(screen.getByText(/依起卦時間 2026\/11\/12 23:30（UTC\+8） 換算/)).toBeTruthy()
+    expect(screen.queryByText(/沒有保存起卦時的時區/)).toBeNull()
+    cleanup()
+    // 同一個時刻、不同的保存時差，日辰差一天
+    render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={late} offsetMinutes={-480} />)
+    expect(Number(selects()[1].value)).toBe((castTime(new Date(late), 480).day + 59) % 60)
+  })
+
+  it('舊紀錄沒有時差：照舊依裝置時區推算，並說明沒有保存時區', () => {
+    render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={castAt} />)
+    expect(Number(selects()[1].value)).toBe(castTime(new Date(castAt)).day)
+    expect(screen.getByText(/這筆紀錄沒有保存起卦時的時區/)).toBeTruthy()
+  })
 })

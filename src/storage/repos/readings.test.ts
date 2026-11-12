@@ -130,3 +130,26 @@ describe('草稿（TC-12）', () => {
     expect(await draft.get()).toMatchObject({ castId: d.castId, phase: 'casting', lines: [7, 8, 9] })
   })
 })
+
+describe('起卦時刻（納甲排盤用）', () => {
+  it('以開始起卦的時刻為準，不是完成的時刻；建立時間照舊是完成的時刻', async () => {
+    // 台灣 22:55 開始、23:05 完成
+    const d = makeDraft({ startedAt: '2026-11-12T14:55:00.000Z' })
+    const r = await readings.completeCast(d, new Date('2026-11-12T15:05:00.000Z'))
+    expect(r.castAt).toBe('2026-11-12T14:55:00.000Z')
+    expect(r.createdAt).toBe('2026-11-12T15:05:00.000Z')
+    expect(r.castOffsetMinutes).toBe(-new Date('2026-11-12T14:55:00.000Z').getTimezoneOffset())
+    expect(await readings.get(d.castId)).toMatchObject({ castAt: r.castAt, castOffsetMinutes: r.castOffsetMinutes })
+  })
+
+  it('保存失敗後重試、或中斷後重跑，起卦時刻都不變', async () => {
+    const d = makeDraft({ startedAt: '2026-11-12T14:55:00.000Z' })
+    const first = readings.readingFromDraft(d, new Date('2026-11-12T15:05:00.000Z'))
+    const retry = readings.readingFromDraft(d, new Date('2026-11-12T16:40:00.000Z'))
+    expect(retry.castAt).toBe(first.castAt)
+    expect(retry.castOffsetMinutes).toBe(first.castOffsetMinutes)
+    await readings.completeCast(d, new Date('2026-11-12T15:05:00.000Z'))
+    const again = await readings.completeCast(d, new Date('2026-11-12T16:40:00.000Z'))
+    expect(again.castAt).toBe('2026-11-12T14:55:00.000Z')
+  })
+})

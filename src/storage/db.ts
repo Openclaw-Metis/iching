@@ -14,7 +14,7 @@ import type { LineValue } from '../lib/castLines.ts'
 export type { LineValue }
 
 export const DB_NAME = 'iching'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 // ── 占卜 ─────────────────────────────────────────────
 
@@ -27,6 +27,12 @@ export interface Reading {
   /** 等於起卦草稿的 castId（UUID） */
   id: string
   createdAt: string
+  /**
+   * 起卦時刻（按下「開始起卦」，ISO UTC）與當時裝置的 UTC 時差（分鐘，東為正）。納甲盤的日辰依這兩個值，
+   * 換裝置或換時區查看也不變。版本 1 的舊紀錄沒有，原本的時區無從得知，所以不補寫。
+   */
+  castAt?: string
+  castOffsetMinutes?: number
   updatedAt: string
   /** 建立時為 1，每次寫入加一；跨分頁寫入在交易內比對 */
   rev: number
@@ -300,6 +306,8 @@ export const nativeVersion = (schema: number) => schema * 10
 export function createDb(options?: DexieOptions): IchingDB {
   const db = new Dexie(DB_NAME, options) as IchingDB
   db.version(1).stores(STORES_V1)
+  // 版本 2：占卜紀錄多了 castAt 與 castOffsetMinutes（不建索引，資料表定義不變）；舊紀錄不轉換，只更新版號
+  db.version(2).stores(STORES_V1).upgrade(tx => tx.table('meta').update('install', { schema: 2 }))
   // 第一次建立資料庫時寫入中繼資料；之後的版本在各自的 upgrade 函式裡更新 schema
   db.on('populate', tx => {
     tx.table('meta').add({ key: 'install', schema: SCHEMA_VERSION, installId: crypto.randomUUID(), createdAt: new Date().toISOString() } satisfies Meta)

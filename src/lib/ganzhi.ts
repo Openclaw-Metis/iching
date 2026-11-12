@@ -74,9 +74,24 @@ export interface CastTime {
   nearTerm: boolean
 }
 
-/** 起卦時刻的月建與日辰。日辰依裝置的本地日期，晚上 11 點起算次日（子時換日）；月建由時刻算，和時區無關 */
-export function castTime(date: Date): CastTime {
-  const local = new Date(date.getFullYear(), date.getMonth(), date.getDate() + (date.getHours() >= 23 ? 1 : 0))
+/**
+ * 起卦時刻的月建與日辰。日辰依起卦當時的時區（offsetMinutes：UTC 時差的分鐘數，東為正），晚上 11 點起算次日
+ * （子時換日）；沒給時差時用裝置在那一刻的時差。月建由時刻算，和時區無關。
+ */
+export function castTime(date: Date, offsetMinutes = -date.getTimezoneOffset()): CastTime {
+  if (Number.isNaN(date.getTime()) || !Number.isInteger(offsetMinutes)) throw new RangeError('起卦時間或時差不合法')
+  // 把時刻平移成「當地的鐘面時間」，再用 UTC 的欄位讀，結果就和執行環境的時區無關；加一小時讓 23 點落到次日
+  const wall = new Date(date.getTime() + (offsetMinutes + 60) * 60_000)
   const { branch, nearTerm } = monthBranch(date.getTime())
-  return { month: branch, day: dayGanzhi(local.getFullYear(), local.getMonth() + 1, local.getDate()), nearTerm }
+  return { month: branch, day: dayGanzhi(wall.getUTCFullYear(), wall.getUTCMonth() + 1, wall.getUTCDate()), nearTerm }
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** 帶時差的起卦時間，如「2026/11/12 23:30（UTC+8）」；鐘面時間依保存的時差，不依查看的裝置 */
+export function castTimeLabel(date: Date, offsetMinutes: number): string {
+  const wall = new Date(date.getTime() + offsetMinutes * 60_000)
+  const abs = Math.abs(offsetMinutes)
+  const zone = `UTC${offsetMinutes < 0 ? '−' : '+'}${Math.floor(abs / 60)}${abs % 60 ? `:${pad(abs % 60)}` : ''}`
+  return `${wall.getUTCFullYear()}/${pad(wall.getUTCMonth() + 1)}/${pad(wall.getUTCDate())} ${pad(wall.getUTCHours())}:${pad(wall.getUTCMinutes())}（${zone}）`
 }

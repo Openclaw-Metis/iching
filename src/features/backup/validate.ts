@@ -85,10 +85,12 @@ export interface RecordCheck<T> {
 const CATEGORIES: Category[] = ['career', 'relations', 'decision', 'general']
 const METHODS: Method[] = ['coins', 'yarrow-hand', 'yarrow-quick', 'manual']
 const invalid = { value: null, corrected: false } as const
+// 實際的時區在 UTC−12 到 UTC+14 之間
+const MAX_OFFSET_MINUTES = 14 * 60
 
 export function validateReading(raw: Json): RecordCheck<Reading> {
   if (!isObject(raw)) return invalid
-  const { id, createdAt, updatedAt, rev, question, category, method, lines, primary, result, moving, note, followUp, starred, v, deletedAt } = raw
+  const { id, createdAt, castAt, castOffsetMinutes, updatedAt, rev, question, category, method, lines, primary, result, moving, note, followUp, starred, v, deletedAt } = raw
   if (typeof id !== 'string' || !id || len(id) > 100) return invalid
   const created = isoDate(createdAt), updated = isoDate(updatedAt)
   if (!created || !updated) return invalid
@@ -113,6 +115,10 @@ export function validateReading(raw: Json): RecordCheck<Reading> {
     if (!deleted) return invalid
   }
 
+  // 起卦時刻與時差要一起合法才採用；缺一個就當成沒有保存時區的舊紀錄，不讓整筆紀錄作廢
+  const castIso = isoDate(castAt)
+  const cast = castIso && isInt(castOffsetMinutes, -MAX_OFFSET_MINUTES, MAX_OFFSET_MINUTES) ? castIso : null
+
   const computed = hexagramsOf(lines as LineValue[])
   const corrected = primary !== computed.primary.number || result !== computed.result.number
     || !Array.isArray(moving) || moving.length !== computed.moving.length || moving.some((m, i) => m !== computed.moving[i])
@@ -120,7 +126,7 @@ export function validateReading(raw: Json): RecordCheck<Reading> {
   return {
     corrected,
     value: {
-      id, createdAt: created, updatedAt: updated, rev: isInt(rev, 1) ? rev : 1,
+      id, createdAt: created, ...(cast ? { castAt: cast, castOffsetMinutes: castOffsetMinutes as number } : {}), updatedAt: updated, rev: isInt(rev, 1) ? rev : 1,
       question: question.trim(), category: category as Category, method: method as Method,
       lines: [...lines] as LineValue[], primary: computed.primary.number, result: computed.result.number, moving: computed.moving,
       note, followUp: follow, starred: star, v: isInt(v, 1) ? v : 1, deletedAt: deleted,

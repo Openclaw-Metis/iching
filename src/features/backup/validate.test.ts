@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Reading } from '../../storage/index.ts'
+import { SCHEMA_VERSION } from '../../storage/db.ts'
 import { partialBackup } from './format.ts'
 import { parseBackupText, validateEnvelope, validateReading, validateTables } from './validate.ts'
 
@@ -58,12 +59,43 @@ describe('備份檔驗證', () => {
 
   it('較新格式的檔案拋出 IMPORT_NEWER_FORMAT', () => {
     expect(() => roundTrip({ ...partialBackup(reading()), format: 99 })).toThrow(expect.objectContaining({ code: 'IMPORT_NEWER_FORMAT' }))
-    expect(() => roundTrip({ ...partialBackup(reading()), schema: 2 })).toThrow(expect.objectContaining({ code: 'IMPORT_NEWER_FORMAT' }))
+    expect(() => roundTrip({ ...partialBackup(reading()), schema: SCHEMA_VERSION + 1 })).toThrow(expect.objectContaining({ code: 'IMPORT_NEWER_FORMAT' }))
   })
 
   it('巢狀超過 8 層時拋出 IMPORT_TOO_LARGE', () => {
     let deep: unknown = 1
     for (let i = 0; i < 9; i++) deep = [deep]
     expect(() => parseBackupText(JSON.stringify(deep))).toThrow(expect.objectContaining({ code: 'IMPORT_TOO_LARGE' }))
+  })
+})
+
+describe('占卜紀錄的起卦時刻與時差', () => {
+  const check = (over: Record<string, unknown>) => validateReading({ ...reading(), ...over } as never).value
+
+  it('兩個欄位都合法時保留', () => {
+    expect(check({ castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: 480 })).toMatchObject({ castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: 480 })
+    expect(check({ castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: -420 })).toMatchObject({ castOffsetMinutes: -420 })
+  })
+
+  it('舊備份沒有這兩個欄位時照常匯入，不補寫', () => {
+    const value = check({})!
+    expect(value).not.toHaveProperty('castAt')
+    expect(value).not.toHaveProperty('castOffsetMinutes')
+  })
+
+  it('缺一個或不合法時兩個一併略去，紀錄其餘內容照常匯入', () => {
+    for (const over of [
+      { castAt: '2026-11-12T15:30:00.000Z' },
+      { castOffsetMinutes: 480 },
+      { castAt: 'yesterday', castOffsetMinutes: 480 },
+      { castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: 1.5 },
+      { castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: 5000 },
+      { castAt: '2026-11-12T15:30:00.000Z', castOffsetMinutes: '480' },
+    ]) {
+      const value = check(over)!
+      expect(value.id).toBe(reading().id)
+      expect(value).not.toHaveProperty('castAt')
+      expect(value).not.toHaveProperty('castOffsetMinutes')
+    }
   })
 })

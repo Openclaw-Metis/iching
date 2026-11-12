@@ -26,6 +26,9 @@ export function readingFromDraft(draft: CastDraft, now = new Date()): Reading {
   return {
     id: draft.castId,
     createdAt: at,
+    // 排盤以開始起卦的時刻為準；時差取那一刻的值，夏令時間切換前後才不會錯
+    castAt: draft.startedAt,
+    castOffsetMinutes: -new Date(draft.startedAt).getTimezoneOffset(),
     updatedAt: at,
     rev: 1,
     question: draft.question.trim(),

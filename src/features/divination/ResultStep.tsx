@@ -1,7 +1,7 @@
 // 解讀步驟：左欄本卦與之卦兩張卡圖（5:7），卦畫以朱紅標出變爻；右欄是保存狀態、讀法說明、主讀經文與白話，
 // 下方是輔讀與問事指引。保存失敗（blocked）時解讀照常顯示，主操作改為下載這次結果。
 
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { touch as touchCardCache } from '../../app/cardCache.ts'
 import { FLAGS } from '../../app/flags.ts'
@@ -25,15 +25,35 @@ import { GuidancePanel } from './GuidancePanel.tsx'
 // 納甲盤展開才載入，不計入占卜頁自身的程式包（規格「納甲六爻盤：模組」）
 const NajiaPanel = lazy(() => import('../najia/index.ts').then(m => ({ default: m.NajiaPanel })))
 
+// 納甲的程式包載不到（多半是網站更新後舊分頁還開著）或排盤出錯時，只讓這一區顯示錯誤，
+// 不讓例外冒到路由層把整頁的經文解讀換掉。不自動重試，由使用者決定要不要重新整理
+class NajiaBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(error: Error) { console.warn(`[NAJIA_FAILED] ${error.message}`) }
+  render() {
+    if (!this.state.failed) return this.props.children
+    return (
+      <div role="alert">
+        <p className="note">納甲六爻盤載入失敗，上面的經文解讀不受影響。多半是網站剛更新，重新整理後再展開一次。</p>
+        <button type="button" className="btn" onClick={() => location.reload()}>重新整理</button>
+      </div>
+    )
+  }
+}
+
 function NajiaSection({ reading }: { reading: Reading }) {
   const [opened, setOpened] = useState(false)
   return (
     <details className="accordion" onToggle={e => { if (e.currentTarget.open) setOpened(true) }}>
       <summary>納甲六爻盤</summary>
       {opened && (
-        <Suspense fallback={<p className="note">載入中</p>}>
-          <NajiaPanel lines={reading.lines} castAt={reading.createdAt} question={reading.question} />
-        </Suspense>
+        <NajiaBoundary>
+          <Suspense fallback={<p className="note">載入中</p>}>
+            {/* 舊紀錄沒有起卦時刻與時差，退回建立時間與查看裝置的時區 */}
+            <NajiaPanel lines={reading.lines} castAt={reading.castAt ?? reading.createdAt} offsetMinutes={reading.castAt ? reading.castOffsetMinutes : undefined} question={reading.question} />
+          </Suspense>
+        </NajiaBoundary>
       )}
     </details>
   )

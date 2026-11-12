@@ -166,6 +166,15 @@ describe('月建與日辰', () => {
     expect(spirits('己')).toEqual(['螣蛇', '白虎', '玄武', '青龍', '朱雀', '勾陳'])
   })
 
+  it('月建或日辰的序號不合法時丟出 RangeError，合法的邊界值照排', () => {
+    for (const time of [
+      { month: -1, day: 0 }, { month: 12, day: 0 }, { month: 1.5, day: 0 }, { month: NaN, day: 0 }, { month: Infinity, day: 0 },
+      { month: 0, day: -1 }, { month: 0, day: 60 }, { month: 0, day: 0.5 }, { month: 0, day: NaN }, { month: 0, day: Infinity },
+    ]) expect(() => najia(hexagram(1), [], time)).toThrow(RangeError)
+    expect(najia(hexagram(1), [], { month: 0, day: 0 }).voidBranches).toEqual([10, 11])
+    expect(najia(hexagram(1), [], { month: 11, day: 59 }).lines).toHaveLength(6)
+  })
+
   it('變爻位置不合法時丟出 RangeError', () => {
     expect(() => najia(hexagram(1), [6])).toThrow(RangeError)
   })

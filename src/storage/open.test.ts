@@ -25,10 +25,10 @@ describe('openStorage', () => {
 
   it('資料庫版本比程式新時為 version-error，不改用記憶體、拒絕寫入（AC-28、TC-21）', async () => {
     const factory = new IDBFactory()
-    // 模擬較新版的程式：同一個資料庫升到 version 2，多一張表
+    // 模擬較新版的程式：同一個資料庫升到下一個版本，多一張表
     const newer = new Dexie(DB_NAME, { indexedDB: factory, IDBKeyRange })
     newer.version(1).stores({ readings: 'id', meta: 'key' })
-    newer.version(2).stores({ readings: 'id', meta: 'key', futureTable: 'id' })
+    newer.version(SCHEMA_VERSION + 1).stores({ readings: 'id', meta: 'key', futureTable: 'id' })
     await newer.open()
     await newer.table('readings').add({ id: 'from-newer' })
     newer.close()
@@ -41,7 +41,7 @@ describe('openStorage', () => {
     await expect(requireDb()).rejects.toSatisfy(e => isAppError(e, 'STORAGE_VERSION'))
 
     // 資料庫維持較新版的樣子，沒有被舊程式改動
-    const check = await rawOpen(factory, nativeVersion(2))
+    const check = await rawOpen(factory, nativeVersion(SCHEMA_VERSION + 1))
     expect([...check.objectStoreNames]).toContain('futureTable')
     check.close()
   })
@@ -97,7 +97,7 @@ describe('openStorage', () => {
     const statuses: StorageMode[] = []
     const h = await openStorage({ indexedDB: factory, IDBKeyRange, onStatus: m => statuses.push(m) })
     const newer = new Dexie(DB_NAME, { indexedDB: factory, IDBKeyRange })
-    newer.version(2).stores({ futureTable: 'id' })
+    newer.version(SCHEMA_VERSION + 1).stores({ futureTable: 'id' })
     await newer.open()
     expect(statuses).toContain('stale')
     expect(h.mode).toBe('stale')
