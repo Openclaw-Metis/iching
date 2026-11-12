@@ -1,9 +1,12 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BRANCHES, STEMS, castTime, ganzhiIndex, ganzhiName } from '../../lib/ganzhi.ts'
 import { NajiaPanel } from './NajiaPanel.tsx'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 // 2026-11-12 中午（本地時間）：離交節很遠，月建不受時區影響
 const castAt = new Date(2026, 10, 12, 12, 0).toISOString()
@@ -37,6 +40,55 @@ describe('納甲六爻盤', () => {
     expect(screen.getByText('旬空：午未')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '回到起卦時間' }))
     expect(screen.queryByRole('button', { name: '回到起卦時間' })).toBeNull()
+  })
+
+  describe('複製排盤（AC-37）', () => {
+    const stubClipboard = (writeText?: (text: string) => Promise<void>) =>
+      vi.stubGlobal('navigator', Object.create(navigator, { clipboard: { value: writeText ? { writeText } : undefined } }))
+
+    it('兩個勾選項預設不勾；勾了才附上問題與提問詞', async () => {
+      const copied: string[] = []
+      stubClipboard(async text => { copied.push(text) })
+      render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={castAt} question="要不要接下新的專案？" />)
+      const question = screen.getByLabelText<HTMLInputElement>('附上我的問題')
+      const prompt = screen.getByLabelText<HTMLInputElement>('附上給 AI 的提問')
+      expect([question.checked, prompt.checked]).toEqual([false, false])
+      fireEvent.click(screen.getByRole('button', { name: '複製排盤' }))
+      await waitFor(() => expect(copied).toHaveLength(1))
+      expect(copied[0].startsWith('【納甲六爻排盤】')).toBe(true)
+      expect(copied[0]).not.toContain('要不要接下新的專案')
+      expect(copied[0]).toContain('上爻（世）　')
+      fireEvent.click(question)
+      fireEvent.click(prompt)
+      fireEvent.click(screen.getByRole('button', { name: '複製排盤' }))
+      await waitFor(() => expect(copied).toHaveLength(2))
+      expect(copied[1].startsWith('請以熟悉六爻納甲筮法')).toBe(true)
+      expect(copied[1]).toContain('問題：要不要接下新的專案？')
+    })
+
+    it('沒有問題時不出現「附上我的問題」；改過日辰的盤複製出來註明自行指定', async () => {
+      const copied: string[] = []
+      stubClipboard(async text => { copied.push(text) })
+      render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={castAt} />)
+      expect(screen.queryByLabelText('附上我的問題')).toBeNull()
+      fireEvent.change(screen.getByLabelText('月建'), { target: { value: String(BRANCHES.indexOf('辰')) } })
+      fireEvent.click(screen.getByRole('button', { name: '複製排盤' }))
+      await waitFor(() => expect(copied).toHaveLength(1))
+      expect(copied[0]).toContain('月建：辰月')
+      expect(copied[0]).toContain('自行指定')
+    })
+
+    it('剪貼簿不能用或被拒絕時，顯示可手動選取的文字', async () => {
+      stubClipboard()
+      const { unmount } = render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={castAt} />)
+      fireEvent.click(screen.getByRole('button', { name: '複製排盤' }))
+      expect(screen.getByRole<HTMLTextAreaElement>('textbox').value).toContain('【納甲六爻排盤】')
+      unmount()
+      stubClipboard(() => Promise.reject(new Error('denied')))
+      render(<NajiaPanel lines={[7, 7, 7, 7, 7, 9]} castAt={castAt} />)
+      fireEvent.click(screen.getByRole('button', { name: '複製排盤' }))
+      expect((await screen.findByRole<HTMLTextAreaElement>('textbox')).value).toContain('本卦：乾為天')
+    })
   })
 
   it('天風姤：缺妻財，寅木伏在二爻', () => {

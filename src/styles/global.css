@@ -496,6 +496,11 @@ button.forge-line:focus-visible { outline-offset: 2px; }
 .najia-sub small { color: var(--gold-lo); font-size: inherit; }
 .najia-seat { padding: 0 6px; border: 1px solid var(--gold-lo); border-radius: var(--radius); color: var(--gold-hi); font-size: 13px; font-style: normal; line-height: 1.5; }
 .najia-mark { color: var(--vermilion); font-family: var(--sans); font-size: 13px; font-style: normal; }
+.najia-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 14px 0 4px; }
+.najia-copy label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--text); font-size: var(--fs-note); cursor: pointer; }
+.najia-copy input { width: 18px; height: 18px; margin: 0; }
+.najia-manual { display: grid; gap: 8px; margin: 8px 0; color: var(--vermilion); font-size: var(--fs-note); }
+.najia-manual textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--ink-0); color: var(--text); font-family: var(--sans); font-size: var(--fs-note); line-height: 1.7; resize: vertical; }
 .focus-block { margin: 12px 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--ink-1); }
 .focus-block .classic { margin: 0 0 6px; }
 .focus-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }

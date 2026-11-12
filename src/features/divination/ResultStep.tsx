@@ -32,7 +32,7 @@ function NajiaSection({ reading }: { reading: Reading }) {
       <summary>納甲六爻盤</summary>
       {opened && (
         <Suspense fallback={<p className="note">載入中</p>}>
-          <NajiaPanel lines={reading.lines} castAt={reading.createdAt} />
+          <NajiaPanel lines={reading.lines} castAt={reading.createdAt} question={reading.question} />
         </Suspense>
       )}
     </details>
