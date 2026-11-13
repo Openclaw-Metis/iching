@@ -32,5 +32,5 @@ export function FolkWellness({ folk }: { folk: FolkReading | undefined }) {
 
 export function FolkNote({ folk }: { folk: FolkReading | undefined }) {
   if (!folk) return null
-  return <p className="note folk-note">民間占斷取自坊間流傳的占卜說法，經本站改寫，斷語與月份（多指農曆）僅供參考；身體與作息是一般的養生提醒，不是醫療建議。</p>
+  return <p className="note folk-note">民間占斷取自坊間流傳，經本站改寫僅供參考；身體與作息為養生提醒，非醫療建議。</p>
 }
