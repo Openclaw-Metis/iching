@@ -186,8 +186,9 @@ function SequenceNav({ hex, className }: { hex: Hexagram; className: string }) {
   const prev = hex.number > 1 ? hexagram(hex.number - 1) : null
   const next = hex.number < 64 ? hexagram(hex.number + 1) : null
   return (
+    // 兩邊都放「連過去的那一卦」自己的序卦文字：xugua[n] 講的是第 n 卦怎麼來，放在別的卦名底下會對不上
     <nav className={`seq-nav ${className}`} aria-label="序卦">
-      {prev ? <Link to={`/gua/${prev.number}`}><b>← {prev.name}</b>{xugua[hex.number]}</Link> : <span />}
+      {prev ? <Link to={`/gua/${prev.number}`}><b>← {prev.name}</b>{xugua[prev.number]}</Link> : <span />}
       {next ? <Link className="next" to={`/gua/${next.number}`}><b>{next.name} →</b>{xugua[next.number]}</Link> : <span />}
     </nav>
   )
